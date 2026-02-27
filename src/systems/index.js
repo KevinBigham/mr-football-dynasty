@@ -387,3 +387,10 @@ export {
   GAME_OF_WEEK977,
   buildRivalryDashboard977,
 } from './rivalry-game-day.js';
+export { DB_CLEANER } from './db-cleaner.js';
+export {
+  detectPositionBattles974,
+  buildCutAdvisor974,
+} from './roster-management.js';
+export { NEGOTIATION_SCENE } from './negotiation-scene.js';
+export { ARC_SPOTLIGHT } from './arc-spotlight.js';

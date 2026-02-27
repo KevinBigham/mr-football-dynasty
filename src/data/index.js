@@ -80,3 +80,12 @@ export {
 } from './appearance.js';
 export { FA_NARRATIVE_993 } from './fa-narrative.js';
 export { PRESS_CONFERENCE_993 } from './press-conference-expanded.js';
+export {
+  FA_TIERS,
+  getFATier,
+  FA_PHASES,
+  FA_ROLE_PITCH,
+  RFA_TENDERS,
+  FA_MARKET_VALUE,
+  FA_PRIORITY_TAGS,
+} from './fa-config.js';
