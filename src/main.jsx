@@ -79,6 +79,19 @@ import {
   splitDeadCapCharge,
   calcTradeImpact,
   addVoidYears,
+  getTradeValue,
+  getTeamNeeds,
+  getGMTradeThresholdMod,
+  getGMFABias,
+  getGMDraftBias,
+  STARTER_COUNTS,
+  SCOUT_COSTS86,
+  SCOUT_POINT_BASE86,
+  genPickBlurb,
+  genRunAlerts,
+  NARRATIVE_STATES,
+  STORY_ARC_EVENTS,
+  pickWeightedEvent,
 } from './systems/index.js';
 import {
   TD,
@@ -91,6 +104,8 @@ import {
   applyLeagueAlignment97,
   getScaledCount97,
   CALENDAR,
+  STADIUM_DEALS976,
+  generateStadiumDeals976,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -254,8 +269,40 @@ function validateModules() {
   if (typeof calcTradeImpact !== 'function') errors.push('calcTradeImpact not a function');
   if (typeof addVoidYears !== 'function') errors.push('addVoidYears not a function');
 
+  // Trade AI
+  if (typeof getTradeValue !== 'function') errors.push('getTradeValue not a function');
+  var testTradePlayer = { ovr: 85, pot: 90, age: 26, pos: 'QB', contract: makeContract(10, 3, 6, 15) };
+  var tv = getTradeValue(testTradePlayer, null, null);
+  if (tv <= 0) errors.push('getTradeValue returned <= 0 for elite QB');
+  if (typeof getTeamNeeds !== 'function') errors.push('getTeamNeeds not a function');
+  var gmMod = getGMTradeThresholdMod('rebuild');
+  if (gmMod.sellMod !== 0.85) errors.push('getGMTradeThresholdMod rebuild sellMod mismatch');
+  if (gmMod.buyMod !== 1.15) errors.push('getGMTradeThresholdMod rebuild buyMod mismatch');
+  if (typeof getGMFABias !== 'function') errors.push('getGMFABias not a function');
+  if (typeof getGMDraftBias !== 'function') errors.push('getGMDraftBias not a function');
+
+  // Scouting
+  if (STARTER_COUNTS.QB !== 1) errors.push('STARTER_COUNTS.QB mismatch');
+  if (STARTER_COUNTS.OL !== 5) errors.push('STARTER_COUNTS.OL mismatch');
+  if (SCOUT_COSTS86.full !== 100) errors.push('SCOUT_COSTS86.full expected 100, got ' + SCOUT_COSTS86.full);
+  if (SCOUT_POINT_BASE86 !== 1000) errors.push('SCOUT_POINT_BASE86 mismatch');
+  if (typeof genPickBlurb !== 'function') errors.push('genPickBlurb not a function');
+  var blurb = genPickBlurb({ pos: 'QB', ovr: 90, pot: 95, age: 22 }, []);
+  if (blurb.indexOf('Elite') < 0) errors.push('genPickBlurb 90 OVR should say Elite');
+  if (typeof genRunAlerts !== 'function') errors.push('genRunAlerts not a function');
+
+  // Story Arcs
+  if (!NARRATIVE_STATES.BREAKOUT) errors.push('NARRATIVE_STATES missing BREAKOUT');
+  if (Object.keys(NARRATIVE_STATES).length !== 9) errors.push('NARRATIVE_STATES count: ' + Object.keys(NARRATIVE_STATES).length);
+  if (!STORY_ARC_EVENTS.breakout || STORY_ARC_EVENTS.breakout.length !== 3) errors.push('STORY_ARC_EVENTS.breakout count mismatch');
+  if (typeof pickWeightedEvent !== 'function') errors.push('pickWeightedEvent not a function');
+
+  // Stadium Deals
+  if (STADIUM_DEALS976.length !== 8) errors.push('STADIUM_DEALS976 count: ' + STADIUM_DEALS976.length);
+  if (typeof generateStadiumDeals976 !== 'function') errors.push('generateStadiumDeals976 not a function');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 90 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 110 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -329,6 +376,19 @@ function ModuleStatusApp() {
     { name: 'Dead Cap Split (post-deadline)', status: typeof splitDeadCapCharge === 'function' },
     { name: 'Trade Impact Calculator', status: typeof calcTradeImpact === 'function' },
     { name: 'Void Year Management', status: typeof addVoidYears === 'function' },
+    { name: 'Trade Value Calculator', status: typeof getTradeValue === 'function' },
+    { name: 'Team Needs Analysis', status: typeof getTeamNeeds === 'function' },
+    { name: 'GM Strategy Modifiers', status: typeof getGMTradeThresholdMod === 'function' },
+    { name: 'GM FA & Draft Bias', status: typeof getGMFABias === 'function' && typeof getGMDraftBias === 'function' },
+    { name: 'Starter Counts (11 pos)', status: STARTER_COUNTS.QB === 1 && STARTER_COUNTS.OL === 5 },
+    { name: 'Scout Costs & Points', status: SCOUT_COSTS86.full === 100 },
+    { name: 'Draft Blurb Generator', status: typeof genPickBlurb === 'function' },
+    { name: 'Draft Run Alerts', status: typeof genRunAlerts === 'function' },
+    { name: 'Narrative States (9 arcs)', status: Object.keys(NARRATIVE_STATES).length === 9 },
+    { name: 'Story Arc Events', status: !!STORY_ARC_EVENTS.breakout },
+    { name: 'Weighted Event Picker', status: typeof pickWeightedEvent === 'function' },
+    { name: 'Stadium Deals (8 templates)', status: STADIUM_DEALS976.length === 8 },
+    { name: 'Stadium Deal Generator', status: typeof generateStadiumDeals976 === 'function' },
   ];
 
   return (
@@ -369,8 +429,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 27 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions (11), Schemes (off/def/plans/counters/FX/flavor), Coaching (archetypes/traits/cliques), Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry &amp; System Fit, Teams &amp; League Structure, Player Traits (25 + FX + milestones), Draft Utils, Scheme Fit (13 profiles + identity fit), Contract Helpers (cap hit, dead cap, void years, trade impact)</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 31 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Story Arcs, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>

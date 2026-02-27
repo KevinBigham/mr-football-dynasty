@@ -17,3 +17,7 @@ export {
   getScaledUdfaCount97,
   CALENDAR,
 } from './teams.js';
+export {
+  STADIUM_DEALS976,
+  generateStadiumDeals976,
+} from './stadium-deals.js';

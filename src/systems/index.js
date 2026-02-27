@@ -84,3 +84,24 @@ export {
   calcTradeImpact,
   addVoidYears,
 } from './contract-helpers.js';
+export {
+  getTradeValue,
+  getTeamNeeds,
+  getGMTradeThresholdMod,
+  getGMFABias,
+  getGMDraftBias,
+} from './trade-ai.js';
+export {
+  STARTER_COUNTS,
+  SCOUT_COSTS86,
+  SCOUT_POINT_BASE86,
+  SCOUT_POINT_GYM_BONUS86,
+  SCOUT_POINT_WIN_BONUS86,
+  genPickBlurb,
+  genRunAlerts,
+} from './scouting.js';
+export {
+  NARRATIVE_STATES,
+  STORY_ARC_EVENTS,
+  pickWeightedEvent,
+} from './story-arcs.js';
