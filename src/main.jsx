@@ -125,6 +125,13 @@ import {
   LEGACY,
   RELOCATION_CITIES976,
   RELOCATION976,
+  GM_STRATEGIES,
+  applyGMStrategy,
+  FO_TRAITS,
+  FRONT_OFFICE,
+  STORY_ARC_ENGINE,
+  WEEKLY_CHALLENGES,
+  TRADE_DEADLINE_FRENZY,
 } from './systems/index.js';
 import {
   TD,
@@ -525,8 +532,40 @@ function validateModules() {
   if (!SOCIAL_FEED_994) errors.push('SOCIAL_FEED_994 not loaded');
   if (!MFSN_OVERTIME_994) errors.push('MFSN_OVERTIME_994 not loaded');
 
+  // GM Strategies
+  if (!GM_STRATEGIES.rebuild || !GM_STRATEGIES.contend || !GM_STRATEGIES.neutral) errors.push('GM_STRATEGIES missing strategy modes');
+  if (GM_STRATEGIES.rebuild.tradePosture !== 'seller') errors.push('GM_STRATEGIES rebuild tradePosture mismatch');
+  if (GM_STRATEGIES.contend.tradePosture !== 'buyer') errors.push('GM_STRATEGIES contend tradePosture mismatch');
+  if (typeof applyGMStrategy !== 'function') errors.push('applyGMStrategy not a function');
+
+  // Front Office
+  if (typeof FRONT_OFFICE.generateStaff !== 'function') errors.push('FRONT_OFFICE.generateStaff not a function');
+  if (typeof FRONT_OFFICE.getBonus !== 'function') errors.push('FRONT_OFFICE.getBonus not a function');
+  if (typeof FRONT_OFFICE.getCandidates !== 'function') errors.push('FRONT_OFFICE.getCandidates not a function');
+  if (FRONT_OFFICE.roles.length !== 7) errors.push('FRONT_OFFICE roles count: ' + FRONT_OFFICE.roles.length + ', expected 7');
+  if (Object.keys(FO_TRAITS).length !== 15) errors.push('FO_TRAITS count: ' + Object.keys(FO_TRAITS).length + ', expected 15');
+
+  // Story Arc Engine
+  if (typeof STORY_ARC_ENGINE.initPlayer !== 'function') errors.push('STORY_ARC_ENGINE.initPlayer not a function');
+  if (typeof STORY_ARC_ENGINE.tickPlayer !== 'function') errors.push('STORY_ARC_ENGINE.tickPlayer not a function');
+  if (typeof STORY_ARC_ENGINE.tickTeam !== 'function') errors.push('STORY_ARC_ENGINE.tickTeam not a function');
+  if (typeof STORY_ARC_ENGINE.normalizePlayer !== 'function') errors.push('STORY_ARC_ENGINE.normalizePlayer not a function');
+  if (typeof STORY_ARC_ENGINE.getTargetState !== 'function') errors.push('STORY_ARC_ENGINE.getTargetState not a function');
+
+  // Weekly Challenges
+  if (!WEEKLY_CHALLENGES.pool || WEEKLY_CHALLENGES.pool.length !== 10) errors.push('WEEKLY_CHALLENGES pool count: ' + (WEEKLY_CHALLENGES.pool && WEEKLY_CHALLENGES.pool.length) + ', expected 10');
+  if (typeof WEEKLY_CHALLENGES.generateWeekly !== 'function') errors.push('WEEKLY_CHALLENGES.generateWeekly not a function');
+  if (typeof WEEKLY_CHALLENGES.checkResults !== 'function') errors.push('WEEKLY_CHALLENGES.checkResults not a function');
+  if (!WEEKLY_CHALLENGES.pool[0].check || typeof WEEKLY_CHALLENGES.pool[0].check !== 'function') errors.push('WEEKLY_CHALLENGES pool check functions missing');
+
+  // Trade Deadline Frenzy
+  if (typeof TRADE_DEADLINE_FRENZY.isDeadlineWindow !== 'function') errors.push('TRADE_DEADLINE_FRENZY.isDeadlineWindow not a function');
+  if (typeof TRADE_DEADLINE_FRENZY.generateAITrades !== 'function') errors.push('TRADE_DEADLINE_FRENZY.generateAITrades not a function');
+  if (!TRADE_DEADLINE_FRENZY.isDeadlineWindow(9)) errors.push('TRADE_DEADLINE_FRENZY week 9 should be deadline window');
+  if (TRADE_DEADLINE_FRENZY.isDeadlineWindow(5)) errors.push('TRADE_DEADLINE_FRENZY week 5 should NOT be deadline window');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 222 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 240 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -669,6 +708,11 @@ function ModuleStatusApp() {
     { name: 'MFSN Drive Summaries', status: !!MFSN_DRIVES_994 },
     { name: 'Social Media Feed', status: !!SOCIAL_FEED_994 },
     { name: 'MFSN Overtime Drama', status: !!MFSN_OVERTIME_994 },
+    { name: 'GM Strategies (rebuild/contend/neutral)', status: !!GM_STRATEGIES.rebuild && !!GM_STRATEGIES.contend },
+    { name: 'Front Office (7 roles, 15 traits)', status: FRONT_OFFICE.roles.length === 7 },
+    { name: 'Story Arc Engine (state machine)', status: typeof STORY_ARC_ENGINE.tickPlayer === 'function' },
+    { name: 'Weekly Challenges (10 pool)', status: WEEKLY_CHALLENGES.pool.length === 10 },
+    { name: 'Trade Deadline Frenzy (AI trades)', status: typeof TRADE_DEADLINE_FRENZY.generateAITrades === 'function' },
   ];
 
   return (
@@ -709,8 +753,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 57 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 62 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
