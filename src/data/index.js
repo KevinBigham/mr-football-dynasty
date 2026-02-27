@@ -78,3 +78,5 @@ export {
   SKIN_TONES,
   HAIR_COLORS,
 } from './appearance.js';
+export { FA_NARRATIVE_993 } from './fa-narrative.js';
+export { PRESS_CONFERENCE_993 } from './press-conference-expanded.js';

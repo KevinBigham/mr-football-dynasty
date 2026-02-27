@@ -362,3 +362,7 @@ export {
   getFuzzyRating,
   getFuzzyGrade,
 } from './fuzzy-grades.js';
+export {
+  OFFSEASON_NEWS,
+  setGetGMArchFn,
+} from './offseason-news.js';

@@ -268,6 +268,7 @@ import {
   gradeL,
   getFuzzyRating,
   getFuzzyGrade,
+  OFFSEASON_NEWS,
 } from './systems/index.js';
 import {
   TD,
@@ -325,6 +326,8 @@ import {
   HELP_SECTIONS,
   SKIN_TONES,
   HAIR_COLORS,
+  FA_NARRATIVE_993,
+  PRESS_CONFERENCE_993,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -1269,6 +1272,13 @@ function ModuleStatusApp() {
     { name: 'Grade Letter Function', status: typeof gradeL === 'function' },
     { name: 'Fuzzy Rating Display', status: typeof getFuzzyRating === 'function' },
     { name: 'Fuzzy Grade Display', status: typeof getFuzzyGrade === 'function' },
+    { name: 'Offseason News (8 templates)', status: OFFSEASON_NEWS.templates.length === 8 },
+    { name: 'Offseason News Generator', status: typeof OFFSEASON_NEWS.generate === 'function' },
+    { name: 'FA Narrative (7 categories)', status: Object.keys(FA_NARRATIVE_993).length === 7 },
+    { name: 'FA Narrative (bigSigning)', status: FA_NARRATIVE_993.bigSigning.length >= 20 },
+    { name: 'Press Conference Expanded (questions)', status: Object.keys(PRESS_CONFERENCE_993.questions).length === 13 },
+    { name: 'Press Conference Expanded (answers)', status: Object.keys(PRESS_CONFERENCE_993.answers).length === 13 },
+    { name: 'Press Conference Expanded (reactions)', status: PRESS_CONFERENCE_993.mediaReaction.length >= 15 },
   ];
 
   return (
@@ -1309,9 +1319,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 124 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree, Dossier, Scout Report, Prospect Dossier, Draft War Room, Offseason Events, Season Goals, Locker Events, Coach Trait Mods, Owner Goals V2, Stat Headlines, Story Templates, Fuzzy Grades</div>
-            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices, Draft Presser, Help Sections, Appearance</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 127 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree, Dossier, Scout Report, Prospect Dossier, Draft War Room, Offseason Events, Season Goals, Locker Events, Coach Trait Mods, Owner Goals V2, Stat Headlines, Story Templates, Fuzzy Grades, Offseason News</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices, Draft Presser, Help Sections, Appearance, FA Narrative, Press Conference Expanded</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>
