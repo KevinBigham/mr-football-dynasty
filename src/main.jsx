@@ -41,7 +41,42 @@ import {
   initOwner,
   updateOwnerApproval,
   getOwnerStatus,
+  getPersonality,
+  traitScalar,
+  generatePersonality,
+  PERS_ICONS,
+  PERS_LABELS,
+  getDominantTrait,
+  getContractPersonalityEffects,
+  chemistryMod,
+  systemFitMod,
+  updateSystemFit,
+  resetSystemFit,
+  TRAITS,
+  TRAIT_FX,
+  TRAIT_MILESTONES95,
+  getPlayerTraits95,
+  hasTrait95,
+  assignTraits,
+  checkTraitMilestones95,
+  makePick,
+  pickConditionText972,
+  pickValue,
+  draftContract,
+  aucContract,
 } from './systems/index.js';
+import {
+  TD,
+  LEAGUE_TEAM_COUNT97,
+  REG_SEASON_WEEKS97,
+  REG_SEASON_GAMES97,
+  LEAGUE_POOL_SCALE97,
+  MFD97_CONF_DIV_MAP,
+  LEAGUE_STRUCTURE,
+  applyLeagueAlignment97,
+  getScaledCount97,
+  CALENDAR,
+} from './data/index.js';
 
 // Module validation — runs on boot, logs to console
 function validateModules() {
@@ -119,8 +154,65 @@ function validateModules() {
   if (getOwnerStatus(90).label !== 'Thrilled') errors.push('getOwnerStatus(90) label mismatch');
   if (getOwnerStatus(10).label !== 'Furious') errors.push('getOwnerStatus(10) label mismatch');
 
+  // Personality
+  var testPers = getPersonality({ personality: { workEthic: 9, loyalty: 7, greed: 3, pressure: 8, ambition: 6 } });
+  if (testPers.workEthic !== 9) errors.push('getPersonality workEthic mismatch');
+  if (typeof traitScalar !== 'function') errors.push('traitScalar not a function');
+  if (typeof generatePersonality !== 'function') errors.push('generatePersonality not a function');
+  if (!PERS_ICONS.workEthic) errors.push('PERS_ICONS missing workEthic');
+  if (!PERS_LABELS.loyalty) errors.push('PERS_LABELS missing loyalty');
+  if (typeof getDominantTrait !== 'function') errors.push('getDominantTrait not a function');
+  if (typeof getContractPersonalityEffects !== 'function') errors.push('getContractPersonalityEffects not a function');
+
+  // Chemistry & System Fit
+  if (typeof chemistryMod !== 'function') errors.push('chemistryMod not a function');
+  if (typeof systemFitMod !== 'function') errors.push('systemFitMod not a function');
+  if (typeof updateSystemFit !== 'function') errors.push('updateSystemFit not a function');
+  if (typeof resetSystemFit !== 'function') errors.push('resetSystemFit not a function');
+  var chemTeam = { roster: [{ chemistry: 85 }, { chemistry: 90 }] };
+  if (chemistryMod(chemTeam) !== 3) errors.push('chemistryMod high-chem team mismatch');
+  if (chemistryMod({ roster: [] }) !== 0) errors.push('chemistryMod empty roster mismatch');
+
+  // Teams / League Data
+  if (TD.length !== 30) errors.push('TD team count: ' + TD.length + ', expected 30');
+  if (LEAGUE_TEAM_COUNT97 !== 30) errors.push('LEAGUE_TEAM_COUNT97 mismatch');
+  if (REG_SEASON_WEEKS97 !== 18) errors.push('REG_SEASON_WEEKS97 mismatch');
+  if (REG_SEASON_GAMES97 !== 17) errors.push('REG_SEASON_GAMES97 mismatch');
+  if (!MFD97_CONF_DIV_MAP.hawks) errors.push('MFD97_CONF_DIV_MAP missing hawks');
+  if (LEAGUE_STRUCTURE.conferences.length !== 2) errors.push('LEAGUE_STRUCTURE conferences count mismatch');
+  if (LEAGUE_STRUCTURE.divisions.length !== 6) errors.push('LEAGUE_STRUCTURE divisions count mismatch');
+  if (typeof applyLeagueAlignment97 !== 'function') errors.push('applyLeagueAlignment97 not a function');
+  if (typeof getScaledCount97 !== 'function') errors.push('getScaledCount97 not a function');
+  if (CALENDAR.length !== 16) errors.push('CALENDAR length: ' + CALENDAR.length + ', expected 16');
+
+  // Traits
+  if (Object.keys(TRAITS).length !== 25) errors.push('TRAITS count: ' + Object.keys(TRAITS).length + ', expected 25');
+  if (!TRAITS.captain || TRAITS.captain.pct !== 6) errors.push('TRAITS.captain mismatch');
+  if (!TRAIT_FX.clutch || TRAIT_FX.clutch.clutch !== 5) errors.push('TRAIT_FX.clutch mismatch');
+  if (!TRAIT_MILESTONES95.ironman) errors.push('TRAIT_MILESTONES95 missing ironman');
+  if (typeof hasTrait95 !== 'function') errors.push('hasTrait95 not a function');
+  var testPlayer95 = { traits95: ['captain', 'clutch'] };
+  if (!hasTrait95(testPlayer95, 'captain')) errors.push('hasTrait95 failed on captain');
+  if (hasTrait95(testPlayer95, 'glass')) errors.push('hasTrait95 false positive on glass');
+  var traits95 = getPlayerTraits95(testPlayer95);
+  if (traits95.length !== 2) errors.push('getPlayerTraits95 count mismatch');
+  if (typeof assignTraits !== 'function') errors.push('assignTraits not a function');
+  if (typeof checkTraitMilestones95 !== 'function') errors.push('checkTraitMilestones95 not a function');
+
+  // Draft Utils
+  if (typeof makePick !== 'function') errors.push('makePick not a function');
+  var testPk = makePick(1, 'hawks', 'hawks', 2026);
+  if (!testPk.pid || testPk.round !== 1) errors.push('makePick output error');
+  if (pickConditionText972({ type: 'playoff', upgradeRound: 2 }).indexOf('playoffs') < 0) errors.push('pickConditionText972 mismatch');
+  if (pickValue(1) !== 200) errors.push('pickValue(1) expected 200, got ' + pickValue(1));
+  if (pickValue(7) !== 5) errors.push('pickValue(7) expected 5, got ' + pickValue(7));
+  var dCon = draftContract(85, 1);
+  if (!dCon || dCon.years !== 4) errors.push('draftContract(85,1) years mismatch');
+  var aCon = aucContract(85, 100, 1000);
+  if (!aCon || aCon.years !== 4) errors.push('aucContract(85,100) years mismatch');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 30 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 68 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -160,6 +252,28 @@ function ModuleStatusApp() {
     { name: 'Contract Scoring', status: typeof calcContractScore994 === 'function' },
     { name: 'Dead Cap Calculator', status: typeof calcDeadCap994 === 'function' },
     { name: '4th Down EV Calculator', status: typeof calcFourthDownEV995 === 'function' },
+    { name: 'Personality System (5 axes)', status: typeof getPersonality === 'function' },
+    { name: 'Personality Icons & Labels', status: !!PERS_ICONS.workEthic && !!PERS_LABELS.loyalty },
+    { name: 'Dominant Trait Detection', status: typeof getDominantTrait === 'function' },
+    { name: 'Contract Personality Effects', status: typeof getContractPersonalityEffects === 'function' },
+    { name: 'Chemistry Modifier', status: typeof chemistryMod === 'function' },
+    { name: 'System Fit Modifier', status: typeof systemFitMod === 'function' },
+    { name: 'System Fit Growth/Reset', status: typeof updateSystemFit === 'function' && typeof resetSystemFit === 'function' },
+    { name: 'Team Definitions (30 teams)', status: TD.length === 30 },
+    { name: 'League Structure (2 conf, 6 div)', status: LEAGUE_STRUCTURE.conferences.length === 2 && LEAGUE_STRUCTURE.divisions.length === 6 },
+    { name: 'Conference/Division Map', status: !!MFD97_CONF_DIV_MAP.hawks },
+    { name: 'Season Calendar (16 events)', status: CALENDAR.length === 16 },
+    { name: 'League Scaling Utilities', status: typeof getScaledCount97 === 'function' },
+    { name: 'Player Traits (25 traits)', status: Object.keys(TRAITS).length === 25 },
+    { name: 'Trait Effects (FX)', status: !!TRAIT_FX.clutch },
+    { name: 'Trait Milestones (10 traits)', status: !!TRAIT_MILESTONES95.ironman },
+    { name: 'Trait Detection (hasTrait95)', status: typeof hasTrait95 === 'function' },
+    { name: 'Trait Assignment (up to 3)', status: typeof assignTraits === 'function' },
+    { name: 'Draft Pick Creation', status: typeof makePick === 'function' },
+    { name: 'Conditional Pick Logic', status: typeof pickConditionText972 === 'function' },
+    { name: 'Pick Value Chart', status: pickValue(1) === 200 },
+    { name: 'Draft Contracts', status: typeof draftContract === 'function' },
+    { name: 'Auction Contracts', status: typeof aucContract === 'function' },
   ];
 
   return (
@@ -200,8 +314,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 19 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions (11), Schemes (off/def/plans/counters/FX/flavor), Coaching (archetypes/traits/cliques), Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner (5 archetypes + approval)</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 25 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions (11), Schemes (off/def/plans/counters/FX/flavor), Coaching (archetypes/traits/cliques), Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner (5 archetypes + approval), Personality (5 axes + contract effects), Chemistry &amp; System Fit, Teams (30) &amp; League Structure, Player Traits (25 traits + FX + milestones), Draft Utils (picks, contracts, conditions)</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>

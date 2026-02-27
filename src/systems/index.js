@@ -25,3 +25,36 @@ export {
   updateOwnerApproval,
   getOwnerStatus,
 } from './owner.js';
+export {
+  getPersonality,
+  traitScalar,
+  generatePersonality,
+  PERS_ICONS,
+  PERS_LABELS,
+  getDominantTrait,
+  getContractPersonalityEffects,
+} from './personality.js';
+export {
+  chemistryMod,
+  systemFitMod,
+  updateSystemFit,
+  resetSystemFit,
+} from './chemistry.js';
+export {
+  TRAITS,
+  TRAIT_FX,
+  TRAIT_MILESTONES95,
+  getPlayerTraits95,
+  hasTrait95,
+  assignTrait,
+  assignTraits,
+  checkTraitMilestones95,
+} from './traits.js';
+export {
+  makePick,
+  pickConditionText972,
+  maybeBuildPickCondition972,
+  pickValue,
+  draftContract,
+  aucContract,
+} from './draft-utils.js';
