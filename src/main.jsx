@@ -148,6 +148,12 @@ import {
   RECORDS_WALL,
   GM_TRADE_PITCH,
   getGMTradePitch,
+  BREAKOUT_SYSTEM,
+  GRUDGE_MATCH,
+  REVENGE_GAME,
+  MENTOR_SYSTEM,
+  STAFF_POACHING,
+  ALL_TIME_RECORDS,
 } from './systems/index.js';
 import {
   TD,
@@ -190,6 +196,9 @@ import {
   SOCIAL_FEED_994,
   MFSN_OVERTIME_994,
   PLAYER_NAMES_991,
+  SCOUTING_TEMPLATES_991,
+  DRAFT_COMMENTARY,
+  getDraftCommentary,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -637,8 +646,54 @@ function validateModules() {
   if (!PLAYER_NAMES_991.positionWeights.QB) errors.push('PLAYER_NAMES_991 missing QB position weights');
   if (Object.keys(PLAYER_NAMES_991.positionWeights).length !== 11) errors.push('PLAYER_NAMES_991 position weights count: ' + Object.keys(PLAYER_NAMES_991.positionWeights).length);
 
+  // Breakout System
+  if (typeof BREAKOUT_SYSTEM.isEligible !== 'function') errors.push('BREAKOUT_SYSTEM.isEligible not a function');
+  if (typeof BREAKOUT_SYSTEM.pick !== 'function') errors.push('BREAKOUT_SYSTEM.pick not a function');
+  if (typeof BREAKOUT_SYSTEM.resolve !== 'function') errors.push('BREAKOUT_SYSTEM.resolve not a function');
+  if (typeof BREAKOUT_SYSTEM.milestoneCheck !== 'function') errors.push('BREAKOUT_SYSTEM.milestoneCheck not a function');
+  if (!BREAKOUT_SYSTEM.isEligible({age:23,ovr:68,pot:78,devTrait:'normal'})) errors.push('BREAKOUT_SYSTEM.isEligible should accept 23yr 68ovr');
+  if (BREAKOUT_SYSTEM.isEligible({age:30,ovr:68,pot:78,devTrait:'normal'})) errors.push('BREAKOUT_SYSTEM.isEligible should reject age 30');
+
+  // Grudge Match & Revenge Game
+  if (typeof GRUDGE_MATCH.markGrudge !== 'function') errors.push('GRUDGE_MATCH.markGrudge not a function');
+  if (typeof GRUDGE_MATCH.isGrudgeGame !== 'function') errors.push('GRUDGE_MATCH.isGrudgeGame not a function');
+  if (typeof GRUDGE_MATCH.applyBoost !== 'function') errors.push('GRUDGE_MATCH.applyBoost not a function');
+  if (typeof REVENGE_GAME.check !== 'function') errors.push('REVENGE_GAME.check not a function');
+  if (typeof REVENGE_GAME.getBonus !== 'function') errors.push('REVENGE_GAME.getBonus not a function');
+
+  // Mentor System
+  if (typeof MENTOR_SYSTEM.isMentorEligible !== 'function') errors.push('MENTOR_SYSTEM.isMentorEligible not a function');
+  if (typeof MENTOR_SYSTEM.isMenteeEligible !== 'function') errors.push('MENTOR_SYSTEM.isMenteeEligible not a function');
+  if (typeof MENTOR_SYSTEM.canPair !== 'function') errors.push('MENTOR_SYSTEM.canPair not a function');
+  if (typeof MENTOR_SYSTEM.weeklyBonus !== 'function') errors.push('MENTOR_SYSTEM.weeklyBonus not a function');
+  if (Object.keys(MENTOR_SYSTEM.posGroups).length !== 7) errors.push('MENTOR_SYSTEM posGroups count: ' + Object.keys(MENTOR_SYSTEM.posGroups).length);
+
+  // Staff Poaching
+  if (typeof STAFF_POACHING.checkPoach !== 'function') errors.push('STAFF_POACHING.checkPoach not a function');
+  if (typeof STAFF_POACHING.counterOfferCost !== 'function') errors.push('STAFF_POACHING.counterOfferCost not a function');
+  if (typeof STAFF_POACHING.applyPoach !== 'function') errors.push('STAFF_POACHING.applyPoach not a function');
+
+  // All-Time Records
+  if (ALL_TIME_RECORDS.categories.length !== 12) errors.push('ALL_TIME_RECORDS categories count: ' + ALL_TIME_RECORDS.categories.length);
+  if (typeof ALL_TIME_RECORDS.buildRecords !== 'function') errors.push('ALL_TIME_RECORDS.buildRecords not a function');
+  var emptyRec = ALL_TIME_RECORDS.buildRecords([]);
+  if (!emptyRec.passYds || !emptyRec.teamWins) errors.push('ALL_TIME_RECORDS.buildRecords empty result structure invalid');
+
+  // Scouting Templates
+  if (!SCOUTING_TEMPLATES_991.QB) errors.push('SCOUTING_TEMPLATES_991 missing QB');
+  if (!SCOUTING_TEMPLATES_991.QB.elite || SCOUTING_TEMPLATES_991.QB.elite.length < 3) errors.push('SCOUTING_TEMPLATES_991 QB elite count low');
+  if (!SCOUTING_TEMPLATES_991.RB) errors.push('SCOUTING_TEMPLATES_991 missing RB');
+  if (!SCOUTING_TEMPLATES_991.WR) errors.push('SCOUTING_TEMPLATES_991 missing WR');
+  if (Object.keys(SCOUTING_TEMPLATES_991).length !== 9) errors.push('SCOUTING_TEMPLATES_991 position count: ' + Object.keys(SCOUTING_TEMPLATES_991).length);
+
+  // Draft Commentary
+  if (!DRAFT_COMMENTARY.r1elite) errors.push('DRAFT_COMMENTARY missing r1elite');
+  if (typeof getDraftCommentary !== 'function') errors.push('getDraftCommentary not a function');
+  if (getDraftCommentary(1, 85) !== DRAFT_COMMENTARY.r1elite) errors.push('getDraftCommentary(1,85) should return r1elite');
+  if (getDraftCommentary(2, 75) !== DRAFT_COMMENTARY.r2steal) errors.push('getDraftCommentary(2,75) should return r2steal');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 270 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 295 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -800,6 +855,14 @@ function ModuleStatusApp() {
     { name: 'Records Wall (13 categories)', status: RECORDS_WALL.categories.length === 13 },
     { name: 'GM Trade Pitch (6 personality types)', status: typeof getGMTradePitch === 'function' },
     { name: 'Player Names (4 pools x 11 pos)', status: !!PLAYER_NAMES_991.first.classic },
+    { name: 'Breakout System (pick/resolve/milestone)', status: typeof BREAKOUT_SYSTEM.pick === 'function' },
+    { name: 'Grudge Match (player revenge)', status: typeof GRUDGE_MATCH.applyBoost === 'function' },
+    { name: 'Revenge Game (rivalry bonuses)', status: typeof REVENGE_GAME.check === 'function' },
+    { name: 'Mentor System (7 pos groups)', status: Object.keys(MENTOR_SYSTEM.posGroups).length === 7 },
+    { name: 'Staff Poaching (check/counter/apply)', status: typeof STAFF_POACHING.checkPoach === 'function' },
+    { name: 'All-Time Records (12 categories)', status: ALL_TIME_RECORDS.categories.length === 12 },
+    { name: 'Scouting Templates (9 positions)', status: Object.keys(SCOUTING_TEMPLATES_991).length === 9 },
+    { name: 'Draft Commentary (round/OVR lines)', status: typeof getDraftCommentary === 'function' },
   ];
 
   return (
@@ -840,9 +903,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 69 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math</div>
-            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 77 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>

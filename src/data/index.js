@@ -57,3 +57,8 @@ export {
   MFSN_OVERTIME_994,
 } from './mfsn-game-day.js';
 export { PLAYER_NAMES_991 } from './player-names.js';
+export { SCOUTING_TEMPLATES_991 } from './scouting-templates.js';
+export {
+  DRAFT_COMMENTARY,
+  getDraftCommentary,
+} from './draft-commentary.js';
