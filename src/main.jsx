@@ -150,6 +150,22 @@ import {
   STADIUM_UPGRADE_995,
   CHAMPION_VOICE_995,
   POWER_RANKINGS_SHOW_995,
+  COACH_PERSONALITIES_991,
+  BROADCAST_COMMENTARY,
+  BROADCAST_COMMENTARY_EXPANDED,
+  MFSN_DRAFT_LINES,
+  MFSN_SHOW,
+  MFSN_CONTENT_991,
+  MFSN_WEEKLY975,
+  MFSN_BROADCAST,
+  MFSN_DRAFT_GRADES,
+  MFSN_PREDICTIONS,
+  MFSN_EXPANDED_993,
+  MFSN_SITUATIONAL_994,
+  MFSN_FOURTH_DOWN_994,
+  MFSN_DRIVES_994,
+  SOCIAL_FEED_994,
+  MFSN_OVERTIME_994,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -478,8 +494,39 @@ function validateModules() {
   if (typeof RELOCATION976.canRelocate !== 'function') errors.push('RELOCATION976.canRelocate not a function');
   if (typeof RELOCATION976.relocate !== 'function') errors.push('RELOCATION976.relocate not a function');
 
+  // Coach Personalities
+  if (!COACH_PERSONALITIES_991.grinder) errors.push('COACH_PERSONALITIES_991 missing grinder');
+  if (!COACH_PERSONALITIES_991.firestarter) errors.push('COACH_PERSONALITIES_991 missing firestarter');
+  if (Object.keys(COACH_PERSONALITIES_991).length !== 6) errors.push('COACH_PERSONALITIES_991 archetype count: ' + Object.keys(COACH_PERSONALITIES_991).length);
+
+  // Broadcast Commentary
+  if (!BROADCAST_COMMENTARY.drives) errors.push('BROADCAST_COMMENTARY missing drives');
+  if (!BROADCAST_COMMENTARY.drives.TD || BROADCAST_COMMENTARY.drives.TD.length < 5) errors.push('BROADCAST_COMMENTARY TD commentary count low');
+  if (!BROADCAST_COMMENTARY_EXPANDED.drives) errors.push('BROADCAST_COMMENTARY_EXPANDED missing drives');
+
+  // MFSN Network
+  if (!Array.isArray(MFSN_DRAFT_LINES) || MFSN_DRAFT_LINES.length < 5) errors.push('MFSN_DRAFT_LINES count low');
+  if (!MFSN_SHOW.generateBroadcast && !MFSN_SHOW.segments) errors.push('MFSN_SHOW missing structure');
+  if (!MFSN_CONTENT_991) errors.push('MFSN_CONTENT_991 not loaded');
+  if (!MFSN_WEEKLY975) errors.push('MFSN_WEEKLY975 not loaded');
+  if (!MFSN_BROADCAST) errors.push('MFSN_BROADCAST not loaded');
+  if (!MFSN_DRAFT_GRADES) errors.push('MFSN_DRAFT_GRADES not loaded');
+  if (!MFSN_PREDICTIONS) errors.push('MFSN_PREDICTIONS not loaded');
+
+  // MFSN Expanded
+  if (!MFSN_EXPANDED_993.drives) errors.push('MFSN_EXPANDED_993 missing drives');
+  if (!MFSN_EXPANDED_993.injuries) errors.push('MFSN_EXPANDED_993 missing injuries');
+  if (!MFSN_EXPANDED_993.crowd) errors.push('MFSN_EXPANDED_993 missing crowd');
+
+  // MFSN Game Day
+  if (!MFSN_SITUATIONAL_994.situational) errors.push('MFSN_SITUATIONAL_994 missing situational');
+  if (!MFSN_FOURTH_DOWN_994) errors.push('MFSN_FOURTH_DOWN_994 not loaded');
+  if (!MFSN_DRIVES_994) errors.push('MFSN_DRIVES_994 not loaded');
+  if (!SOCIAL_FEED_994) errors.push('SOCIAL_FEED_994 not loaded');
+  if (!MFSN_OVERTIME_994) errors.push('MFSN_OVERTIME_994 not loaded');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 200 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 222 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -606,6 +653,22 @@ function ModuleStatusApp() {
     { name: 'Press Conference System', status: PRESS_CONF_986.questions.length === 8 },
     { name: 'Legacy Score System', status: typeof LEGACY.calcScore === 'function' },
     { name: 'Relocation System (10 cities)', status: RELOCATION_CITIES976.length === 10 },
+    { name: 'Coach Personalities (6 archetypes)', status: Object.keys(COACH_PERSONALITIES_991).length === 6 },
+    { name: 'Broadcast Commentary (base)', status: !!BROADCAST_COMMENTARY.drives },
+    { name: 'Broadcast Commentary (expanded)', status: !!BROADCAST_COMMENTARY_EXPANDED.drives },
+    { name: 'MFSN Draft Commentary', status: MFSN_DRAFT_LINES.length >= 5 },
+    { name: 'MFSN Show System', status: !!MFSN_SHOW },
+    { name: 'MFSN Content Templates', status: !!MFSN_CONTENT_991 },
+    { name: 'MFSN Weekly Show', status: !!MFSN_WEEKLY975 },
+    { name: 'MFSN Broadcast Data', status: !!MFSN_BROADCAST },
+    { name: 'MFSN Draft Grades', status: !!MFSN_DRAFT_GRADES },
+    { name: 'MFSN Predictions', status: !!MFSN_PREDICTIONS },
+    { name: 'MFSN Expanded (ST, injuries, crowd)', status: !!MFSN_EXPANDED_993.drives },
+    { name: 'MFSN Situational Commentary', status: !!MFSN_SITUATIONAL_994.situational },
+    { name: 'MFSN Fourth Down Analysis', status: !!MFSN_FOURTH_DOWN_994 },
+    { name: 'MFSN Drive Summaries', status: !!MFSN_DRIVES_994 },
+    { name: 'Social Media Feed', status: !!SOCIAL_FEED_994 },
+    { name: 'MFSN Overtime Drama', status: !!MFSN_OVERTIME_994 },
   ];
 
   return (
@@ -646,7 +709,7 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 52 modules</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 57 modules</div>
             <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
