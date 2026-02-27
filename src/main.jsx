@@ -132,6 +132,22 @@ import {
   STORY_ARC_ENGINE,
   WEEKLY_CHALLENGES,
   TRADE_DEADLINE_FRENZY,
+  TEAM_CLIMATES,
+  CLIMATE_PROFILES,
+  WEATHER,
+  HT_CONDITIONS,
+  HT_STRATEGIES,
+  AGE_CURVES,
+  PLAYER_ARCHETYPES,
+  ARCHETYPE_AGING,
+  COACH_SKILL_TREE,
+  OWNER_PATIENCE,
+  OWNER_CONFIDENCE_ARC,
+  OWNER_CONSEQUENCES,
+  TRADE_MATH,
+  RECORDS_WALL,
+  GM_TRADE_PITCH,
+  getGMTradePitch,
 } from './systems/index.js';
 import {
   TD,
@@ -173,6 +189,7 @@ import {
   MFSN_DRIVES_994,
   SOCIAL_FEED_994,
   MFSN_OVERTIME_994,
+  PLAYER_NAMES_991,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -564,8 +581,64 @@ function validateModules() {
   if (!TRADE_DEADLINE_FRENZY.isDeadlineWindow(9)) errors.push('TRADE_DEADLINE_FRENZY week 9 should be deadline window');
   if (TRADE_DEADLINE_FRENZY.isDeadlineWindow(5)) errors.push('TRADE_DEADLINE_FRENZY week 5 should NOT be deadline window');
 
+  // Weather System
+  if (Object.keys(TEAM_CLIMATES).length < 18) errors.push('TEAM_CLIMATES count too low: ' + Object.keys(TEAM_CLIMATES).length);
+  if (!CLIMATE_PROFILES.dome || !CLIMATE_PROFILES.cold) errors.push('CLIMATE_PROFILES missing dome or cold');
+  if (typeof WEATHER.getConditions !== 'function') errors.push('WEATHER.getConditions not a function');
+  if (typeof WEATHER.getImpact !== 'function') errors.push('WEATHER.getImpact not a function');
+  var wxTest = WEATHER.getConditions('hawks', 5, 12345);
+  if (!wxTest.precip || typeof wxTest.temp !== 'number') errors.push('WEATHER.getConditions output structure invalid');
+  if (HT_CONDITIONS.length !== 5) errors.push('HT_CONDITIONS count: ' + HT_CONDITIONS.length + ', expected 5');
+  if (HT_STRATEGIES.length !== 6) errors.push('HT_STRATEGIES count: ' + HT_STRATEGIES.length + ', expected 6');
+
+  // Player Archetypes
+  if (typeof PLAYER_ARCHETYPES.classify !== 'function') errors.push('PLAYER_ARCHETYPES.classify not a function');
+  var archTest = PLAYER_ARCHETYPES.classify({pos:'QB',ratings:{pocketPresence:90,accuracy:88,fieldVision:85,decisionSpeed:87}});
+  if (!archTest || !archTest.archetype) errors.push('PLAYER_ARCHETYPES.classify failed for QB');
+  if (Object.keys(ARCHETYPE_AGING.mods).length !== 30) errors.push('ARCHETYPE_AGING mods count: ' + Object.keys(ARCHETYPE_AGING.mods).length + ', expected 30');
+  if (typeof ARCHETYPE_AGING.getCurve !== 'function') errors.push('ARCHETYPE_AGING.getCurve not a function');
+  if (!AGE_CURVES.QB || !AGE_CURVES.RB) errors.push('AGE_CURVES missing QB or RB');
+  if (Object.keys(AGE_CURVES).length !== 10) errors.push('AGE_CURVES position count: ' + Object.keys(AGE_CURVES).length + ', expected 10');
+
+  // Coach Skill Tree
+  if (!COACH_SKILL_TREE.trees.Strategist) errors.push('COACH_SKILL_TREE missing Strategist');
+  if (!COACH_SKILL_TREE.trees.Motivator) errors.push('COACH_SKILL_TREE missing Motivator');
+  if (!COACH_SKILL_TREE.trees.Disciplinarian) errors.push('COACH_SKILL_TREE missing Disciplinarian');
+  if (COACH_SKILL_TREE.trees.Strategist.branches.length !== 3) errors.push('COACH_SKILL_TREE Strategist branches: ' + COACH_SKILL_TREE.trees.Strategist.branches.length);
+  if (typeof COACH_SKILL_TREE.getTreeKey !== 'function') errors.push('COACH_SKILL_TREE.getTreeKey not a function');
+  if (typeof COACH_SKILL_TREE.getActiveBonus !== 'function') errors.push('COACH_SKILL_TREE.getActiveBonus not a function');
+  if (COACH_SKILL_TREE.getTreeKey('QB Guru') !== 'Strategist') errors.push('COACH_SKILL_TREE getTreeKey QB Guru mismatch');
+
+  // Owner Extended
+  if (typeof OWNER_PATIENCE.tick !== 'function') errors.push('OWNER_PATIENCE.tick not a function');
+  if (typeof OWNER_PATIENCE.status !== 'function') errors.push('OWNER_PATIENCE.status not a function');
+  if (OWNER_PATIENCE.status(90).label !== 'ECSTATIC') errors.push('OWNER_PATIENCE status(90) label mismatch');
+  if (OWNER_PATIENCE.status(5).label !== 'CRISIS') errors.push('OWNER_PATIENCE status(5) label mismatch');
+  if (OWNER_CONFIDENCE_ARC.stages.length !== 4) errors.push('OWNER_CONFIDENCE_ARC stages count: ' + OWNER_CONFIDENCE_ARC.stages.length);
+  if (typeof OWNER_CONFIDENCE_ARC.get !== 'function') errors.push('OWNER_CONFIDENCE_ARC.get not a function');
+  if (OWNER_CONSEQUENCES.ultimatums.length !== 3) errors.push('OWNER_CONSEQUENCES ultimatums count: ' + OWNER_CONSEQUENCES.ultimatums.length);
+  if (OWNER_CONSEQUENCES.furiousPenalties.length !== 3) errors.push('OWNER_CONSEQUENCES furiousPenalties count mismatch');
+
+  // Trade Math
+  if (typeof TRADE_MATH.classify !== 'function') errors.push('TRADE_MATH.classify not a function');
+  var tmTest = TRADE_MATH.classify(20, false);
+  if (tmTest.classification !== 'fleece') errors.push('TRADE_MATH.classify(20) should be fleece');
+  if (typeof TRADE_MATH.trustLabel !== 'function') errors.push('TRADE_MATH.trustLabel not a function');
+  if (TRADE_MATH.trustLabel(80).label !== 'Trusted') errors.push('TRADE_MATH.trustLabel(80) mismatch');
+  if (RECORDS_WALL.categories.length !== 13) errors.push('RECORDS_WALL categories count: ' + RECORDS_WALL.categories.length);
+  if (typeof RECORDS_WALL.build !== 'function') errors.push('RECORDS_WALL.build not a function');
+  if (typeof getGMTradePitch !== 'function') errors.push('getGMTradePitch not a function');
+  if (!GM_TRADE_PITCH.analytics || GM_TRADE_PITCH.analytics.length < 2) errors.push('GM_TRADE_PITCH analytics count low');
+
+  // Player Names
+  if (!PLAYER_NAMES_991.first.classic || PLAYER_NAMES_991.first.classic.length < 30) errors.push('PLAYER_NAMES_991 classic first names count low');
+  if (!PLAYER_NAMES_991.first.modern || PLAYER_NAMES_991.first.modern.length < 30) errors.push('PLAYER_NAMES_991 modern first names count low');
+  if (!PLAYER_NAMES_991.last.common || PLAYER_NAMES_991.last.common.length < 40) errors.push('PLAYER_NAMES_991 common last names count low');
+  if (!PLAYER_NAMES_991.positionWeights.QB) errors.push('PLAYER_NAMES_991 missing QB position weights');
+  if (Object.keys(PLAYER_NAMES_991.positionWeights).length !== 11) errors.push('PLAYER_NAMES_991 position weights count: ' + Object.keys(PLAYER_NAMES_991.positionWeights).length);
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 240 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 270 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -713,6 +786,20 @@ function ModuleStatusApp() {
     { name: 'Story Arc Engine (state machine)', status: typeof STORY_ARC_ENGINE.tickPlayer === 'function' },
     { name: 'Weekly Challenges (10 pool)', status: WEEKLY_CHALLENGES.pool.length === 10 },
     { name: 'Trade Deadline Frenzy (AI trades)', status: typeof TRADE_DEADLINE_FRENZY.generateAITrades === 'function' },
+    { name: 'Weather System (climate + impacts)', status: typeof WEATHER.getConditions === 'function' },
+    { name: 'Halftime Conditions (5 states)', status: HT_CONDITIONS.length === 5 },
+    { name: 'Halftime Strategies (6 options)', status: HT_STRATEGIES.length === 6 },
+    { name: 'Player Archetypes (9 positions)', status: typeof PLAYER_ARCHETYPES.classify === 'function' },
+    { name: 'Archetype Aging (30 curves)', status: Object.keys(ARCHETYPE_AGING.mods).length === 30 },
+    { name: 'Age Curves (10 positions)', status: Object.keys(AGE_CURVES).length === 10 },
+    { name: 'Coach Skill Tree (3 trees x 3 branches)', status: !!COACH_SKILL_TREE.trees.Strategist },
+    { name: 'Owner Patience System', status: typeof OWNER_PATIENCE.tick === 'function' },
+    { name: 'Owner Confidence Arc (4 stages)', status: OWNER_CONFIDENCE_ARC.stages.length === 4 },
+    { name: 'Owner Consequences & Ultimatums', status: OWNER_CONSEQUENCES.ultimatums.length === 3 },
+    { name: 'Trade Math (classify/trust/decay)', status: typeof TRADE_MATH.classify === 'function' },
+    { name: 'Records Wall (13 categories)', status: RECORDS_WALL.categories.length === 13 },
+    { name: 'GM Trade Pitch (6 personality types)', status: typeof getGMTradePitch === 'function' },
+    { name: 'Player Names (4 pools x 11 pos)', status: !!PLAYER_NAMES_991.first.classic },
   ];
 
   return (
@@ -753,8 +840,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 62 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 69 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>

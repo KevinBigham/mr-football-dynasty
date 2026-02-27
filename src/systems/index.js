@@ -164,3 +164,27 @@ export {
 export { STORY_ARC_ENGINE } from './story-arc-engine.js';
 export { WEEKLY_CHALLENGES } from './weekly-challenges.js';
 export { TRADE_DEADLINE_FRENZY } from './trade-deadline-frenzy.js';
+export {
+  TEAM_CLIMATES,
+  CLIMATE_PROFILES,
+  WEATHER,
+  HT_CONDITIONS,
+  HT_STRATEGIES,
+} from './weather.js';
+export {
+  AGE_CURVES,
+  PLAYER_ARCHETYPES,
+  ARCHETYPE_AGING,
+} from './player-archetypes.js';
+export { COACH_SKILL_TREE } from './coach-skill-tree.js';
+export {
+  OWNER_PATIENCE,
+  OWNER_CONFIDENCE_ARC,
+  OWNER_CONSEQUENCES,
+} from './owner-extended.js';
+export {
+  TRADE_MATH,
+  RECORDS_WALL,
+  GM_TRADE_PITCH,
+  getGMTradePitch,
+} from './trade-math.js';
