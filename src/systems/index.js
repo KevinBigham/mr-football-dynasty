@@ -249,3 +249,35 @@ export {
 } from './owner-personality.js';
 export { buildAwardsCeremony } from './awards-ceremony.js';
 export { buildCapVisualization } from './cap-visualization.js';
+export {
+  ROLE_DEFS,
+  assignDefaultRoles,
+  getRoleSnapPct,
+} from './role-defs.js';
+export {
+  calcDominanceScore,
+  calcDynastyIndex,
+  calcPeakPower,
+  calcLongevity,
+  generateIdentityTags,
+  ERA_THRESHOLD,
+  ALMANAC_SCHEMA_VERSION,
+  generateEraCards,
+  buildHallOfSeasons,
+} from './dynasty-analytics.js';
+export {
+  rivalryKey,
+  checkHateWeek,
+  MOMENT_GRAVITY,
+  addRivalryMoment,
+  getBiggestMoment,
+  getMostRecentMoment,
+  MOMENT_CATEGORIES,
+  categorizeMoment,
+  buildRivalryTrophyCase,
+  buildRivalryLadder,
+  buildRivalryLadderLite,
+  generateHighlights,
+  generateReceipts,
+  FIX_IT_DRILLS,
+} from './rivalry-engine.js';

@@ -63,3 +63,4 @@ export {
   getDraftCommentary,
 } from './draft-commentary.js';
 export { DRAFT_ANALYST_993 } from './draft-analyst.js';
+export { RIVALRY_TRASH_991 } from './rivalry-trash.js';

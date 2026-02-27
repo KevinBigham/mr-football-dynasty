@@ -189,6 +189,30 @@ import {
   checkOwnerPersonality,
   buildAwardsCeremony,
   buildCapVisualization,
+  ROLE_DEFS,
+  assignDefaultRoles,
+  getRoleSnapPct,
+  calcDominanceScore,
+  calcDynastyIndex,
+  calcPeakPower,
+  calcLongevity,
+  generateIdentityTags,
+  ERA_THRESHOLD,
+  generateEraCards,
+  buildHallOfSeasons,
+  rivalryKey,
+  checkHateWeek,
+  MOMENT_GRAVITY,
+  addRivalryMoment,
+  getBiggestMoment,
+  MOMENT_CATEGORIES,
+  categorizeMoment,
+  buildRivalryTrophyCase,
+  buildRivalryLadder,
+  buildRivalryLadderLite,
+  generateHighlights,
+  generateReceipts,
+  FIX_IT_DRILLS,
 } from './systems/index.js';
 import {
   TD,
@@ -235,6 +259,7 @@ import {
   DRAFT_COMMENTARY,
   getDraftCommentary,
   DRAFT_ANALYST_993,
+  RIVALRY_TRASH_991,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -838,8 +863,53 @@ function validateModules() {
   if (!cvTest || cvTest.breakdown.length !== 1) errors.push('buildCapVisualization single-player breakdown mismatch');
   if (cvTest && cvTest.totalUsed !== 20) errors.push('buildCapVisualization totalUsed should be 20');
 
+  // Role Definitions
+  if (!ROLE_DEFS.RB || ROLE_DEFS.RB.length !== 3) errors.push('ROLE_DEFS.RB count: ' + (ROLE_DEFS.RB && ROLE_DEFS.RB.length));
+  if (!ROLE_DEFS.WR || ROLE_DEFS.WR.length !== 3) errors.push('ROLE_DEFS.WR count mismatch');
+  if (!ROLE_DEFS.DL || ROLE_DEFS.DL.length !== 2) errors.push('ROLE_DEFS.DL count mismatch');
+  if (!ROLE_DEFS.LB || ROLE_DEFS.LB.length !== 3) errors.push('ROLE_DEFS.LB count mismatch');
+  if (typeof assignDefaultRoles !== 'function') errors.push('assignDefaultRoles not a function');
+  if (typeof getRoleSnapPct !== 'function') errors.push('getRoleSnapPct not a function');
+  if (getRoleSnapPct('RB', 'rb1') !== 65) errors.push('getRoleSnapPct RB rb1 should be 65');
+
+  // Dynasty Analytics
+  if (typeof calcDominanceScore !== 'function') errors.push('calcDominanceScore not a function');
+  if (typeof calcDynastyIndex !== 'function') errors.push('calcDynastyIndex not a function');
+  if (calcDynastyIndex({seasons:0}) !== 0) errors.push('calcDynastyIndex zero seasons should be 0');
+  if (typeof calcPeakPower !== 'function') errors.push('calcPeakPower not a function');
+  if (typeof calcLongevity !== 'function') errors.push('calcLongevity not a function');
+  if (typeof generateIdentityTags !== 'function') errors.push('generateIdentityTags not a function');
+  if (ERA_THRESHOLD !== 30) errors.push('ERA_THRESHOLD should be 30');
+  if (typeof generateEraCards !== 'function') errors.push('generateEraCards not a function');
+  if (typeof buildHallOfSeasons !== 'function') errors.push('buildHallOfSeasons not a function');
+
+  // Rivalry Engine
+  if (typeof rivalryKey !== 'function') errors.push('rivalryKey not a function');
+  if (rivalryKey('a','b') !== 'a|b') errors.push('rivalryKey a,b should be a|b');
+  if (rivalryKey('b','a') !== 'a|b') errors.push('rivalryKey b,a should sort to a|b');
+  if (typeof checkHateWeek !== 'function') errors.push('checkHateWeek not a function');
+  if (Object.keys(MOMENT_GRAVITY).length !== 5) errors.push('MOMENT_GRAVITY count: ' + Object.keys(MOMENT_GRAVITY).length);
+  if (typeof addRivalryMoment !== 'function') errors.push('addRivalryMoment not a function');
+  if (typeof getBiggestMoment !== 'function') errors.push('getBiggestMoment not a function');
+  if (getBiggestMoment([]) !== null) errors.push('getBiggestMoment empty should return null');
+  if (Object.keys(MOMENT_CATEGORIES).length !== 5) errors.push('MOMENT_CATEGORIES count: ' + Object.keys(MOMENT_CATEGORIES).length);
+  if (typeof categorizeMoment !== 'function') errors.push('categorizeMoment not a function');
+  if (typeof buildRivalryTrophyCase !== 'function') errors.push('buildRivalryTrophyCase not a function');
+  if (typeof buildRivalryLadder !== 'function') errors.push('buildRivalryLadder not a function');
+  if (typeof buildRivalryLadderLite !== 'function') errors.push('buildRivalryLadderLite not a function');
+  if (typeof generateHighlights !== 'function') errors.push('generateHighlights not a function');
+  if (typeof generateReceipts !== 'function') errors.push('generateReceipts not a function');
+  if (!FIX_IT_DRILLS.pressureRate) errors.push('FIX_IT_DRILLS missing pressureRate');
+  if (!FIX_IT_DRILLS.turnovers) errors.push('FIX_IT_DRILLS missing turnovers');
+  if (Object.keys(FIX_IT_DRILLS).length !== 9) errors.push('FIX_IT_DRILLS count: ' + Object.keys(FIX_IT_DRILLS).length);
+
+  // Rivalry Trash Talk
+  if (!RIVALRY_TRASH_991.mild || RIVALRY_TRASH_991.mild.length < 10) errors.push('RIVALRY_TRASH_991 mild count low');
+  if (!RIVALRY_TRASH_991.spicy || RIVALRY_TRASH_991.spicy.length < 10) errors.push('RIVALRY_TRASH_991 spicy count low');
+  if (!RIVALRY_TRASH_991.atomic || RIVALRY_TRASH_991.atomic.length < 10) errors.push('RIVALRY_TRASH_991 atomic count low');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 380 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 420 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -1038,6 +1108,22 @@ function ModuleStatusApp() {
     { name: 'Owner Personality Checker', status: typeof checkOwnerPersonality === 'function' },
     { name: 'Awards Ceremony Builder', status: typeof buildAwardsCeremony === 'function' },
     { name: 'Cap Visualization (breakdown)', status: typeof buildCapVisualization === 'function' },
+    { name: 'Role Definitions (RB/WR/DL/LB)', status: !!ROLE_DEFS.RB && ROLE_DEFS.RB.length === 3 },
+    { name: 'Role Assignment & Snap %', status: typeof assignDefaultRoles === 'function' && typeof getRoleSnapPct === 'function' },
+    { name: 'Dominance Score Calculator', status: typeof calcDominanceScore === 'function' },
+    { name: 'Dynasty Index (multi-factor)', status: typeof calcDynastyIndex === 'function' },
+    { name: 'Peak Power Window (5-year)', status: typeof calcPeakPower === 'function' },
+    { name: 'Longevity Tracker', status: typeof calcLongevity === 'function' },
+    { name: 'Identity Tags (up to 3)', status: typeof generateIdentityTags === 'function' },
+    { name: 'Era Card Generator', status: typeof generateEraCards === 'function' },
+    { name: 'Hall of Seasons (top 20)', status: typeof buildHallOfSeasons === 'function' },
+    { name: 'Rivalry Key & Hate Week', status: typeof rivalryKey === 'function' && typeof checkHateWeek === 'function' },
+    { name: 'Rivalry Moments (5 gravity levels)', status: Object.keys(MOMENT_GRAVITY).length === 5 },
+    { name: 'Rivalry Trophy Case', status: typeof buildRivalryTrophyCase === 'function' },
+    { name: 'Rivalry Ladder (full + lite)', status: typeof buildRivalryLadder === 'function' && typeof buildRivalryLadderLite === 'function' },
+    { name: 'Game Highlights & Receipts', status: typeof generateHighlights === 'function' && typeof generateReceipts === 'function' },
+    { name: 'Fix-It Drills (9 types)', status: Object.keys(FIX_IT_DRILLS).length === 9 },
+    { name: 'Rivalry Trash Talk (3 tiers)', status: !!RIVALRY_TRASH_991.mild && !!RIVALRY_TRASH_991.spicy && !!RIVALRY_TRASH_991.atomic },
   ];
 
   return (
@@ -1078,9 +1164,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 91 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization</div>
-            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 95 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>
