@@ -311,3 +311,17 @@ export {
   autoHallOfFame,
   buildCapFixes,
 } from './hall-of-fame.js';
+export { SCOUT } from './scout-perception.js';
+export {
+  OC_SPECIALTIES,
+  DC_SPECIALTIES,
+  assignCoordSpecialty,
+} from './coordinator-specialties.js';
+export {
+  PROSPECT_CHARACTER,
+  BUST_STEAL_CALC,
+  DRAFT_DAY_TRADES,
+  DRAFT_EVAL,
+} from './draft-day.js';
+export { INJURY_REPORT } from './injury-report.js';
+export { buildBracketTree } from './bracket-tree.js';

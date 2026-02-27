@@ -233,6 +233,16 @@ import {
   calcLegacyScore,
   autoHallOfFame,
   buildCapFixes,
+  SCOUT,
+  OC_SPECIALTIES,
+  DC_SPECIALTIES,
+  assignCoordSpecialty,
+  PROSPECT_CHARACTER,
+  BUST_STEAL_CALC,
+  DRAFT_DAY_TRADES,
+  DRAFT_EVAL,
+  INJURY_REPORT,
+  buildBracketTree,
 } from './systems/index.js';
 import {
   TD,
@@ -286,6 +296,7 @@ import {
   COL_WEIGHTED,
   pickCollege,
   BROADCAST_VOICES_991,
+  DRAFT_PRESSER975,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -935,7 +946,7 @@ function validateModules() {
   if (!RIVALRY_TRASH_991.atomic || RIVALRY_TRASH_991.atomic.length < 10) errors.push('RIVALRY_TRASH_991 atomic count low');
 
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 449 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 466 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -1178,6 +1189,22 @@ function ModuleStatusApp() {
     { name: 'Legacy Score Calculator', status: typeof calcLegacyScore === 'function' },
     { name: 'Auto Hall of Fame', status: typeof autoHallOfFame === 'function' },
     { name: 'Cap Fixes Builder', status: typeof buildCapFixes === 'function' },
+    { name: 'Scout Perception (gaussian)', status: typeof SCOUT.gaussian === 'function' },
+    { name: 'Scout Perceived Rating', status: typeof SCOUT.getPerceived === 'function' },
+    { name: 'Scout Range Calculator', status: typeof SCOUT.getRange === 'function' },
+    { name: 'Scout Grade Range', status: typeof SCOUT.getGradeRange === 'function' },
+    { name: 'OC Specialties (5 types)', status: OC_SPECIALTIES.length === 5 },
+    { name: 'DC Specialties (5 types)', status: DC_SPECIALTIES.length === 5 },
+    { name: 'Coordinator Assignment', status: typeof assignCoordSpecialty === 'function' },
+    { name: 'Prospect Character (10 types)', status: PROSPECT_CHARACTER.types.length === 10 },
+    { name: 'Prospect Character Assignment', status: typeof PROSPECT_CHARACTER.assign === 'function' },
+    { name: 'Bust/Steal Calculator', status: typeof BUST_STEAL_CALC.calc === 'function' },
+    { name: 'Draft Day Trade-Up Logic', status: typeof DRAFT_DAY_TRADES.shouldTradeUp === 'function' },
+    { name: 'Draft Day AI Offers', status: typeof DRAFT_DAY_TRADES.makeOffer === 'function' },
+    { name: 'Draft Eval (safety compare)', status: typeof DRAFT_EVAL.compareSafety === 'function' },
+    { name: 'Injury Report Generator', status: typeof INJURY_REPORT.generate === 'function' },
+    { name: 'Playoff Bracket Tree', status: typeof buildBracketTree === 'function' },
+    { name: 'Draft Presser (questions)', status: typeof DRAFT_PRESSER975.generateQuestions === 'function' },
   ];
 
   return (
@@ -1218,9 +1245,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 103 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame</div>
-            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 110 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices, Draft Presser</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>
