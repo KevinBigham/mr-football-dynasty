@@ -255,6 +255,19 @@ import {
   generatePlayerGoals,
   updateGoalProgress,
   evaluateGoals,
+  LOCKER_EVENTS,
+  checkLockerEvents,
+  getCoachTraitMods,
+  OWNER_TYPES,
+  OWNER_GOALS,
+  STAT_HEADLINES,
+  getStatHeadline,
+  getTraitMoraleExplainer,
+  STORY_TEMPLATES,
+  PRESSER_TAG_TRIGGERS,
+  gradeL,
+  getFuzzyRating,
+  getFuzzyGrade,
 } from './systems/index.js';
 import {
   TD,
@@ -1243,6 +1256,19 @@ function ModuleStatusApp() {
     { name: 'Help Sections (3 groups)', status: HELP_SECTIONS.length === 3 },
     { name: 'Skin Tones (7 values)', status: SKIN_TONES.length === 7 },
     { name: 'Hair Colors (7 values)', status: HAIR_COLORS.length === 7 },
+    { name: 'Locker Events (18 events)', status: LOCKER_EVENTS.length === 18 },
+    { name: 'Locker Events Checker', status: typeof checkLockerEvents === 'function' },
+    { name: 'Coach Trait Mods', status: typeof getCoachTraitMods === 'function' },
+    { name: 'Owner Types (3)', status: OWNER_TYPES.length === 3 },
+    { name: 'Owner Goals (9)', status: OWNER_GOALS.length === 9 },
+    { name: 'Stat Headlines (13)', status: STAT_HEADLINES.length === 13 },
+    { name: 'Stat Headline Getter', status: typeof getStatHeadline === 'function' },
+    { name: 'Trait Morale Explainer', status: typeof getTraitMoraleExplainer === 'function' },
+    { name: 'Story Templates (15)', status: STORY_TEMPLATES.length === 15 },
+    { name: 'Presser Tag Triggers (6)', status: PRESSER_TAG_TRIGGERS.length === 6 },
+    { name: 'Grade Letter Function', status: typeof gradeL === 'function' },
+    { name: 'Fuzzy Rating Display', status: typeof getFuzzyRating === 'function' },
+    { name: 'Fuzzy Grade Display', status: typeof getFuzzyGrade === 'function' },
   ];
 
   return (
@@ -1283,8 +1309,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 118 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree, Dossier, Scout Report, Prospect Dossier, Draft War Room, Offseason Events, Season Goals</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 124 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree, Dossier, Scout Report, Prospect Dossier, Draft War Room, Offseason Events, Season Goals, Locker Events, Coach Trait Mods, Owner Goals V2, Stat Headlines, Story Templates, Fuzzy Grades</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices, Draft Presser, Help Sections, Appearance</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
