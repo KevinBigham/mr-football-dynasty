@@ -58,3 +58,29 @@ export {
   draftContract,
   aucContract,
 } from './draft-utils.js';
+export {
+  SCHEME_FIT,
+  calcSchemeFit,
+  fitTierFromScore,
+  getPlayerSide,
+  getSpecialtyBonus,
+  calcSpecialtyFitAdj,
+  calcPersonalityFitAdj,
+  calcPlayerIdentityFit,
+  calcTeamFit,
+  getTeamPlayerFitScore86,
+  getSchemeMismatchWarnings,
+  FIT_GROUP_DEFS,
+} from './scheme-fit.js';
+export {
+  voidYearDeadCap,
+  v36_capHit,
+  v36_cashPaid,
+  v36_deadIfCut,
+  v36_deadIfTraded,
+  v36_tradeSavings,
+  splitDeadCapCharge,
+  applyDeadCapCharge,
+  calcTradeImpact,
+  addVoidYears,
+} from './contract-helpers.js';

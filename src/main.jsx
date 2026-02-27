@@ -64,6 +64,21 @@ import {
   pickValue,
   draftContract,
   aucContract,
+  SCHEME_FIT,
+  calcSchemeFit,
+  fitTierFromScore,
+  getPlayerSide,
+  calcPlayerIdentityFit,
+  calcTeamFit,
+  getSchemeMismatchWarnings,
+  FIT_GROUP_DEFS,
+  voidYearDeadCap,
+  v36_capHit,
+  v36_deadIfTraded,
+  v36_tradeSavings,
+  splitDeadCapCharge,
+  calcTradeImpact,
+  addVoidYears,
 } from './systems/index.js';
 import {
   TD,
@@ -211,8 +226,36 @@ function validateModules() {
   var aCon = aucContract(85, 100, 1000);
   if (!aCon || aCon.years !== 4) errors.push('aucContract(85,100) years mismatch');
 
+  // Scheme Fit
+  if (Object.keys(SCHEME_FIT).length !== 13) errors.push('SCHEME_FIT count: ' + Object.keys(SCHEME_FIT).length + ', expected 13');
+  var fitResult = calcSchemeFit({ pos: 'QB', ratings: { accuracy: 90, speed: 80, awareness: 85 } }, 'spread');
+  if (!fitResult || fitResult.score < 80) errors.push('calcSchemeFit spread QB score too low: ' + (fitResult && fitResult.score));
+  if (fitTierFromScore(92) !== 'ELITE') errors.push('fitTierFromScore(92) mismatch');
+  if (fitTierFromScore(55) !== 'FRINGE') errors.push('fitTierFromScore(55) mismatch');
+  if (getPlayerSide('QB') !== 'off') errors.push('getPlayerSide(QB) mismatch');
+  if (getPlayerSide('CB') !== 'def') errors.push('getPlayerSide(CB) mismatch');
+  if (getPlayerSide('K') !== 'other') errors.push('getPlayerSide(K) mismatch');
+  if (typeof calcPlayerIdentityFit !== 'function') errors.push('calcPlayerIdentityFit not a function');
+  if (typeof calcTeamFit !== 'function') errors.push('calcTeamFit not a function');
+  if (typeof getSchemeMismatchWarnings !== 'function') errors.push('getSchemeMismatchWarnings not a function');
+  if (FIT_GROUP_DEFS.length !== 7) errors.push('FIT_GROUP_DEFS count: ' + FIT_GROUP_DEFS.length);
+
+  // Contract Helpers
+  var testCon = makeContract(10, 3, 6, 15);
+  if (v36_capHit(testCon) <= 0) errors.push('v36_capHit returned <= 0');
+  if (typeof v36_deadIfTraded !== 'function') errors.push('v36_deadIfTraded not a function');
+  if (typeof v36_tradeSavings !== 'function') errors.push('v36_tradeSavings not a function');
+  if (voidYearDeadCap(testCon) !== 0) errors.push('voidYearDeadCap on no-void contract should be 0');
+  var splitResult = splitDeadCapCharge(10, 'regular', 12);
+  if (!splitResult.postDeadline) errors.push('splitDeadCapCharge post-deadline flag mismatch');
+  if (splitResult.now !== 5) errors.push('splitDeadCapCharge 50/50 split mismatch');
+  var splitPre = splitDeadCapCharge(10, 'regular', 5);
+  if (splitPre.postDeadline) errors.push('splitDeadCapCharge pre-deadline should not split');
+  if (typeof calcTradeImpact !== 'function') errors.push('calcTradeImpact not a function');
+  if (typeof addVoidYears !== 'function') errors.push('addVoidYears not a function');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 68 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 90 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -274,6 +317,18 @@ function ModuleStatusApp() {
     { name: 'Pick Value Chart', status: pickValue(1) === 200 },
     { name: 'Draft Contracts', status: typeof draftContract === 'function' },
     { name: 'Auction Contracts', status: typeof aucContract === 'function' },
+    { name: 'Scheme Fit Profiles (13 schemes)', status: Object.keys(SCHEME_FIT).length === 13 },
+    { name: 'Scheme Fit Calculator', status: typeof calcSchemeFit === 'function' },
+    { name: 'Player Identity Fit (composite)', status: typeof calcPlayerIdentityFit === 'function' },
+    { name: 'Team Fit Aggregation', status: typeof calcTeamFit === 'function' },
+    { name: 'Scheme Mismatch Warnings', status: typeof getSchemeMismatchWarnings === 'function' },
+    { name: 'Fit Group Definitions', status: FIT_GROUP_DEFS.length === 7 },
+    { name: 'Contract Cap Hit (v36)', status: typeof v36_capHit === 'function' },
+    { name: 'Dead Cap & Trade Savings', status: typeof v36_deadIfTraded === 'function' },
+    { name: 'Void Year Dead Cap', status: typeof voidYearDeadCap === 'function' },
+    { name: 'Dead Cap Split (post-deadline)', status: typeof splitDeadCapCharge === 'function' },
+    { name: 'Trade Impact Calculator', status: typeof calcTradeImpact === 'function' },
+    { name: 'Void Year Management', status: typeof addVoidYears === 'function' },
   ];
 
   return (
@@ -314,8 +369,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 25 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions (11), Schemes (off/def/plans/counters/FX/flavor), Coaching (archetypes/traits/cliques), Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner (5 archetypes + approval), Personality (5 axes + contract effects), Chemistry &amp; System Fit, Teams (30) &amp; League Structure, Player Traits (25 traits + FX + milestones), Draft Utils (picks, contracts, conditions)</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 27 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions (11), Schemes (off/def/plans/counters/FX/flavor), Coaching (archetypes/traits/cliques), Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry &amp; System Fit, Teams &amp; League Structure, Player Traits (25 + FX + milestones), Draft Utils, Scheme Fit (13 profiles + identity fit), Contract Helpers (cap hit, dead cap, void years, trade impact)</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>
