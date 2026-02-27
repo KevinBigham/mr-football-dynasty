@@ -132,3 +132,21 @@ export {
   checkUnlocks,
   isTabUnlocked,
 } from './unlocks.js';
+export {
+  SPECIAL_PLAYS_993,
+  SPECIAL_COVERAGES_993,
+} from './special-plays.js';
+export {
+  EP_TABLE_993,
+  getEP993,
+  LEVERAGE_INDEX_993,
+  getLeverageIndex,
+  calcWinProbV2_993,
+} from './win-probability.js';
+export { PLAYBOOK_986 } from './playbook.js';
+export { PRESS_CONF_986 } from './press-conference.js';
+export { LEGACY } from './legacy.js';
+export {
+  RELOCATION_CITIES976,
+  RELOCATION976,
+} from './relocation.js';

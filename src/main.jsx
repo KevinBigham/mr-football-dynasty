@@ -114,6 +114,17 @@ import {
   DEFAULT_UNLOCKS,
   checkUnlocks,
   isTabUnlocked,
+  SPECIAL_PLAYS_993,
+  SPECIAL_COVERAGES_993,
+  EP_TABLE_993,
+  getEP993,
+  LEVERAGE_INDEX_993,
+  calcWinProbV2_993,
+  PLAYBOOK_986,
+  PRESS_CONF_986,
+  LEGACY,
+  RELOCATION_CITIES976,
+  RELOCATION976,
 } from './systems/index.js';
 import {
   TD,
@@ -433,8 +444,42 @@ function validateModules() {
   if (ACTION_KEYS[' '] !== 'simWeek') errors.push('ACTION_KEYS space should map to simWeek');
   if (TAB_ORDER.length !== 10) errors.push('TAB_ORDER length: ' + TAB_ORDER.length);
 
+  // Special Plays
+  if (SPECIAL_PLAYS_993.trickPlays.length !== 4) errors.push('SPECIAL_PLAYS_993 trickPlays count: ' + SPECIAL_PLAYS_993.trickPlays.length);
+  if (SPECIAL_PLAYS_993.passVariants.length !== 3) errors.push('SPECIAL_PLAYS_993 passVariants count: ' + SPECIAL_PLAYS_993.passVariants.length);
+  if (SPECIAL_COVERAGES_993.length !== 4) errors.push('SPECIAL_COVERAGES_993 count: ' + SPECIAL_COVERAGES_993.length);
+
+  // Win Probability Engine
+  if (!EP_TABLE_993[1] || !EP_TABLE_993[4]) errors.push('EP_TABLE_993 missing downs');
+  if (typeof getEP993 !== 'function') errors.push('getEP993 not a function');
+  var epTest = getEP993(1, 5, 50);
+  if (typeof epTest !== 'number' || epTest < 1 || epTest > 3) errors.push('getEP993 1st & 5 at mid expected 1-3, got ' + epTest);
+  if (!LEVERAGE_INDEX_993[4] || LEVERAGE_INDEX_993[4].tied !== 3.0) errors.push('LEVERAGE_INDEX_993 Q4 tied mismatch');
+  if (typeof calcWinProbV2_993 !== 'function') errors.push('calcWinProbV2_993 not a function');
+
+  // Playbook
+  if (!PLAYBOOK_986.offense) errors.push('PLAYBOOK_986 missing offense');
+  if (!PLAYBOOK_986.offense.run || PLAYBOOK_986.offense.run.length < 5) errors.push('PLAYBOOK_986 run plays count low');
+  if (!PLAYBOOK_986.defense) errors.push('PLAYBOOK_986 missing defense');
+
+  // Press Conference
+  if (PRESS_CONF_986.questions.length !== 8) errors.push('PRESS_CONF_986 questions count: ' + PRESS_CONF_986.questions.length);
+  if (typeof PRESS_CONF_986.generate !== 'function') errors.push('PRESS_CONF_986.generate not a function');
+  if (!PRESS_CONF_986.responses.confident) errors.push('PRESS_CONF_986 missing confident response');
+
+  // Legacy System
+  if (typeof LEGACY.buildStats !== 'function') errors.push('LEGACY.buildStats not a function');
+  if (typeof LEGACY.calcScore !== 'function') errors.push('LEGACY.calcScore not a function');
+  var legacyTest = LEGACY.calcScore({ games: 100, wins: 70, losses: 30, rings: 2, playoffs: 5, draftHits: 3, capMastery: 2, devSuccesses: 3, neverTanked: true, fired: false, years: 6 });
+  if (!legacyTest.tier || legacyTest.score < 50) errors.push('LEGACY.calcScore test failed');
+
+  // Relocation
+  if (RELOCATION_CITIES976.length !== 10) errors.push('RELOCATION_CITIES976 count: ' + RELOCATION_CITIES976.length);
+  if (typeof RELOCATION976.canRelocate !== 'function') errors.push('RELOCATION976.canRelocate not a function');
+  if (typeof RELOCATION976.relocate !== 'function') errors.push('RELOCATION976.relocate not a function');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 178 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 200 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -553,6 +598,14 @@ function ModuleStatusApp() {
     { name: 'Keyboard Shortcuts', status: KEYMAP['1'] === 'home' },
     { name: 'Action Keys', status: ACTION_KEYS[' '] === 'simWeek' },
     { name: 'Tab Navigation Order', status: TAB_ORDER.length === 10 },
+    { name: 'Special Plays (4 trick + 3 pass)', status: SPECIAL_PLAYS_993.trickPlays.length === 4 },
+    { name: 'Special Coverages (4 packages)', status: SPECIAL_COVERAGES_993.length === 4 },
+    { name: 'Expected Points Table (4 downs)', status: !!EP_TABLE_993[1] && !!EP_TABLE_993[4] },
+    { name: 'Win Probability Engine v2', status: typeof calcWinProbV2_993 === 'function' },
+    { name: 'Playbook (offense + defense)', status: !!PLAYBOOK_986.offense && !!PLAYBOOK_986.defense },
+    { name: 'Press Conference System', status: PRESS_CONF_986.questions.length === 8 },
+    { name: 'Legacy Score System', status: typeof LEGACY.calcScore === 'function' },
+    { name: 'Relocation System (10 cities)', status: RELOCATION_CITIES976.length === 10 },
   ];
 
   return (
@@ -593,8 +646,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 46 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 52 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
