@@ -15,6 +15,8 @@ export {
   restructureContract,
   backloadContract973,
   extendAndRestructure973,
+  CONTRACT_VALUE_TABLE_994,
+  AGE_VALUE_CURVE_994,
   calcContractScore994,
   calcDeadCap994,
   calcFourthDownEV995,

@@ -21,3 +21,7 @@ export {
   STADIUM_DEALS976,
   generateStadiumDeals976,
 } from './stadium-deals.js';
+export {
+  TEAM_FLAVOR_991,
+  getTeamFlavor991,
+} from './team-flavor.js';

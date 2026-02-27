@@ -152,6 +152,37 @@ export function extendAndRestructure973(p, addYears) {
   };
 }
 
+// v99.4 — DeepSeek: Contract Value Engine v2
+// CONTRACT_VALUE_TABLE_994[position][tier] -> expected cap % per year
+export var CONTRACT_VALUE_TABLE_994 = {
+  QB:  { elite: 0.18, starter: 0.09, backup: 0.03 },
+  RB:  { elite: 0.12, starter: 0.06, backup: 0.02 },
+  WR:  { elite: 0.16, starter: 0.08, backup: 0.025 },
+  TE:  { elite: 0.10, starter: 0.05, backup: 0.015 },
+  OL:  { elite: 0.11, starter: 0.055, backup: 0.018 },
+  DL:  { elite: 0.15, starter: 0.075, backup: 0.022 },
+  LB:  { elite: 0.10, starter: 0.05, backup: 0.015 },
+  CB:  { elite: 0.14, starter: 0.07, backup: 0.02 },
+  S:   { elite: 0.09, starter: 0.045, backup: 0.012 },
+  K:   { elite: 0.05, starter: 0.025, backup: 0.008 },
+  P:   { elite: 0.04, starter: 0.02, backup: 0.006 },
+};
+
+// AGE_VALUE_CURVE_994[position] -> multipliers, index 0 = age 21, index 17 = age 38
+export var AGE_VALUE_CURVE_994 = {
+  QB:  [0.80,0.84,0.88,0.91,0.94,0.96,0.98,0.99,1.00,1.00,0.99,0.98,0.96,0.93,0.89,0.84,0.78,0.71],
+  RB:  [0.85,0.93,0.98,1.00,0.96,0.88,0.78,0.68,0.59,0.51,0.44,0.38,0.32,0.27,0.22,0.18,0.14,0.11],
+  WR:  [0.72,0.79,0.86,0.92,0.97,0.99,1.00,0.99,0.97,0.94,0.90,0.86,0.81,0.76,0.71,0.66,0.61,0.56],
+  TE:  [0.70,0.77,0.84,0.90,0.95,0.98,0.99,1.00,0.99,0.97,0.94,0.90,0.86,0.81,0.76,0.71,0.66,0.61],
+  OL:  [0.65,0.72,0.79,0.86,0.92,0.96,0.99,1.00,1.00,0.99,0.97,0.94,0.91,0.87,0.83,0.79,0.75,0.71],
+  DL:  [0.68,0.75,0.82,0.89,0.94,0.98,0.99,1.00,0.99,0.96,0.92,0.87,0.82,0.77,0.72,0.67,0.62,0.57],
+  LB:  [0.70,0.78,0.86,0.93,0.97,0.99,1.00,0.98,0.95,0.91,0.86,0.81,0.76,0.71,0.66,0.61,0.56,0.51],
+  CB:  [0.80,0.90,0.97,1.00,0.98,0.96,0.92,0.87,0.81,0.75,0.69,0.63,0.57,0.51,0.45,0.39,0.33,0.27],
+  S:   [0.72,0.80,0.88,0.94,0.98,0.99,1.00,0.98,0.95,0.91,0.87,0.82,0.77,0.72,0.67,0.62,0.57,0.52],
+  K:   [0.70,0.74,0.78,0.82,0.86,0.90,0.94,0.98,1.00,1.00,0.99,0.97,0.94,0.90,0.86,0.82,0.78,0.74],
+  P:   [0.70,0.74,0.78,0.82,0.86,0.90,0.94,0.98,1.00,1.00,0.99,0.97,0.94,0.90,0.86,0.82,0.78,0.74],
+};
+
 // v99.4: Contract scoring — grades a contract A+ through F
 export function calcContractScore994(ovr, pos, age, years, totalValue, capTotal) {
   var tier;
@@ -159,19 +190,14 @@ export function calcContractScore994(ovr, pos, age, years, totalValue, capTotal)
   else if (ovr >= 75) tier = 'starter';
   else tier = 'backup';
 
-  // Get base market rate from table (fallback to 0.05)
-  var marketRate =
-    typeof CONTRACT_VALUE_TABLE_994 !== 'undefined' &&
-    CONTRACT_VALUE_TABLE_994[pos]
-      ? CONTRACT_VALUE_TABLE_994[pos][tier]
-      : 0.05;
+  var marketRate = CONTRACT_VALUE_TABLE_994[pos]
+    ? CONTRACT_VALUE_TABLE_994[pos][tier]
+    : 0.05;
 
-  // Age multiplier
   var ageIndex = Math.min(38, Math.max(21, age)) - 21;
-  var ageMult =
-    typeof AGE_VALUE_CURVE_994 !== 'undefined' && AGE_VALUE_CURVE_994[pos]
-      ? AGE_VALUE_CURVE_994[pos][ageIndex]
-      : 0.8;
+  var ageMult = AGE_VALUE_CURVE_994[pos]
+    ? AGE_VALUE_CURVE_994[pos][ageIndex]
+    : 0.8;
 
   // Length penalty: 2% per year beyond 3
   var lengthPenalty = 1 - 0.02 * Math.max(0, years - 3);

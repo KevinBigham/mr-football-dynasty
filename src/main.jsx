@@ -34,6 +34,8 @@ import {
   calcCapHit,
   calcDeadMoney,
   restructureContract,
+  CONTRACT_VALUE_TABLE_994,
+  AGE_VALUE_CURVE_994,
   calcContractScore994,
   calcDeadCap994,
   calcFourthDownEV995,
@@ -106,6 +108,8 @@ import {
   CALENDAR,
   STADIUM_DEALS976,
   generateStadiumDeals976,
+  TEAM_FLAVOR_991,
+  getTeamFlavor991,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -301,8 +305,19 @@ function validateModules() {
   if (STADIUM_DEALS976.length !== 8) errors.push('STADIUM_DEALS976 count: ' + STADIUM_DEALS976.length);
   if (typeof generateStadiumDeals976 !== 'function') errors.push('generateStadiumDeals976 not a function');
 
+  // Team Flavor
+  if (Object.keys(TEAM_FLAVOR_991).length < 28) errors.push('TEAM_FLAVOR_991 team count too low: ' + Object.keys(TEAM_FLAVOR_991).length);
+  if (!TEAM_FLAVOR_991.KC || !TEAM_FLAVOR_991.KC.stadium) errors.push('TEAM_FLAVOR_991 missing KC stadium');
+  var kcStadium = getTeamFlavor991('KC', 'stadium');
+  if (kcStadium !== 'Arrowhead West') errors.push('getTeamFlavor991 KC stadium mismatch');
+  if (typeof getTeamFlavor991 !== 'function') errors.push('getTeamFlavor991 not a function');
+
+  // Contract Value Tables (now in contracts.js)
+  if (typeof CONTRACT_VALUE_TABLE_994 === 'undefined') errors.push('CONTRACT_VALUE_TABLE_994 not defined');
+  if (typeof AGE_VALUE_CURVE_994 === 'undefined') errors.push('AGE_VALUE_CURVE_994 not defined');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 110 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 116 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -389,6 +404,9 @@ function ModuleStatusApp() {
     { name: 'Weighted Event Picker', status: typeof pickWeightedEvent === 'function' },
     { name: 'Stadium Deals (8 templates)', status: STADIUM_DEALS976.length === 8 },
     { name: 'Stadium Deal Generator', status: typeof generateStadiumDeals976 === 'function' },
+    { name: 'Team Flavor (30 stadiums/fans)', status: Object.keys(TEAM_FLAVOR_991).length >= 28 },
+    { name: 'Contract Value Tables (11 pos)', status: !!CONTRACT_VALUE_TABLE_994.QB },
+    { name: 'Age Value Curves (11 pos)', status: !!AGE_VALUE_CURVE_994.QB },
   ];
 
   return (
@@ -429,7 +447,7 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 31 modules</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 32 modules</div>
             <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Story Arcs, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
