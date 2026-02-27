@@ -196,3 +196,24 @@ export {
 export { MENTOR_SYSTEM } from './mentor-system.js';
 export { STAFF_POACHING } from './staff-poaching.js';
 export { ALL_TIME_RECORDS } from './all-time-records.js';
+export { FILM } from './film-study.js';
+export {
+  AGENT_TYPES,
+  assignAgentType,
+  getAgentTypeObj,
+} from './agent-types.js';
+export {
+  TRUST_TREND,
+  AGING_V2,
+  TRUST,
+} from './trust-aging.js';
+export {
+  getPosMarketTier86,
+  HOLDOUT_SYSTEM,
+} from './holdout-system.js';
+export {
+  calcFatigueMultiplier,
+  calcGameScriptMult,
+  calcWeekDeltas,
+  attributeCause,
+} from './game-helpers.js';

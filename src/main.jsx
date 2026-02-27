@@ -154,6 +154,19 @@ import {
   MENTOR_SYSTEM,
   STAFF_POACHING,
   ALL_TIME_RECORDS,
+  FILM,
+  AGENT_TYPES,
+  assignAgentType,
+  getAgentTypeObj,
+  TRUST_TREND,
+  AGING_V2,
+  TRUST,
+  getPosMarketTier86,
+  HOLDOUT_SYSTEM,
+  calcFatigueMultiplier,
+  calcGameScriptMult,
+  calcWeekDeltas,
+  attributeCause,
 } from './systems/index.js';
 import {
   TD,
@@ -199,6 +212,7 @@ import {
   SCOUTING_TEMPLATES_991,
   DRAFT_COMMENTARY,
   getDraftCommentary,
+  DRAFT_ANALYST_993,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -692,8 +706,60 @@ function validateModules() {
   if (getDraftCommentary(1, 85) !== DRAFT_COMMENTARY.r1elite) errors.push('getDraftCommentary(1,85) should return r1elite');
   if (getDraftCommentary(2, 75) !== DRAFT_COMMENTARY.r2steal) errors.push('getDraftCommentary(2,75) should return r2steal');
 
+  // Draft Analyst
+  if (!DRAFT_ANALYST_993.rodPemberton) errors.push('DRAFT_ANALYST_993 missing rodPemberton');
+  if (!DRAFT_ANALYST_993.rodPemberton.steal || DRAFT_ANALYST_993.rodPemberton.steal.length < 5) errors.push('DRAFT_ANALYST_993 rodPemberton steal count low');
+  if (!DRAFT_ANALYST_993.rodPemberton.reach) errors.push('DRAFT_ANALYST_993 missing rodPemberton.reach');
+  if (!DRAFT_ANALYST_993.rodPemberton.meh) errors.push('DRAFT_ANALYST_993 missing rodPemberton.meh');
+  if (!DRAFT_ANALYST_993.rodPemberton.flop) errors.push('DRAFT_ANALYST_993 missing rodPemberton.flop');
+
+  // Film Study
+  if (typeof FILM.analyze !== 'function') errors.push('FILM.analyze not a function');
+  if (typeof FILM.gradeOff !== 'function') errors.push('FILM.gradeOff not a function');
+  if (typeof FILM.gradeDef !== 'function') errors.push('FILM.gradeDef not a function');
+  if (typeof FILM.gradeST !== 'function') errors.push('FILM.gradeST not a function');
+  if (typeof FILM.letterGrade !== 'function') errors.push('FILM.letterGrade not a function');
+  if (FILM.letterGrade(92) !== 'A+') errors.push('FILM.letterGrade(92) should be A+');
+  if (FILM.letterGrade(55) !== 'C') errors.push('FILM.letterGrade(55) should be C');
+  if (FILM.gradeOff(28, null) < 70) errors.push('FILM.gradeOff(28) should be >= 70');
+
+  // Agent Types
+  if (AGENT_TYPES.length !== 5) errors.push('AGENT_TYPES count: ' + AGENT_TYPES.length + ', expected 5');
+  if (!AGENT_TYPES[0].moneyWeight) errors.push('AGENT_TYPES missing moneyWeight');
+  if (typeof assignAgentType !== 'function') errors.push('assignAgentType not a function');
+  if (typeof getAgentTypeObj !== 'function') errors.push('getAgentTypeObj not a function');
+  if (getAgentTypeObj('mercenary').moneyWeight !== 0.95) errors.push('getAgentTypeObj mercenary moneyWeight mismatch');
+  if (getAgentTypeObj('ring_chaser').ringWeight !== 0.95) errors.push('getAgentTypeObj ring_chaser ringWeight mismatch');
+
+  // Trust & Aging
+  if (typeof TRUST_TREND.getArrow !== 'function') errors.push('TRUST_TREND.getArrow not a function');
+  if (TRUST_TREND.getArrow(60, 50) !== '📈') errors.push('TRUST_TREND.getArrow(60,50) should be 📈');
+  if (TRUST_TREND.getArrow(40, 50) !== '📉') errors.push('TRUST_TREND.getArrow(40,50) should be 📉');
+  if (typeof AGING_V2.getMultiplier !== 'function') errors.push('AGING_V2.getMultiplier not a function');
+  if (AGING_V2.getMultiplier('awareness', 'prime', 5) !== -0.5) errors.push('AGING_V2 mental prime should be -0.5');
+  if (typeof TRUST.leagueSnapshot !== 'function') errors.push('TRUST.leagueSnapshot not a function');
+
+  // Holdout System
+  if (typeof HOLDOUT_SYSTEM.checkHoldouts !== 'function') errors.push('HOLDOUT_SYSTEM.checkHoldouts not a function');
+  if (typeof HOLDOUT_SYSTEM.weeklyHoldout !== 'function') errors.push('HOLDOUT_SYSTEM.weeklyHoldout not a function');
+  if (typeof HOLDOUT_SYSTEM.resolve !== 'function') errors.push('HOLDOUT_SYSTEM.resolve not a function');
+  if (typeof getPosMarketTier86 !== 'function') errors.push('getPosMarketTier86 not a function');
+  var qbMarket = getPosMarketTier86('QB');
+  if (qbMarket.tier !== 1 || qbMarket.mult !== 2.5) errors.push('getPosMarketTier86 QB tier/mult mismatch');
+  var rbMarket = getPosMarketTier86('RB');
+  if (rbMarket.tier !== 3) errors.push('getPosMarketTier86 RB tier mismatch');
+
+  // Game Helpers
+  if (typeof calcFatigueMultiplier !== 'function') errors.push('calcFatigueMultiplier not a function');
+  if (calcFatigueMultiplier(90, 100) !== 0.92) errors.push('calcFatigueMultiplier(90,100) should be 0.92');
+  if (calcFatigueMultiplier(50, 100) !== 1.0) errors.push('calcFatigueMultiplier(50,100) should be 1.0');
+  if (typeof calcGameScriptMult !== 'function') errors.push('calcGameScriptMult not a function');
+  if (calcGameScriptMult(28, 14, 'RB', 'rb1') !== 1.15) errors.push('calcGameScriptMult blowout RB1 mismatch');
+  if (typeof calcWeekDeltas !== 'function') errors.push('calcWeekDeltas not a function');
+  if (typeof attributeCause !== 'function') errors.push('attributeCause not a function');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 295 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 335 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -863,6 +929,19 @@ function ModuleStatusApp() {
     { name: 'All-Time Records (12 categories)', status: ALL_TIME_RECORDS.categories.length === 12 },
     { name: 'Scouting Templates (9 positions)', status: Object.keys(SCOUTING_TEMPLATES_991).length === 9 },
     { name: 'Draft Commentary (round/OVR lines)', status: typeof getDraftCommentary === 'function' },
+    { name: 'Draft Analyst (multi-personality)', status: !!DRAFT_ANALYST_993.rodPemberton },
+    { name: 'Film Study (off/def/ST grading)', status: typeof FILM.analyze === 'function' },
+    { name: 'Agent Types (5 FA personalities)', status: AGENT_TYPES.length === 5 },
+    { name: 'Agent Type Assignment', status: typeof assignAgentType === 'function' },
+    { name: 'Trust Trend Indicators', status: typeof TRUST_TREND.getArrow === 'function' },
+    { name: 'Aging v2 (physical/mental/technique)', status: typeof AGING_V2.getMultiplier === 'function' },
+    { name: 'GM Trust Snapshot', status: typeof TRUST.leagueSnapshot === 'function' },
+    { name: 'Holdout System (5 stages)', status: typeof HOLDOUT_SYSTEM.checkHoldouts === 'function' },
+    { name: 'Position Market Tiers', status: typeof getPosMarketTier86 === 'function' },
+    { name: 'Fatigue Multiplier (snap-based)', status: typeof calcFatigueMultiplier === 'function' },
+    { name: 'Game Script Multiplier', status: typeof calcGameScriptMult === 'function' },
+    { name: 'Week-over-Week Deltas', status: typeof calcWeekDeltas === 'function' },
+    { name: 'Performance Attribution Engine', status: typeof attributeCause === 'function' },
   ];
 
   return (
@@ -903,9 +982,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 77 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records</div>
-            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 83 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>

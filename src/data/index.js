@@ -62,3 +62,4 @@ export {
   DRAFT_COMMENTARY,
   getDraftCommentary,
 } from './draft-commentary.js';
+export { DRAFT_ANALYST_993 } from './draft-analyst.js';
