@@ -19,3 +19,9 @@ export {
   calcDeadCap994,
   calcFourthDownEV995,
 } from './contracts.js';
+export {
+  OWNER_ARCHETYPES,
+  initOwner,
+  updateOwnerApproval,
+  getOwnerStatus,
+} from './owner.js';

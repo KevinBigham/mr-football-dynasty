@@ -13,7 +13,15 @@ import { createRoot } from 'react-dom/client';
 
 // Validate extracted modules load correctly
 import { RNG, mulberry32, setSeed, rng, pick, U } from './utils/index.js';
-import { T, SP, RAD, SH, S, DIFF_SETTINGS, SAVE_VERSION, CAP_MATH, getSalaryCap } from './config/index.js';
+import {
+  T, SP, RAD, SH, S,
+  DIFF_SETTINGS, SAVE_VERSION, CAP_MATH, getSalaryCap,
+  POS_DEF, RATING_LABELS, ALL_POSITIONS, OFF_POSITIONS, DEF_POSITIONS,
+  OFF_SCHEMES, DEF_SCHEMES, OFF_PLANS, DEF_PLANS,
+  SCHEME_COUNTERS, SCHEME_FX, SCHEME_FLAVOR, getSchemeFlavorLine,
+  GAMEPLANS, GP_COUNTERS, HOME_FIELD_ADV, RIVALRY_NAMES,
+  ARCHETYPES, ARCH_BOOST, COACH_TRAITS, ARCH_TRAIT_POOLS, CLIQUE_TYPES,
+} from './config/index.js';
 import {
   HALFTIME_V2,
   TRAINING_CAMP_986,
@@ -29,6 +37,10 @@ import {
   calcContractScore994,
   calcDeadCap994,
   calcFourthDownEV995,
+  OWNER_ARCHETYPES,
+  initOwner,
+  updateOwnerApproval,
+  getOwnerStatus,
 } from './systems/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -77,10 +89,38 @@ function validateModules() {
 
   // GM Rep
   var rep = GM_REP_986.calculate([], null);
-  if (rep.overall !== 50) errors.push('GM_REP base overall mismatch');
+  if (rep.overall !== 43) errors.push('GM_REP base overall mismatch');
+
+  // Positions
+  if (!POS_DEF.QB || POS_DEF.QB.r.length !== 20) errors.push('POS_DEF.QB ratings count mismatch');
+  if (ALL_POSITIONS.length !== 11) errors.push('ALL_POSITIONS count: ' + ALL_POSITIONS.length + ', expected 11');
+  if (OFF_POSITIONS.length !== 5) errors.push('OFF_POSITIONS count mismatch');
+  if (DEF_POSITIONS.length !== 4) errors.push('DEF_POSITIONS count mismatch');
+  if (!RATING_LABELS.arm) errors.push('RATING_LABELS missing arm');
+
+  // Schemes
+  if (OFF_SCHEMES.length !== 8) errors.push('OFF_SCHEMES count: ' + OFF_SCHEMES.length);
+  if (DEF_SCHEMES.length !== 5) errors.push('DEF_SCHEMES count: ' + DEF_SCHEMES.length);
+  if (OFF_PLANS.length !== 6) errors.push('OFF_PLANS count mismatch');
+  if (DEF_PLANS.length !== 6) errors.push('DEF_PLANS count mismatch');
+  if (!SCHEME_COUNTERS.air_raid) errors.push('SCHEME_COUNTERS missing air_raid');
+  if (GAMEPLANS.length !== 6) errors.push('GAMEPLANS count mismatch');
+  if (typeof getSchemeFlavorLine !== 'function') errors.push('getSchemeFlavorLine not a function');
+
+  // Coaching
+  if (ARCHETYPES.HC.length !== 3) errors.push('ARCHETYPES.HC count mismatch');
+  if (!ARCH_BOOST['QB Guru']) errors.push('ARCH_BOOST missing QB Guru');
+  if (Object.keys(COACH_TRAITS).length !== 10) errors.push('COACH_TRAITS count mismatch');
+  if (CLIQUE_TYPES.length !== 3) errors.push('CLIQUE_TYPES count mismatch');
+
+  // Owner
+  if (OWNER_ARCHETYPES.length !== 5) errors.push('OWNER_ARCHETYPES count mismatch');
+  if (typeof initOwner !== 'function') errors.push('initOwner not a function');
+  if (getOwnerStatus(90).label !== 'Thrilled') errors.push('getOwnerStatus(90) label mismatch');
+  if (getOwnerStatus(10).label !== 'Furious') errors.push('getOwnerStatus(10) label mismatch');
 
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 16 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 30 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -103,6 +143,18 @@ function ModuleStatusApp() {
     { name: 'Compensatory Picks', status: typeof COMP_PICKS_986.calculate === 'function' },
     { name: 'Contract Incentives', status: INCENTIVES_986.types.length === 7 },
     { name: 'GM Reputation', status: typeof GM_REP_986.calculate === 'function' },
+    { name: 'Position Definitions (11 pos, 20 ratings each)', status: ALL_POSITIONS.length === 11 },
+    { name: 'Rating Labels', status: !!RATING_LABELS.arm },
+    { name: 'Offensive Schemes (8)', status: OFF_SCHEMES.length === 8 },
+    { name: 'Defensive Schemes (5)', status: DEF_SCHEMES.length === 5 },
+    { name: 'Game Plans (Off: 6, Def: 6)', status: OFF_PLANS.length === 6 && DEF_PLANS.length === 6 },
+    { name: 'Scheme Counter Matrix', status: !!SCHEME_COUNTERS.air_raid },
+    { name: 'Scheme FX & Flavor Text', status: !!SCHEME_FX.air_raid && !!SCHEME_FLAVOR.spread },
+    { name: 'Coaching Archetypes (HC/OC/DC)', status: ARCHETYPES.HC.length === 3 },
+    { name: 'Coach Traits (10 traits)', status: Object.keys(COACH_TRAITS).length === 10 },
+    { name: 'Clique Types', status: CLIQUE_TYPES.length === 3 },
+    { name: 'Owner Archetypes (5 types)', status: OWNER_ARCHETYPES.length === 5 },
+    { name: 'Owner Approval System', status: typeof initOwner === 'function' },
     { name: 'Coach Carousel', status: typeof COACH_CAROUSEL_986.fireCoach === 'function' },
     { name: 'Contract System', status: typeof makeContract === 'function' },
     { name: 'Contract Scoring', status: typeof calcContractScore994 === 'function' },
@@ -148,8 +200,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 15 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts (create/restructure/backload/extend/score/deadcap/4thdownEV)</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 19 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions (11), Schemes (off/def/plans/counters/FX/flavor), Coaching (archetypes/traits/cliques), Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner (5 archetypes + approval)</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>
