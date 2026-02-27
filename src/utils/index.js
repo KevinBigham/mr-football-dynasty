@@ -20,3 +20,4 @@ export {
 } from './rng.js';
 
 export { assign, mS, cl, sum, avg } from './helpers.js';
+export { LZW } from './lzw.js';

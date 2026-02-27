@@ -12,7 +12,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 // Validate extracted modules load correctly
-import { RNG, mulberry32, setSeed, rng, pick, U } from './utils/index.js';
+import { RNG, mulberry32, setSeed, rng, pick, U, LZW } from './utils/index.js';
 import {
   T, SP, RAD, SH, S,
   DIFF_SETTINGS, SAVE_VERSION, CAP_MATH, getSalaryCap,
@@ -21,6 +21,7 @@ import {
   SCHEME_COUNTERS, SCHEME_FX, SCHEME_FLAVOR, getSchemeFlavorLine,
   GAMEPLANS, GP_COUNTERS, HOME_FIELD_ADV, RIVALRY_NAMES,
   ARCHETYPES, ARCH_BOOST, COACH_TRAITS, ARCH_TRAIT_POOLS, CLIQUE_TYPES,
+  KEYMAP, ACTION_KEYS, TAB_ORDER,
 } from './config/index.js';
 import {
   HALFTIME_V2,
@@ -94,6 +95,25 @@ import {
   NARRATIVE_STATES,
   STORY_ARC_EVENTS,
   pickWeightedEvent,
+  RIVALRY_TROPHIES_986,
+  POWER_RANKINGS_986,
+  CAP_PROJ_986,
+  GENERATIONAL_986,
+  OWNER_MODE_986,
+  PLAYER_COMPARE_986,
+  TIMELINE_986,
+  CEREMONY_986,
+  PRACTICE_SQUAD_986,
+  HOLDOUT_V2_986,
+  EXPANSION_DRAFT_986,
+  SCOUT_SPEND_MENU95,
+  SCOUT_MATH,
+  SCOUT_NOTE_FLAVOR,
+  getScoutNoteFlavor,
+  UNLOCK_DEFS,
+  DEFAULT_UNLOCKS,
+  checkUnlocks,
+  isTabUnlocked,
 } from './systems/index.js';
 import {
   TD,
@@ -110,6 +130,15 @@ import {
   generateStadiumDeals976,
   TEAM_FLAVOR_991,
   getTeamFlavor991,
+  LOCKER_ROOM_994,
+  COACH_PLAYER_VOICE_994,
+  PLAYOFF_NARRATIVE_993,
+  COMEBACK_994,
+  TRADE_DEADLINE_994,
+  DYNASTY_MOMENTS_995,
+  STADIUM_UPGRADE_995,
+  CHAMPION_VOICE_995,
+  POWER_RANKINGS_SHOW_995,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -316,8 +345,96 @@ function validateModules() {
   if (typeof CONTRACT_VALUE_TABLE_994 === 'undefined') errors.push('CONTRACT_VALUE_TABLE_994 not defined');
   if (typeof AGE_VALUE_CURVE_994 === 'undefined') errors.push('AGE_VALUE_CURVE_994 not defined');
 
+  // Narrative Data — Locker Room
+  if (!LOCKER_ROOM_994.newArrival) errors.push('LOCKER_ROOM_994 missing newArrival');
+  if (!LOCKER_ROOM_994.newArrival.veteranWelcome || LOCKER_ROOM_994.newArrival.veteranWelcome.length < 10) errors.push('LOCKER_ROOM_994 veteranWelcome count low');
+  if (!LOCKER_ROOM_994.chemistry) errors.push('LOCKER_ROOM_994 missing chemistry');
+  if (!LOCKER_ROOM_994.coachClash) errors.push('LOCKER_ROOM_994 missing coachClash');
+
+  // Coach Player Voice
+  if (!COACH_PLAYER_VOICE_994.synergy) errors.push('COACH_PLAYER_VOICE_994 missing synergy');
+  if (!COACH_PLAYER_VOICE_994.synergy.grinder_workEthic) errors.push('COACH_PLAYER_VOICE_994 missing grinder_workEthic');
+  if (!COACH_PLAYER_VOICE_994.friction) errors.push('COACH_PLAYER_VOICE_994 missing friction');
+
+  // Playoff Narrative
+  if (!PLAYOFF_NARRATIVE_993.clinchedBerth || PLAYOFF_NARRATIVE_993.clinchedBerth.length < 10) errors.push('PLAYOFF_NARRATIVE_993 clinchedBerth count low');
+  if (!PLAYOFF_NARRATIVE_993.championshipWin) errors.push('PLAYOFF_NARRATIVE_993 missing championshipWin');
+  if (!PLAYOFF_NARRATIVE_993.superBowlLoss) errors.push('PLAYOFF_NARRATIVE_993 missing superBowlLoss');
+  if (!PLAYOFF_NARRATIVE_993.firstTitleEver) errors.push('PLAYOFF_NARRATIVE_993 missing firstTitleEver');
+
+  // Comeback
+  if (!COMEBACK_994.injuryReturn) errors.push('COMEBACK_994 missing injuryReturn');
+  if (!COMEBACK_994.injuryReturn.QB || COMEBACK_994.injuryReturn.QB.length < 5) errors.push('COMEBACK_994 QB injury return count low');
+  if (!COMEBACK_994.slumpToBaller) errors.push('COMEBACK_994 missing slumpToBaller');
+  if (!COMEBACK_994.triumphOverTrade) errors.push('COMEBACK_994 missing triumphOverTrade');
+
+  // Trade Deadline
+  if (!TRADE_DEADLINE_994.deadlineFrenzy || TRADE_DEADLINE_994.deadlineFrenzy.length < 10) errors.push('TRADE_DEADLINE_994 deadlineFrenzy count low');
+  if (!TRADE_DEADLINE_994.buyerModeNarrative) errors.push('TRADE_DEADLINE_994 missing buyerModeNarrative');
+  if (!TRADE_DEADLINE_994.farewellMoment) errors.push('TRADE_DEADLINE_994 missing farewellMoment');
+  if (!TRADE_DEADLINE_994.lastRide) errors.push('TRADE_DEADLINE_994 missing lastRide');
+
+  // Dynasty Moments
+  if (!DYNASTY_MOMENTS_995.firstChampionship) errors.push('DYNASTY_MOMENTS_995 missing firstChampionship');
+  if (!DYNASTY_MOMENTS_995.backToBack) errors.push('DYNASTY_MOMENTS_995 missing backToBack');
+  if (!DYNASTY_MOMENTS_995.dynastyWatch) errors.push('DYNASTY_MOMENTS_995 missing dynastyWatch');
+  if (!DYNASTY_MOMENTS_995.dynastyEnds) errors.push('DYNASTY_MOMENTS_995 missing dynastyEnds');
+
+  // Stadium Upgrade
+  if (!STADIUM_UPGRADE_995.newStadiumOpen) errors.push('STADIUM_UPGRADE_995 missing newStadiumOpen');
+  if (!STADIUM_UPGRADE_995.capacityExpansion) errors.push('STADIUM_UPGRADE_995 missing capacityExpansion');
+  if (!STADIUM_UPGRADE_995.jumbotron) errors.push('STADIUM_UPGRADE_995 missing jumbotron');
+
+  // Champion Voice
+  if (!CHAMPION_VOICE_995.grinder) errors.push('CHAMPION_VOICE_995 missing grinder');
+  if (!CHAMPION_VOICE_995.grinder.win || CHAMPION_VOICE_995.grinder.win.length < 5) errors.push('CHAMPION_VOICE_995 grinder win count low');
+  if (!CHAMPION_VOICE_995.dynastyCoach) errors.push('CHAMPION_VOICE_995 missing dynastyCoach');
+
+  // Power Rankings Show
+  if (!POWER_RANKINGS_SHOW_995.rank1 || POWER_RANKINGS_SHOW_995.rank1.length < 5) errors.push('POWER_RANKINGS_SHOW_995 rank1 count low');
+  if (!POWER_RANKINGS_SHOW_995.rank21to30) errors.push('POWER_RANKINGS_SHOW_995 missing rank21to30');
+
+  // Game Features — Mini-systems
+  if (RIVALRY_TROPHIES_986.names.length !== 16) errors.push('RIVALRY_TROPHIES_986 names count: ' + RIVALRY_TROPHIES_986.names.length);
+  if (typeof POWER_RANKINGS_986.generate !== 'function') errors.push('POWER_RANKINGS_986.generate not a function');
+  if (typeof CAP_PROJ_986.project !== 'function') errors.push('CAP_PROJ_986.project not a function');
+  if (typeof GENERATIONAL_986.shouldSpawn !== 'function') errors.push('GENERATIONAL_986.shouldSpawn not a function');
+  if (OWNER_MODE_986.ticketTiers.length !== 4) errors.push('OWNER_MODE_986 ticketTiers count mismatch');
+  if (typeof PLAYER_COMPARE_986.buildRadar !== 'function') errors.push('PLAYER_COMPARE_986.buildRadar not a function');
+  if (typeof TIMELINE_986.addEvent !== 'function') errors.push('TIMELINE_986.addEvent not a function');
+  if (typeof CEREMONY_986.generateRetirementSpeech !== 'function') errors.push('CEREMONY_986.generateRetirementSpeech not a function');
+  if (PRACTICE_SQUAD_986.MAX_SIZE !== 16) errors.push('PRACTICE_SQUAD_986 MAX_SIZE mismatch');
+  if (HOLDOUT_V2_986.types.length !== 3) errors.push('HOLDOUT_V2_986 types count mismatch');
+  if (EXPANSION_DRAFT_986.cities.length !== 10) errors.push('EXPANSION_DRAFT_986 cities count mismatch');
+
+  // Scout Intel
+  if (SCOUT_SPEND_MENU95.length !== 12) errors.push('SCOUT_SPEND_MENU95 count: ' + SCOUT_SPEND_MENU95.length);
+  if (typeof SCOUT_MATH.getErrorBand !== 'function') errors.push('SCOUT_MATH.getErrorBand not a function');
+  if (SCOUT_MATH.getErrorBand(0, 0) !== 12) errors.push('SCOUT_MATH base error band mismatch');
+  if (typeof getScoutNoteFlavor !== 'function') errors.push('getScoutNoteFlavor not a function');
+  var snf = getScoutNoteFlavor('QB', 'workEthic');
+  if (snf.indexOf('Film junkie') < 0) errors.push('getScoutNoteFlavor QB+workEthic mismatch');
+
+  // Unlock System
+  if (UNLOCK_DEFS.length !== 5) errors.push('UNLOCK_DEFS count: ' + UNLOCK_DEFS.length);
+  if (typeof checkUnlocks !== 'function') errors.push('checkUnlocks not a function');
+  var godU = checkUnlocks(null, { week: 1, year: 2026, phase: 'regular' }, [], 'test', true);
+  if (!godU.frontOffice || !godU.legacy) errors.push('checkUnlocks godMode should unlock all');
+  if (typeof isTabUnlocked !== 'function') errors.push('isTabUnlocked not a function');
+  if (!isTabUnlocked('home', {}, false)) errors.push('isTabUnlocked home should always be open');
+
+  // LZW Compression
+  if (typeof LZW.compress !== 'function') errors.push('LZW.compress not a function');
+  var lzTest = LZW.compress('hello world');
+  if (LZW.decompress(lzTest) !== 'hello world') errors.push('LZW round-trip failed');
+
+  // Keyboard Config
+  if (KEYMAP['1'] !== 'home') errors.push('KEYMAP 1 should map to home');
+  if (ACTION_KEYS[' '] !== 'simWeek') errors.push('ACTION_KEYS space should map to simWeek');
+  if (TAB_ORDER.length !== 10) errors.push('TAB_ORDER length: ' + TAB_ORDER.length);
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 116 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 178 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -407,6 +524,35 @@ function ModuleStatusApp() {
     { name: 'Team Flavor (30 stadiums/fans)', status: Object.keys(TEAM_FLAVOR_991).length >= 28 },
     { name: 'Contract Value Tables (11 pos)', status: !!CONTRACT_VALUE_TABLE_994.QB },
     { name: 'Age Value Curves (11 pos)', status: !!AGE_VALUE_CURVE_994.QB },
+    { name: 'Locker Room Narratives', status: !!LOCKER_ROOM_994.newArrival },
+    { name: 'Coach-Player Voice (synergy/friction)', status: !!COACH_PLAYER_VOICE_994.synergy },
+    { name: 'Playoff Narrative (9 categories)', status: !!PLAYOFF_NARRATIVE_993.clinchedBerth },
+    { name: 'Comeback & Redemption Arcs', status: !!COMEBACK_994.injuryReturn },
+    { name: 'Trade Deadline Narrative (7 categories)', status: !!TRADE_DEADLINE_994.deadlineFrenzy },
+    { name: 'Dynasty Moments (6 event types)', status: !!DYNASTY_MOMENTS_995.firstChampionship },
+    { name: 'Stadium Upgrade Narrative', status: !!STADIUM_UPGRADE_995.newStadiumOpen },
+    { name: 'Champion Voice (6 archetypes)', status: !!CHAMPION_VOICE_995.grinder },
+    { name: 'Power Rankings Show (5 tiers)', status: !!POWER_RANKINGS_SHOW_995.rank1 },
+    { name: 'Rivalry Trophies (16 names)', status: RIVALRY_TROPHIES_986.names.length === 16 },
+    { name: 'Power Rankings Generator', status: typeof POWER_RANKINGS_986.generate === 'function' },
+    { name: 'Cap Projections (3-year)', status: typeof CAP_PROJ_986.project === 'function' },
+    { name: 'Generational Players', status: typeof GENERATIONAL_986.shouldSpawn === 'function' },
+    { name: 'Owner Mode (tickets/stadium)', status: OWNER_MODE_986.ticketTiers.length === 4 },
+    { name: 'Player Comparison Radar', status: typeof PLAYER_COMPARE_986.buildRadar === 'function' },
+    { name: 'Franchise Timeline', status: typeof TIMELINE_986.addEvent === 'function' },
+    { name: 'Retirement & HoF Ceremonies', status: typeof CEREMONY_986.generateRetirementSpeech === 'function' },
+    { name: 'Practice Squad System', status: PRACTICE_SQUAD_986.MAX_SIZE === 16 },
+    { name: 'Player Holdouts v2', status: HOLDOUT_V2_986.types.length === 3 },
+    { name: 'Expansion Draft Event', status: EXPANSION_DRAFT_986.cities.length === 10 },
+    { name: 'Scout Spending Menu (12 options)', status: SCOUT_SPEND_MENU95.length === 12 },
+    { name: 'Scout Math (error bands)', status: typeof SCOUT_MATH.getErrorBand === 'function' },
+    { name: 'Scout Note Flavor Text', status: typeof getScoutNoteFlavor === 'function' },
+    { name: 'Unlock System (5 progressive)', status: UNLOCK_DEFS.length === 5 },
+    { name: 'Tab Unlock Logic', status: typeof isTabUnlocked === 'function' },
+    { name: 'LZW Compression', status: typeof LZW.compress === 'function' },
+    { name: 'Keyboard Shortcuts', status: KEYMAP['1'] === 'home' },
+    { name: 'Action Keys', status: ACTION_KEYS[' '] === 'simWeek' },
+    { name: 'Tab Navigation Order', status: TAB_ORDER.length === 10 },
   ];
 
   return (
@@ -447,8 +593,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 32 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Story Arcs, Stadium Deals</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 46 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>

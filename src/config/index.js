@@ -42,3 +42,8 @@ export {
   ARCH_TRAIT_POOLS,
   CLIQUE_TYPES,
 } from './coaching.js';
+export {
+  KEYMAP,
+  ACTION_KEYS,
+  TAB_ORDER,
+} from './keyboard.js';

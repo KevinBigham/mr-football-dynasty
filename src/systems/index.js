@@ -107,3 +107,28 @@ export {
   STORY_ARC_EVENTS,
   pickWeightedEvent,
 } from './story-arcs.js';
+export {
+  RIVALRY_TROPHIES_986,
+  POWER_RANKINGS_986,
+  CAP_PROJ_986,
+  GENERATIONAL_986,
+  OWNER_MODE_986,
+  PLAYER_COMPARE_986,
+  TIMELINE_986,
+  CEREMONY_986,
+  PRACTICE_SQUAD_986,
+  HOLDOUT_V2_986,
+  EXPANSION_DRAFT_986,
+} from './game-features.js';
+export {
+  SCOUT_SPEND_MENU95,
+  SCOUT_MATH,
+  SCOUT_NOTE_FLAVOR,
+  getScoutNoteFlavor,
+} from './scout-intel.js';
+export {
+  UNLOCK_DEFS,
+  DEFAULT_UNLOCKS,
+  checkUnlocks,
+  isTabUnlocked,
+} from './unlocks.js';
