@@ -217,3 +217,35 @@ export {
   calcWeekDeltas,
   attributeCause,
 } from './game-helpers.js';
+export {
+  AWARD_HISTORY_LOG,
+  recordAwardHistory,
+  getMultiTimeWinners,
+  getTrophyName,
+  setTrophyNameForRivalry,
+  buildCareerPage,
+} from './award-history.js';
+export {
+  COACH_LEGACY_LOG,
+  updateCoachLegacy,
+  recordCoachRing,
+  getCoachLegacyTop,
+} from './coach-legacy.js';
+export { buildDNAImpactReport } from './dna-impact.js';
+export {
+  calcTradeValue,
+  calcPickValue,
+  evaluateTradePackage,
+} from './trade-value.js';
+export {
+  RING_OF_HONOR_LOG,
+  nominateForRing,
+  autoRingOfHonor,
+  getRingOfHonor,
+} from './ring-of-honor.js';
+export {
+  OWNER_PERSONALITY_EVENTS,
+  checkOwnerPersonality,
+} from './owner-personality.js';
+export { buildAwardsCeremony } from './awards-ceremony.js';
+export { buildCapVisualization } from './cap-visualization.js';

@@ -167,6 +167,28 @@ import {
   calcGameScriptMult,
   calcWeekDeltas,
   attributeCause,
+  AWARD_HISTORY_LOG,
+  recordAwardHistory,
+  getMultiTimeWinners,
+  getTrophyName,
+  setTrophyNameForRivalry,
+  buildCareerPage,
+  COACH_LEGACY_LOG,
+  updateCoachLegacy,
+  recordCoachRing,
+  getCoachLegacyTop,
+  buildDNAImpactReport,
+  calcTradeValue,
+  calcPickValue,
+  evaluateTradePackage,
+  RING_OF_HONOR_LOG,
+  nominateForRing,
+  autoRingOfHonor,
+  getRingOfHonor,
+  OWNER_PERSONALITY_EVENTS,
+  checkOwnerPersonality,
+  buildAwardsCeremony,
+  buildCapVisualization,
 } from './systems/index.js';
 import {
   TD,
@@ -758,8 +780,66 @@ function validateModules() {
   if (typeof calcWeekDeltas !== 'function') errors.push('calcWeekDeltas not a function');
   if (typeof attributeCause !== 'function') errors.push('attributeCause not a function');
 
+  // Award History
+  if (Array.isArray(AWARD_HISTORY_LOG)) {} else errors.push('AWARD_HISTORY_LOG not an array');
+  if (typeof recordAwardHistory !== 'function') errors.push('recordAwardHistory not a function');
+  if (typeof getMultiTimeWinners !== 'function') errors.push('getMultiTimeWinners not a function');
+  if (typeof getTrophyName !== 'function') errors.push('getTrophyName not a function');
+  if (getTrophyName({'a-b': 'Test Cup'}, 'a', 'b') !== 'Test Cup') errors.push('getTrophyName lookup mismatch');
+  if (getTrophyName(null, 'a', 'b') !== null) errors.push('getTrophyName null should return null');
+  if (typeof setTrophyNameForRivalry !== 'function') errors.push('setTrophyNameForRivalry not a function');
+  if (typeof buildCareerPage !== 'function') errors.push('buildCareerPage not a function');
+  if (buildCareerPage(null, null, null) !== null) errors.push('buildCareerPage null inputs should return null');
+
+  // Coach Legacy
+  if (typeof COACH_LEGACY_LOG !== 'object') errors.push('COACH_LEGACY_LOG not an object');
+  if (typeof updateCoachLegacy !== 'function') errors.push('updateCoachLegacy not a function');
+  if (typeof recordCoachRing !== 'function') errors.push('recordCoachRing not a function');
+  if (typeof getCoachLegacyTop !== 'function') errors.push('getCoachLegacyTop not a function');
+
+  // DNA Impact
+  if (typeof buildDNAImpactReport !== 'function') errors.push('buildDNAImpactReport not a function');
+  if (buildDNAImpactReport(null, null, null) !== null) errors.push('buildDNAImpactReport null should return null');
+
+  // Trade Value
+  if (typeof calcTradeValue !== 'function') errors.push('calcTradeValue not a function');
+  var tvTest = calcTradeValue({ovr: 85, age: 25, pos: 'QB', pot: 90});
+  if (tvTest < 150) errors.push('calcTradeValue elite young QB too low: ' + tvTest);
+  if (typeof calcPickValue !== 'function') errors.push('calcPickValue not a function');
+  if (calcPickValue(1) !== 80) errors.push('calcPickValue(1) should be 80');
+  if (calcPickValue(2) !== 50) errors.push('calcPickValue(2) should be 50');
+  if (typeof evaluateTradePackage !== 'function') errors.push('evaluateTradePackage not a function');
+  var epTest = evaluateTradePackage([{type:'pick',round:1}], [{type:'pick',round:3}]);
+  if (epTest.verdict !== 'OVERPAY') errors.push('evaluateTradePackage 1st-for-3rd should be OVERPAY');
+
+  // Ring of Honor
+  if (typeof RING_OF_HONOR_LOG !== 'object') errors.push('RING_OF_HONOR_LOG not an object');
+  if (typeof nominateForRing !== 'function') errors.push('nominateForRing not a function');
+  if (typeof autoRingOfHonor !== 'function') errors.push('autoRingOfHonor not a function');
+  if (typeof getRingOfHonor !== 'function') errors.push('getRingOfHonor not a function');
+  var emptyRing = getRingOfHonor('nonexistent');
+  if (!Array.isArray(emptyRing) || emptyRing.length !== 0) errors.push('getRingOfHonor empty team should return []');
+
+  // Owner Personality
+  if (OWNER_PERSONALITY_EVENTS.length !== 10) errors.push('OWNER_PERSONALITY_EVENTS count: ' + OWNER_PERSONALITY_EVENTS.length + ', expected 10');
+  if (typeof checkOwnerPersonality !== 'function') errors.push('checkOwnerPersonality not a function');
+  if (checkOwnerPersonality(null, null, null, function(){return 0;}) !== null) errors.push('checkOwnerPersonality null should return null');
+
+  // Awards Ceremony
+  if (typeof buildAwardsCeremony !== 'function') errors.push('buildAwardsCeremony not a function');
+  if (buildAwardsCeremony(null) !== null) errors.push('buildAwardsCeremony null should return null');
+  var acTest = buildAwardsCeremony({mvp:{name:'Test',pos:'QB',team:'TST',line:'30 TD'},year:2026});
+  if (!acTest || acTest.reveal.length !== 1) errors.push('buildAwardsCeremony MVP-only should have 1 reveal');
+
+  // Cap Visualization
+  if (typeof buildCapVisualization !== 'function') errors.push('buildCapVisualization not a function');
+  if (buildCapVisualization(null) !== null) errors.push('buildCapVisualization null should return null');
+  var cvTest = buildCapVisualization({roster:[{pos:'QB',ovr:85,age:27,contract:{salary:20,years:3}}],deadCap:5});
+  if (!cvTest || cvTest.breakdown.length !== 1) errors.push('buildCapVisualization single-player breakdown mismatch');
+  if (cvTest && cvTest.totalUsed !== 20) errors.push('buildCapVisualization totalUsed should be 20');
+
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 335 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 380 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -942,6 +1022,22 @@ function ModuleStatusApp() {
     { name: 'Game Script Multiplier', status: typeof calcGameScriptMult === 'function' },
     { name: 'Week-over-Week Deltas', status: typeof calcWeekDeltas === 'function' },
     { name: 'Performance Attribution Engine', status: typeof attributeCause === 'function' },
+    { name: 'Award History Tracking', status: Array.isArray(AWARD_HISTORY_LOG) },
+    { name: 'Multi-Time Award Winners', status: typeof getMultiTimeWinners === 'function' },
+    { name: 'Rivalry Trophy Names', status: typeof getTrophyName === 'function' },
+    { name: 'Player Career Pages', status: typeof buildCareerPage === 'function' },
+    { name: 'Coach Legacy Tracking', status: typeof updateCoachLegacy === 'function' },
+    { name: 'Coach Ring Records', status: typeof recordCoachRing === 'function' },
+    { name: 'DNA Impact Reports', status: typeof buildDNAImpactReport === 'function' },
+    { name: 'Trade Value Calculator (simple)', status: typeof calcTradeValue === 'function' },
+    { name: 'Pick Value Chart (simple)', status: calcPickValue(1) === 80 },
+    { name: 'Trade Package Evaluator', status: typeof evaluateTradePackage === 'function' },
+    { name: 'Ring of Honor System', status: typeof nominateForRing === 'function' },
+    { name: 'Ring of Honor (auto-nom)', status: typeof autoRingOfHonor === 'function' },
+    { name: 'Owner Personality Events (10)', status: OWNER_PERSONALITY_EVENTS.length === 10 },
+    { name: 'Owner Personality Checker', status: typeof checkOwnerPersonality === 'function' },
+    { name: 'Awards Ceremony Builder', status: typeof buildAwardsCeremony === 'function' },
+    { name: 'Cap Visualization (breakdown)', status: typeof buildCapVisualization === 'function' },
   ];
 
   return (
@@ -982,8 +1078,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 83 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 91 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
