@@ -27116,8 +27116,9 @@ var LIVE_GAME_986 = {
         if (hT && aT) {
           var hS = Math.floor(Math.random() * 7) * 3 + Math.floor(Math.random() * 5) * 7;
           var aS = Math.floor(Math.random() * 7) * 3 + Math.floor(Math.random() * 5) * 7;
-          hS = Math.max(0, Math.min(45, hS + Math.round((hT.ovr - aT.ovr) * 0.2)));
-          aS = Math.max(0, Math.min(45, aS - Math.round((hT.ovr - aT.ovr) * 0.2)));
+          var ovrDiff = Math.round(((hT.ovr || 70) - (aT.ovr || 70)) * 0.2);
+          hS = Math.max(0, Math.min(45, hS + ovrDiff));
+          aS = Math.max(0, Math.min(45, aS - ovrDiff));
           games.push({
             homeAbbr: hT.abbr,
             awayAbbr: aT.abbr,
@@ -62055,7 +62056,36 @@ function AppCore() {
           color: isUserOff ? "#fbbf24" : "#a78bfa"
         } }, isUserOff ? "\u{1F3C8} OFFENSE \u2014 PICK YOUR PLAY" : "\u{1F6E1}\uFE0F DEFENSE \u2014 PICK YOUR COVERAGE")), isUserOff ? (
           /* ── OFFENSIVE PLAY SELECTION ── */
-          /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", gap: 4 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 } }, /* @__PURE__ */ React.createElement("button", { onClick: function() {
+          /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", gap: 4 } }, (function() {
+  var offT = lg2.possession === "home" ? lg2.homeTeam : lg2.awayTeam;
+  var defT = lg2.possession === "home" ? lg2.awayTeam : lg2.homeTeam;
+  function _pa(roster, pos, key) { var p = (roster||[]).find(function(x){return x.pos===pos&&x.isStarter;}); return p&&p.ratings?(p.ratings[key]||50):50; }
+  function _pn(roster, pos) { var p = (roster||[]).find(function(x){return x.pos===pos&&x.isStarter;}); return p?p.name.split(" ").pop():pos; }
+  function _olAvg(roster, key) { var ols=(roster||[]).filter(function(x){return x.pos==="OL"&&x.isStarter;}); if(!ols.length)return 50; var s=0; ols.forEach(function(x){s+=(x.ratings?(x.ratings[key]||50):50);}); return Math.round(s/ols.length); }
+  var _mups = [
+    { label: "RUN LANE", off: _olAvg(offT.roster,"runBlock"), def: _pa(defT.roster,"DL","blockShedding"), offLbl: "OL blk", defLbl: _pn(defT.roster,"DL")+" shed" },
+    { label: "PASS PRO", off: _pa(offT.roster,"QB","pocketPresence"), def: _pa(defT.roster,"DL","passRush"), offLbl: _pn(offT.roster,"QB")+" pkt", defLbl: _pn(defT.roster,"DL")+" rush" },
+    { label: "WR/CB", off: _pa(offT.roster,"WR","separation"), def: _pa(defT.roster,"CB","coverage"), offLbl: _pn(offT.roster,"WR")+" sep", defLbl: _pn(defT.roster,"CB")+" cov" }
+  ];
+  return React.createElement("div", { style: { padding: "4px 6px", marginBottom: 2, borderRadius: 4, background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.10)" } },
+    React.createElement("div", { style: { fontSize: 7, fontWeight: 800, color: "#fbbf24", letterSpacing: 1, marginBottom: 3 } }, "\u26A1 PRE-SNAP INTEL"),
+    React.createElement("div", { style: { display: "flex", gap: 3 } },
+      _mups.map(function(m, mi) {
+        var edge = m.off - m.def;
+        var col = edge >= 8 ? "#22c55e" : edge <= -8 ? "#ef4444" : "#94a3b8";
+        var arrow = edge >= 8 ? "\u25B2 ADV" : edge <= -8 ? "\u25BC CAU" : "\u2014 EVN";
+        var bgCol = edge >= 8 ? "rgba(34,197,94,0.08)" : edge <= -8 ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.02)";
+        var bdCol = edge >= 8 ? "rgba(34,197,94,0.18)" : edge <= -8 ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.05)";
+        return React.createElement("div", { key: mi, style: { flex: 1, background: bgCol, borderRadius: 4, padding: "3px 5px", border: "1px solid "+bdCol } },
+          React.createElement("div", { style: { fontSize: 6, color: "#64748b", letterSpacing: 0.5, marginBottom: 2, fontWeight: 700 } }, m.label),
+          React.createElement("div", { style: { fontSize: 8, color: "#e2e8f0", fontWeight: 600 } }, m.offLbl+": "+Math.round(m.off)),
+          React.createElement("div", { style: { fontSize: 8, color: "#94a3b8" } }, m.defLbl+": "+Math.round(m.def)),
+          React.createElement("div", { style: { fontSize: 7, fontWeight: 800, color: col, marginTop: 1 } }, arrow)
+        );
+      })
+    )
+  );
+})(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 } }, /* @__PURE__ */ React.createElement("button", { onClick: function() {
             var newLg = Object.assign({}, lg2);
             newLg.noHuddle = !newLg.noHuddle;
             if (newLg.noHuddle) {
@@ -62209,8 +62239,39 @@ function AppCore() {
                 return r.type === "run";
               }).map(function(r, ri) {
                 return /* @__PURE__ */ React.createElement("circle", { key: "rb" + ri, cx: r.x, cy: r.y, r: "2.5", fill: "#22c55e" });
-              })) : /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, flexShrink: 0, width: 36, textAlign: "center" } }, play.icon), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700, fontSize: 11, color: play.isTrick ? T.red : T.text } }, play.label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: T.dim, marginTop: 1 } }, play.desc)), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: T.faint } }, "\u25B6"));
-            })), !_playCategory && /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", color: T.faint, fontSize: 11 } }, "Pick a play category above \u261D\uFE0F")))
+              })) : /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, flexShrink: 0, width: 36, textAlign: "center" } }, play.icon), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700, fontSize: 11, color: play.isTrick ? T.red : T.text } }, play.label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: T.dim, marginTop: 1 } }, play.desc)), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: T.faint } }, "\u25B6"));})), (function() {
+  var _usrT = lg2.possession === "home" ? lg2.homeTeam : lg2.awayTeam;
+  var _bs = lg2.boxScore || {};
+  var _qbP = (_usrT.roster || []).find(function(p) { return p.pos === "QB" && p.isStarter; });
+  var _rbP = (_usrT.roster || []).find(function(p) { return p.pos === "RB" && p.isStarter; });
+  var _qbNm = _qbP ? _qbP.name : null;
+  var _rbNm = _rbP ? _rbP.name : null;
+  var _qbSt = (_qbNm && _bs[_qbNm]) ? _bs[_qbNm] : { comp: 0, att: 0, passYds: 0, passTD: 0, int: 0 };
+  var _rbSt = (_rbNm && _bs[_rbNm]) ? _bs[_rbNm] : { rushAtt: 0, rushYds: 0, rushTD: 0 };
+  var qbLn = _qbNm ? _qbNm.split(" ").pop() : "QB";
+  var rbLn = _rbNm ? _rbNm.split(" ").pop() : "RB";
+  return React.createElement("div", { style: { padding: "4px 6px", borderRadius: 4, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", marginTop: 2 } },
+    React.createElement("div", { style: { fontSize: 7, fontWeight: 800, color: "#64748b", letterSpacing: 1, marginBottom: 3 } }, "\uD83D\uDCCA LIVE BOX"),
+    React.createElement("div", { style: { display: "flex", gap: 4 } },
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("div", { style: { fontSize: 6, color: "#475569", fontWeight: 700, marginBottom: 2 } }, "QB"),
+        React.createElement("div", { style: { fontSize: 8, color: "#e2e8f0", fontWeight: 700 } }, qbLn),
+        React.createElement("div", { style: { fontSize: 7, color: "#94a3b8", lineHeight: 1.4 } }, _qbSt.comp + "/" + _qbSt.att + " \xb7 " + _qbSt.passYds + " yds"),
+        React.createElement("div", { style: { fontSize: 7, lineHeight: 1.4, display: "flex", gap: 4 } },
+          React.createElement("span", { style: { color: _qbSt.passTD > 0 ? "#22c55e" : "#64748b" } }, _qbSt.passTD + "TD"),
+          React.createElement("span", { style: { color: _qbSt.int > 0 ? "#ef4444" : "#64748b" } }, _qbSt.int + "INT")
+        )
+      ),
+      React.createElement("div", { style: { width: 1, background: "rgba(255,255,255,0.05)", margin: "0 2px" } }),
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("div", { style: { fontSize: 6, color: "#475569", fontWeight: 700, marginBottom: 2 } }, "RB"),
+        React.createElement("div", { style: { fontSize: 8, color: "#e2e8f0", fontWeight: 700 } }, rbLn),
+        React.createElement("div", { style: { fontSize: 7, color: "#94a3b8", lineHeight: 1.4 } }, _rbSt.rushAtt + "car \xb7 " + _rbSt.rushYds + " yds"),
+        React.createElement("div", { style: { fontSize: 7, color: _rbSt.rushTD > 0 ? "#22c55e" : "#64748b", lineHeight: 1.4 } }, _rbSt.rushTD + "TD")
+      )
+    )
+  );
+})(), !_playCategory && /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", color: T.faint, fontSize: 11 } }, "Pick a play category above \u261D\uFE0F")))
           ))
         ) : (
           /* ── DEFENSIVE PLAY SELECTION + WATCH DRIVE ── */
