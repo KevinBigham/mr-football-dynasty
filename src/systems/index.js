@@ -325,3 +325,17 @@ export {
 } from './draft-day.js';
 export { INJURY_REPORT } from './injury-report.js';
 export { buildBracketTree } from './bracket-tree.js';
+export { DOSSIER } from './dossier.js';
+export { SCOUT_REPORT } from './scout-report.js';
+export { PROSPECT_DOSSIER } from './prospect-dossier.js';
+export { DRAFT_WAR_ROOM } from './draft-war-room.js';
+export { OFFSEASON_EVENTS } from './offseason-events.js';
+export {
+  OWNER_GOAL_TEMPLATES,
+  COACH_GOAL_TEMPLATES,
+  PLAYER_GOAL_TEMPLATES,
+  generateSeasonGoals,
+  generatePlayerGoals,
+  updateGoalProgress,
+  evaluateGoals,
+} from './season-goals.js';
