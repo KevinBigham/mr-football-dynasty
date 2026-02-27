@@ -64,3 +64,11 @@ export {
 } from './draft-commentary.js';
 export { DRAFT_ANALYST_993 } from './draft-analyst.js';
 export { RIVALRY_TRASH_991 } from './rivalry-trash.js';
+export {
+  COL_POWER,
+  COL_G5,
+  COL_FCS,
+  COL_WEIGHTED,
+  pickCollege,
+} from './college-pipeline.js';
+export { BROADCAST_VOICES_991 } from './broadcast-voices.js';

@@ -281,3 +281,33 @@ export {
   generateReceipts,
   FIX_IT_DRILLS,
 } from './rivalry-engine.js';
+export {
+  PRACTICE_FOCUS,
+  CAPTAIN_RULES,
+  CAPTAIN_MOMENT_TYPES,
+} from './practice-captain.js';
+export { PROSPECT_CLAIMS } from './prospect-claims.js';
+export {
+  CLINIC_TRACKS,
+  CLINIC,
+  CLINIC_MATH,
+} from './coaching-clinic.js';
+export {
+  MEDIA_TAGS,
+  PRESS_TAG_MAP,
+  getMediaPersona,
+  CREDIBILITY_MATH,
+  RIVALRY_MATH,
+} from './media-persona.js';
+export {
+  PRESS_QUESTIONS,
+  HEADLINES,
+} from './postgame-presser.js';
+export {
+  HALL_OF_FAME_LOG,
+  HOF_SPEECHES,
+  getHOFSpeech,
+  calcLegacyScore,
+  autoHallOfFame,
+  buildCapFixes,
+} from './hall-of-fame.js';

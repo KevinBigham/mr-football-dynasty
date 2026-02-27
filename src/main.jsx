@@ -213,6 +213,26 @@ import {
   generateHighlights,
   generateReceipts,
   FIX_IT_DRILLS,
+  PRACTICE_FOCUS,
+  CAPTAIN_RULES,
+  CAPTAIN_MOMENT_TYPES,
+  PROSPECT_CLAIMS,
+  CLINIC_TRACKS,
+  CLINIC,
+  CLINIC_MATH,
+  MEDIA_TAGS,
+  PRESS_TAG_MAP,
+  getMediaPersona,
+  CREDIBILITY_MATH,
+  RIVALRY_MATH,
+  PRESS_QUESTIONS,
+  HEADLINES,
+  HALL_OF_FAME_LOG,
+  HOF_SPEECHES,
+  getHOFSpeech,
+  calcLegacyScore,
+  autoHallOfFame,
+  buildCapFixes,
 } from './systems/index.js';
 import {
   TD,
@@ -260,6 +280,12 @@ import {
   getDraftCommentary,
   DRAFT_ANALYST_993,
   RIVALRY_TRASH_991,
+  COL_POWER,
+  COL_G5,
+  COL_FCS,
+  COL_WEIGHTED,
+  pickCollege,
+  BROADCAST_VOICES_991,
 } from './data/index.js';
 
 // Module validation — runs on boot, logs to console
@@ -909,7 +935,7 @@ function validateModules() {
   if (!RIVALRY_TRASH_991.atomic || RIVALRY_TRASH_991.atomic.length < 10) errors.push('RIVALRY_TRASH_991 atomic count low');
 
   if (errors.length === 0) {
-    console.log('%c[MFD] All ' + 420 + ' module checks passed', 'color: #34d399; font-weight: bold');
+    console.log('%c[MFD] All ' + 449 + ' module checks passed', 'color: #34d399; font-weight: bold');
     return true;
   } else {
     console.error('[MFD] Module validation errors:', errors);
@@ -1124,6 +1150,34 @@ function ModuleStatusApp() {
     { name: 'Game Highlights & Receipts', status: typeof generateHighlights === 'function' && typeof generateReceipts === 'function' },
     { name: 'Fix-It Drills (9 types)', status: Object.keys(FIX_IT_DRILLS).length === 9 },
     { name: 'Rivalry Trash Talk (3 tiers)', status: !!RIVALRY_TRASH_991.mild && !!RIVALRY_TRASH_991.spicy && !!RIVALRY_TRASH_991.atomic },
+    { name: 'College Pipeline (Power 50)', status: COL_POWER.length === 50 },
+    { name: 'College Pipeline (G5 29)', status: COL_G5.length === 29 },
+    { name: 'College Pipeline (FCS 9)', status: COL_FCS.length === 9 },
+    { name: 'College Weighted Pool', status: COL_WEIGHTED.length > 50 },
+    { name: 'Pick College Function', status: typeof pickCollege === 'function' },
+    { name: 'Broadcast Voices (3 announcers)', status: BROADCAST_VOICES_991.voices.length === 3 },
+    { name: 'Broadcast Voice Calls', status: typeof BROADCAST_VOICES_991.getCall === 'function' },
+    { name: 'Practice Focus (4 options)', status: PRACTICE_FOCUS.length === 4 },
+    { name: 'Captain Rules (system)', status: CAPTAIN_RULES.eligibleMinOvr === 70 },
+    { name: 'Captain Moment Types (3)', status: CAPTAIN_MOMENT_TYPES.length === 3 },
+    { name: 'Prospect Claims (generate)', status: typeof PROSPECT_CLAIMS.generate === 'function' },
+    { name: 'Prospect Claims (verify)', status: typeof PROSPECT_CLAIMS.verify === 'function' },
+    { name: 'Coaching Clinic Tracks (5)', status: CLINIC_TRACKS.length === 5 },
+    { name: 'Coaching Clinic (earnXP)', status: typeof CLINIC.earnXP === 'function' },
+    { name: 'Coaching Clinic Math (getMods)', status: typeof CLINIC_MATH.getMods === 'function' },
+    { name: 'Media Tags (6 archetypes)', status: Object.keys(MEDIA_TAGS).length === 6 },
+    { name: 'Press Tag Map (18 mappings)', status: Object.keys(PRESS_TAG_MAP).length >= 17 },
+    { name: 'Media Persona Detection', status: typeof getMediaPersona === 'function' },
+    { name: 'Credibility Math (calcDelta)', status: typeof CREDIBILITY_MATH.calcDelta === 'function' },
+    { name: 'Rivalry Math (calcDelta)', status: typeof RIVALRY_MATH.calcDelta === 'function' },
+    { name: 'Press Questions (5 scenarios)', status: PRESS_QUESTIONS.length === 5 },
+    { name: 'Headlines Generator', status: typeof HEADLINES.generate === 'function' },
+    { name: 'Hall of Fame Log (array)', status: Array.isArray(HALL_OF_FAME_LOG) },
+    { name: 'HOF Speeches (6 traits)', status: Object.keys(HOF_SPEECHES).length === 6 },
+    { name: 'HOF Speech Getter', status: typeof getHOFSpeech === 'function' },
+    { name: 'Legacy Score Calculator', status: typeof calcLegacyScore === 'function' },
+    { name: 'Auto Hall of Fame', status: typeof autoHallOfFame === 'function' },
+    { name: 'Cap Fixes Builder', status: typeof buildCapFixes === 'function' },
   ];
 
   return (
@@ -1164,9 +1218,9 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 95 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine</div>
-            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 103 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame</div>
+            <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
           </div>
