@@ -269,6 +269,21 @@ import {
   getFuzzyRating,
   getFuzzyGrade,
   OFFSEASON_NEWS,
+  getRivalryLabel,
+  findRivalObj,
+  WP_TABLE_DEEPSEEK,
+  momentumDecay991,
+  edgeToProbability991,
+  draftPickOvr991,
+  aiPickOffGPPreview,
+  aiPickDefGPPreview,
+  RIVALRY_TROPHIES977,
+  RIVALRY_WEEK977,
+  PREGAME_TALK977,
+  HALFTIME_PANEL977,
+  POSTGAME_LOCKER977,
+  GAME_OF_WEEK977,
+  buildRivalryDashboard977,
 } from './systems/index.js';
 import {
   TD,
@@ -1279,6 +1294,24 @@ function ModuleStatusApp() {
     { name: 'Press Conference Expanded (questions)', status: Object.keys(PRESS_CONFERENCE_993.questions).length === 13 },
     { name: 'Press Conference Expanded (answers)', status: Object.keys(PRESS_CONFERENCE_993.answers).length === 13 },
     { name: 'Press Conference Expanded (reactions)', status: PRESS_CONFERENCE_993.mediaReaction.length >= 15 },
+    // Phase 1u: Game sim math, AI gameplan, rivalry game day
+    { name: 'getRivalryLabel function', status: typeof getRivalryLabel === 'function' },
+    { name: 'findRivalObj function', status: typeof findRivalObj === 'function' },
+    { name: 'WP_TABLE_DEEPSEEK (28 entries)', status: Object.keys(WP_TABLE_DEEPSEEK).length === 28 },
+    { name: 'momentumDecay991 function', status: typeof momentumDecay991 === 'function' },
+    { name: 'edgeToProbability991 function', status: typeof edgeToProbability991 === 'function' },
+    { name: 'draftPickOvr991 function', status: typeof draftPickOvr991 === 'function' },
+    { name: 'aiPickOffGPPreview function', status: typeof aiPickOffGPPreview === 'function' },
+    { name: 'aiPickDefGPPreview function', status: typeof aiPickDefGPPreview === 'function' },
+    { name: 'RIVALRY_TROPHIES977 (8 templates)', status: RIVALRY_TROPHIES977.templates.length === 8 },
+    { name: 'RIVALRY_TROPHIES977.generateTrophy', status: typeof RIVALRY_TROPHIES977.generateTrophy === 'function' },
+    { name: 'RIVALRY_TROPHIES977.updateTrophy', status: typeof RIVALRY_TROPHIES977.updateTrophy === 'function' },
+    { name: 'RIVALRY_WEEK977.getAtmosphere', status: typeof RIVALRY_WEEK977.getAtmosphere === 'function' },
+    { name: 'PREGAME_TALK977.generate', status: typeof PREGAME_TALK977.generate === 'function' },
+    { name: 'HALFTIME_PANEL977.generate', status: typeof HALFTIME_PANEL977.generate === 'function' },
+    { name: 'POSTGAME_LOCKER977.generate', status: typeof POSTGAME_LOCKER977.generate === 'function' },
+    { name: 'GAME_OF_WEEK977.pick', status: typeof GAME_OF_WEEK977.pick === 'function' },
+    { name: 'buildRivalryDashboard977 function', status: typeof buildRivalryDashboard977 === 'function' },
   ];
 
   return (
@@ -1319,8 +1352,8 @@ function ModuleStatusApp() {
             Phase 1 Summary
           </div>
           <div style={{ fontSize: 11, color: T.dim, lineHeight: 1.8 }}>
-            <div><strong style={{ color: T.text }}>Files extracted:</strong> 127 modules</div>
-            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree, Dossier, Scout Report, Prospect Dossier, Draft War Room, Offseason Events, Season Goals, Locker Events, Coach Trait Mods, Owner Goals V2, Stat Headlines, Story Templates, Fuzzy Grades, Offseason News</div>
+            <div><strong style={{ color: T.text }}>Files extracted:</strong> 131 modules</div>
+            <div><strong style={{ color: T.text }}>Systems:</strong> RNG, Theme, Difficulty, Cap Math, Positions, Schemes, Coaching, Keyboard, Halftime, Training Camp, Franchise Tags, Comp Picks, Incentives, GM Rep, Coach Carousel, Contracts, Owner, Personality, Chemistry, Teams, Traits, Draft Utils, Scheme Fit, Contract Helpers, Trade AI, Scouting, Scout Intel, Story Arcs, Game Features, Unlocks, LZW, Special Plays, Win Probability, Playbook, Press Conference, Legacy, Relocation, GM Strategies, Front Office, Story Arc Engine, Weekly Challenges, Trade Deadline Frenzy, Weather, Player Archetypes, Coach Skill Tree, Owner Extended, Trade Math, Breakout, Grudge/Revenge, Mentor, Staff Poaching, All-Time Records, Film Study, Agent Types, Trust/Aging, Holdout System, Game Helpers, Award History, Coach Legacy, DNA Impact, Trade Value, Ring of Honor, Owner Personality, Awards Ceremony, Cap Visualization, Role Definitions, Dynasty Analytics, Rivalry Engine, Practice/Captain, Prospect Claims, Coaching Clinic, Media Persona, Postgame Presser, Hall of Fame, Scout Perception, Coordinator Specialties, Draft Day, Injury Report, Bracket Tree, Dossier, Scout Report, Prospect Dossier, Draft War Room, Offseason Events, Season Goals, Locker Events, Coach Trait Mods, Owner Goals V2, Stat Headlines, Story Templates, Fuzzy Grades, Offseason News, Game Sim Math, AI Gameplan, Rivalry Game Day</div>
             <div><strong style={{ color: T.text }}>Narrative Data:</strong> Locker Room, Coach-Player Voice, Playoff Narrative, Comeback, Trade Deadline, Dynasty Moments, Stadium Upgrade, Champion Voice, Power Rankings Show, Team Flavor, Stadium Deals, Player Names, Scouting Templates, Draft Commentary, Draft Analyst, Rivalry Trash Talk, College Pipeline, Broadcast Voices, Draft Presser, Help Sections, Appearance, FA Narrative, Press Conference Expanded</div>
             <div><strong style={{ color: T.text }}>Build system:</strong> Vite + React 18</div>
             <div><strong style={{ color: T.text }}>Original game:</strong> Still available at /mr-football-dynasty/index.html</div>
