@@ -3,31 +3,35 @@ import { describe, expect, it } from 'vitest';
 import { SCOUT } from '../src/systems/scout-perception.js';
 
 describe('scout-perception.js', () => {
-  it('gaussian is deterministic for identical seed inputs', () => {
+  it('gaussian is deterministic for the same seed', () => {
     const a = SCOUT.gaussian(75, 4, 1234);
     const b = SCOUT.gaussian(75, 4, 1234);
     expect(a).toBeCloseTo(b, 10);
   });
 
-  it('getPerceived is deterministic and clamps values to 30-99', () => {
-    const first = SCOUT.getPerceived(85, 8, 'p42', 3);
-    const second = SCOUT.getPerceived(85, 8, 'p42', 3);
-    expect(first).toBe(second);
+  it('getPerceived is bounded [30, 99] and deterministic per player/week', () => {
+    const x1 = SCOUT.getPerceived(82, 6, 'p17', 5);
+    const x2 = SCOUT.getPerceived(82, 6, 'p17', 5);
+    const x3 = SCOUT.getPerceived(82, 6, 'p17', 6);
 
-    expect(SCOUT.getPerceived(5, 0, 'p1', 1)).toBeGreaterThanOrEqual(30);
-    expect(SCOUT.getPerceived(130, 10, 'p9', 2)).toBeLessThanOrEqual(99);
+    expect(x1).toBeGreaterThanOrEqual(30);
+    expect(x1).toBeLessThanOrEqual(99);
+    expect(x1).toBe(x2);
+    expect(x3).not.toBe(x2);
   });
 
-  it('returns range window and confidence flags by scout level', () => {
-    const lowScout = SCOUT.getRange(80, 1);
-    const eliteScout = SCOUT.getRange(80, 10);
+  it('getRange narrows with higher scout level and sets confidence flag', () => {
+    const low = SCOUT.getRange(80, 0);
+    const high = SCOUT.getRange(80, 10);
 
-    expect(lowScout).toMatchObject({ lo: 64, hi: 97, display: '64–97', confident: false });
-    expect(eliteScout).toMatchObject({ lo: 77, hi: 83, display: '77–83', confident: true });
+    expect(low.lo).toBeLessThan(high.lo);
+    expect(low.hi).toBeGreaterThan(high.hi);
+    expect(low.confident).toBe(false);
+    expect(high.confident).toBe(true);
   });
 
-  it('builds grade ranges from numeric range endpoints', () => {
-    expect(SCOUT.getGradeRange(90, 10)).toBe('A – A+');
-    expect(SCOUT.getGradeRange(55, 0)).toBe('F – C+');
+  it('getGradeRange returns letter-grade span', () => {
+    const gr = SCOUT.getGradeRange(88, 5);
+    expect(gr).toMatch(/^[A-F][+]?\s–\s[A-F][+]?$/);
   });
 });

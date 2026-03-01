@@ -151,6 +151,21 @@ export function generateReceipts(gameResult,reason){
   return receipts.slice(0,5);
 }
 
+export function getRivalryLabel(heat){
+  var h=heat||0;
+  if(h<20)return{tier:"none",label:null,emoji:""};
+  if(h<40)return{tier:"budding",label:"Growing Rivalry",emoji:"🔥"};
+  if(h<60)return{tier:"heated",label:"Rivalry Game",emoji:"🔥"};
+  if(h<80)return{tier:"intense",label:"Bitter Rivals",emoji:"🔥🔥"};
+  return{tier:"war",label:"Blood Feud",emoji:"🔥🔥🔥"};
+}
+
+export function findRivalObj(team,oppId){
+  if(!team)return null;if(!team.rivals)team.rivals=[];
+  for(var i=0;i<team.rivals.length;i++){if(team.rivals[i]&&team.rivals[i].teamId===oppId)return team.rivals[i];}
+  return null;
+}
+
 export var FIX_IT_DRILLS={
   pressureRate:{drill:"Pass Pro Emphasis",action:"Reduce pressure rate this week",icon:"🛡️",fix:"quick_pass"},
   pocket:{drill:"Pass Pro Emphasis",action:"Focus OL assignments — reduce pressure rate",icon:"🛡️",fix:"quick_pass"},

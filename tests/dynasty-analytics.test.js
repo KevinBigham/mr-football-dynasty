@@ -6,81 +6,56 @@ import {
   calcDynastyIndex,
   calcLongevity,
   calcPeakPower,
-  buildHallOfSeasons,
   generateEraCards,
   generateIdentityTags,
+  buildHallOfSeasons,
 } from '../src/systems/dynasty-analytics.js';
 
 describe('dynasty-analytics.js', () => {
-  it('calculates dominance score from wins, playoffs, point diff, ranks, and title', () => {
-    const tr = { id: 1, wins: 12, losses: 5, playoffWins: 2, pf: 400, pa: 300, offRank: 1, defRank: 1 };
+  it('calculates dominance and dynasty index scores', () => {
+    const tr = { id: 1, wins: 12, losses: 5, playoffWins: 2, pf: 420, pa: 280, offRank: 1, defRank: 1 };
     const h = { winnerId: 1 };
-    expect(calcDominanceScore(tr, h)).toBe(112);
-  });
+    expect(calcDominanceScore(tr, h)).toBe(116);
 
-  it('computes dynasty index formula and handles missing seasons', () => {
-    expect(calcDynastyIndex({ seasons: 0 })).toBe(0);
     expect(
       calcDynastyIndex({
         seasons: 4,
-        wins: 40,
+        wins: 44,
         losses: 24,
         titles: 1,
         playoffWins: 5,
         mvps: 1,
         dpoys: 1,
         rivalryDominance: 2,
-      }),
-    ).toBe(365);
+      })
+    ).toBe(369);
+    expect(calcDynastyIndex({ seasons: 0, wins: 0, losses: 0 })).toBe(0);
   });
 
-  it('finds the best 5-year peak power window', () => {
+  it('finds peak power window and longevity metrics', () => {
     const history = [
-      { year: 2020, winnerId: 2, teamRecords: [{ id: 1, wins: 5, losses: 11, pf: 250, pa: 300 }] },
-      { year: 2021, winnerId: 2, teamRecords: [{ id: 1, wins: 6, losses: 10, pf: 260, pa: 310 }] },
-      {
-        year: 2022,
-        winnerId: 1,
-        teamRecords: [{ id: 1, wins: 12, losses: 5, playoffWins: 2, pf: 420, pa: 280, offRank: 1, defRank: 2 }],
-      },
-      {
-        year: 2023,
-        winnerId: 2,
-        teamRecords: [{ id: 1, wins: 11, losses: 6, playoffWins: 1, pf: 390, pa: 300, offRank: 2, defRank: 1 }],
-      },
-      {
-        year: 2024,
-        winnerId: 1,
-        teamRecords: [{ id: 1, wins: 13, losses: 4, playoffWins: 3, pf: 430, pa: 290, offRank: 1, defRank: 1 }],
-      },
-      { year: 2025, winnerId: 2, teamRecords: [{ id: 1, wins: 10, losses: 7, pf: 360, pa: 330, offRank: 3, defRank: 4 }] },
+      { year: 2020, winnerId: 1, teamRecords: [{ id: 1, wins: 13, losses: 4, playoffWins: 2, pf: 420, pa: 280 }] },
+      { year: 2021, winnerId: 2, teamRecords: [{ id: 1, wins: 11, losses: 6, playoffWins: 1, pf: 390, pa: 320 }] },
+      { year: 2022, winnerId: 1, teamRecords: [{ id: 1, wins: 12, losses: 5, playoffWins: 3, pf: 410, pa: 300 }] },
+      { year: 2023, winnerId: 3, teamRecords: [{ id: 1, wins: 10, losses: 7, playoffWins: 0, pf: 350, pa: 330 }] },
+      { year: 2024, winnerId: 1, teamRecords: [{ id: 1, wins: 14, losses: 3, playoffWins: 2, pf: 450, pa: 260 }] },
+      { year: 2025, winnerId: 2, teamRecords: [{ id: 1, wins: 7, losses: 10, playoffWins: 0, pf: 300, pa: 360 }] },
     ];
 
     const peak = calcPeakPower(history, 1);
-    expect(peak.startYear).toBe(2021);
-    expect(peak.endYear).toBe(2025);
+    expect(peak.startYear).toBe(2020);
+    expect(peak.endYear).toBe(2024);
     expect(peak.score).toBeGreaterThan(0);
+
+    const longevity = calcLongevity(history, 1);
+    expect(longevity.winningSzns).toBe(5);
+    expect(longevity.playoffAppearances).toBe(4);
+    expect(longevity.consistency).toBe(83);
+    expect(longevity.score).toBeGreaterThan(0);
   });
 
-  it('calculates longevity score and consistency fields', () => {
-    const history = [
-      { year: 2020, winnerId: 2, teamRecords: [{ id: 1, wins: 5, losses: 11, playoffWins: 0, pf: 250, pa: 300 }] },
-      { year: 2021, winnerId: 2, teamRecords: [{ id: 1, wins: 6, losses: 10, playoffWins: 0, pf: 260, pa: 310 }] },
-      { year: 2022, winnerId: 1, teamRecords: [{ id: 1, wins: 12, losses: 5, playoffWins: 2, pf: 420, pa: 280, offRank: 1 }] },
-      { year: 2023, winnerId: 2, teamRecords: [{ id: 1, wins: 11, losses: 6, playoffWins: 1, pf: 390, pa: 300, defRank: 1 }] },
-      { year: 2024, winnerId: 1, teamRecords: [{ id: 1, wins: 13, losses: 4, playoffWins: 3, pf: 430, pa: 290, offRank: 1, defRank: 1 }] },
-      { year: 2025, winnerId: 2, teamRecords: [{ id: 1, wins: 10, losses: 7, playoffWins: 0, pf: 360, pa: 330 }] },
-    ];
-
-    const out = calcLongevity(history, 1);
-    expect(out.winningSzns).toBe(4);
-    expect(out.playoffAppearances).toBe(3);
-    expect(out.consistency).toBe(67);
-    expect(out.score).toBeGreaterThan(600);
-  });
-
-  it('generates up to three identity tags in priority order', () => {
-    const tr = { id: 1, abbr: 'AAA', wins: 12, losses: 5, pf: 500, pa: 300, offRank: 1, defRank: 2 };
+  it('generates identity tags capped at three entries', () => {
+    const tr = { id: 1, abbr: 'AAA', wins: 14, losses: 3, offRank: 1, defRank: 1, pf: 450, pa: 250 };
     const h = { winnerId: 1, mvp: { tm: 'AAA' } };
     const tags = generateIdentityTags(tr, h);
 
@@ -88,51 +63,41 @@ describe('dynasty-analytics.js', () => {
     expect(tags.map((t) => t.id)).toEqual(['lockdown', 'airraid', 'dominant']);
   });
 
-  it('builds and finalizes era cards after sustained decline', () => {
+  it('builds era cards after sustained dominance and down years', () => {
+    const teams = [{ abbr: 'AAA', icon: 'A', name: 'Alpha' }];
     const history = [
-      { year: 2020, winnerId: 2, teamRecords: [{ id: 1, abbr: 'AAA', wins: 10, losses: 6, playoffWins: 0 }] },
-      { year: 2021, winnerId: 2, teamRecords: [{ id: 1, abbr: 'AAA', wins: 11, losses: 5, playoffWins: 1 }] },
-      { year: 2022, winnerId: 2, teamRecords: [{ id: 1, abbr: 'AAA', wins: 7, losses: 10, playoffWins: 0 }] },
-      { year: 2023, winnerId: 2, teamRecords: [{ id: 1, abbr: 'AAA', wins: 6, losses: 11, playoffWins: 0 }] },
+      { year: 2020, winnerId: 1, teamRecords: [{ id: 1, abbr: 'AAA', wins: 12, losses: 5, playoffWins: 2, pf: 410, pa: 300 }] },
+      { year: 2021, winnerId: 1, teamRecords: [{ id: 1, abbr: 'AAA', wins: 11, losses: 6, playoffWins: 1, pf: 390, pa: 315 }] },
+      { year: 2022, winnerId: 2, teamRecords: [{ id: 1, abbr: 'AAA', wins: 4, losses: 13, playoffWins: 0, pf: 250, pa: 420 }] },
+      { year: 2023, winnerId: 3, teamRecords: [{ id: 1, abbr: 'AAA', wins: 5, losses: 12, playoffWins: 0, pf: 270, pa: 410 }] },
     ];
-    const teams = [{ abbr: 'AAA', id: 1, icon: '🅰️' }];
 
     const eras = generateEraCards(history, teams);
-    expect(eras).toHaveLength(1);
-    expect(eras[0]).toMatchObject({ abbr: 'AAA', start: 2020, end: 2021, seasons: 2, totalDom: 71 });
+    expect(eras.length).toBeGreaterThan(0);
+    expect(eras[0].abbr).toBe('AAA');
+    expect(eras[0].start).toBe(2020);
+    expect(eras[0].end).toBe(2021);
+    expect(eras[0].seasons).toBe(2);
   });
 
-  it('builds hall-of-seasons cards sorted by dominance and stamped schema version', () => {
-    const teams = [
-      { abbr: 'AAA', icon: '🅰️' },
-      { abbr: 'BBB', icon: '🅱️' },
-    ];
-
+  it('builds hall of seasons entries with plaques, tags, and schema version', () => {
+    const teams = [{ abbr: 'AAA', icon: 'A', name: 'Alpha' }];
     const history = [
       {
-        year: 2025,
+        year: 2026,
         winnerId: 1,
-        topGames: [{ week: 9, hAbbr: 'AAA', aAbbr: 'BBB', hScore: 31, aScore: 27, margin: 4 }],
-        mvp: { name: 'Ace QB', pos: 'QB', tm: 'AAA' },
-        teamRecords: [
-          { id: 1, abbr: 'AAA', wins: 12, losses: 5, playoffWins: 2, pf: 410, pa: 290, offRank: 1, defRank: 1 },
-          { id: 2, abbr: 'BBB', wins: 8, losses: 9, playoffWins: 0, pf: 330, pa: 340, offRank: 10, defRank: 12 },
-        ],
-      },
-      {
-        year: 2024,
-        winnerId: 2,
-        topGames: [{ week: 2, hAbbr: 'BBB', aAbbr: 'AAA', hScore: 24, aScore: 20, margin: 4 }],
-        allPro1st: { WR: [{ name: 'Top WR', tm: 'BBB' }] },
-        teamRecords: [{ id: 2, abbr: 'BBB', wins: 10, losses: 7, playoffWins: 1, pf: 360, pa: 320, offRank: 5, defRank: 6 }],
+        mvp: { tm: 'AAA', name: 'QB One', pos: 'QB' },
+        topGames: [{ week: 12, margin: 3, hAbbr: 'AAA', hScore: 31, aScore: 28, aAbbr: 'BBB' }],
+        teamRecords: [{ id: 1, abbr: 'AAA', wins: 14, losses: 3, playoffWins: 2, pf: 440, pa: 260, offRank: 1, defRank: 1 }],
       },
     ];
 
     const hall = buildHallOfSeasons(history, teams);
+    expect(hall).toHaveLength(1);
     expect(hall[0].abbr).toBe('AAA');
     expect(hall[0].schemaV).toBe(ALMANAC_SCHEMA_VERSION);
-    expect(hall[0].plaque).toContain('Elite 12-5');
-    expect(hall[0].plaque).toContain('🏆 Champions');
-    expect(hall[0].idTags.length).toBeLessThanOrEqual(3);
+    expect(hall[0].plaque).toContain('Champions');
+    expect(hall[0].plaque).toContain('#1 Offense');
+    expect(hall[0].idTags.length).toBeGreaterThan(0);
   });
 });

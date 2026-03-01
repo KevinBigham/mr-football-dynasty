@@ -280,6 +280,8 @@ export {
   generateHighlights,
   generateReceipts,
   FIX_IT_DRILLS,
+  getRivalryLabel,
+  findRivalObj,
 } from './rivalry-engine.js';
 export {
   PRACTICE_FOCUS,
@@ -366,3 +368,30 @@ export {
   OFFSEASON_NEWS,
   setGetGMArchFn,
 } from './offseason-news.js';
+export {
+  WP_TABLE_DEEPSEEK,
+  momentumDecay991,
+  edgeToProbability991,
+  draftPickOvr991,
+} from './game-sim-math.js';
+export {
+  aiPickOffGPPreview,
+  aiPickDefGPPreview,
+} from './ai-gameplan.js';
+export {
+  RIVALRY_TROPHIES977,
+  RIVALRY_WEEK977,
+  PREGAME_TALK977,
+  HALFTIME_PANEL977,
+  POSTGAME_LOCKER977,
+  GAME_OF_WEEK977,
+  buildRivalryDashboard977,
+} from './rivalry-game-day.js';
+export { DB_CLEANER } from './db-cleaner.js';
+export {
+  detectPositionBattles974,
+  buildCutAdvisor974,
+} from './roster-management.js';
+export { NEGOTIATION_SCENE } from './negotiation-scene.js';
+export { ARC_SPOTLIGHT } from './arc-spotlight.js';
+export { PREMIUM, PREMIUM_FEATURES } from './premium.js';

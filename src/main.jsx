@@ -10,6 +10,8 @@
  */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import App from '../mr-football-v100.jsx';
+import LauncherShell from './app/launcher-shell.jsx';
 
 // Validate extracted modules load correctly
 import { RNG, mulberry32, setSeed, rng, pick, U, LZW } from './utils/index.js';
@@ -342,7 +344,7 @@ function validateModules() {
   if (v1 === v2) errors.push('mulberry32 produced identical consecutive values');
 
   // Theme
-  if (T.bg !== '#0f172a') errors.push('Theme T.bg mismatch');
+  if (T.bg !== '#070d17') errors.push('Theme T.bg mismatch'); // Bloomberg Edition
   if (!S.btn || !S.btnPrimary) errors.push('Style objects missing');
 
   // Difficulty
@@ -1335,4 +1337,8 @@ function ModuleStatusApp() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<ModuleStatusApp />);
+// Render LauncherShell as app root (Phase 3+ integration point)
+// LauncherShell wraps the game and provides the launcher UI layer
+createRoot(document.getElementById('root')).render(
+  <LauncherShell basePath={import.meta.env.BASE_URL || '/'} />
+);

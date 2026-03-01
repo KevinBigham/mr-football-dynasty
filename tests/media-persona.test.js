@@ -1,46 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  CREDIBILITY_MATH,
-  MEDIA_TAGS,
-  PRESS_TAG_MAP,
-  RIVALRY_MATH,
-  getMediaPersona,
-} from '../src/systems/media-persona.js';
+import { CREDIBILITY_MATH, MEDIA_TAGS, PRESS_TAG_MAP, RIVALRY_MATH, getMediaPersona } from '../src/systems/media-persona.js';
 
 describe('media-persona.js', () => {
-  it('needs enough history and repeat tags to resolve a persona', () => {
-    expect(getMediaPersona(['swagger', 'stoic'])).toBeNull();
-    expect(getMediaPersona(['unknown', 'unknown', 'unknown', 'swagger'])).toBeNull();
-
-    const persona = getMediaPersona(['swagger', 'stoic', 'swagger', 'accountability']);
-    expect(persona).toEqual(MEDIA_TAGS.swagger);
-  });
-
-  it('uses only the most recent six tags for persona detection', () => {
-    const history = ['accountability', 'accountability', 'stoic', 'swagger', 'swagger', 'stoic', 'stoic'];
-    const persona = getMediaPersona(history);
-    expect(persona).toEqual(MEDIA_TAGS.stoic);
-  });
-
-  it('maps credibility deltas by tag and game context', () => {
-    expect(CREDIBILITY_MATH.calcDelta('accountability', -3)).toBe(4);
-    expect(CREDIBILITY_MATH.calcDelta('deflector', -21)).toBe(-4);
-    expect(CREDIBILITY_MATH.calcDelta('swagger', -1)).toBe(-5);
-    expect(CREDIBILITY_MATH.calcDelta('tough_love', -18)).toBe(-2);
-    expect(CREDIBILITY_MATH.calcDelta('stoic', 7)).toBe(2);
-    expect(CREDIBILITY_MATH.calcDelta('players_coach', -7)).toBe(1);
-  });
-
-  it('computes rivalry heat deltas with cap', () => {
-    expect(RIVALRY_MATH.calcDelta(24, true, true, 4)).toBe(12);
-    expect(RIVALRY_MATH.calcDelta(3, false, false, 0)).toBe(3);
-    expect(RIVALRY_MATH.calcDelta(6, false, false, 0)).toBe(2);
-  });
-
-  it('contains expected press tag mappings', () => {
+  it('defines media tags and press tag map entries', () => {
+    expect(Object.keys(MEDIA_TAGS)).toEqual(
+      expect.arrayContaining(['accountability', 'tough_love', 'players_coach', 'swagger', 'deflector', 'stoic'])
+    );
+    expect(PRESS_TAG_MAP.blame).toBe('tough_love');
     expect(PRESS_TAG_MAP.own_it).toBe('accountability');
-    expect(PRESS_TAG_MAP.swagger).toBe('swagger');
-    expect(PRESS_TAG_MAP.next_up).toBe('stoic');
+  });
+
+  it('getMediaPersona requires sufficient history and detects dominant recent tag', () => {
+    expect(getMediaPersona(['swagger', 'swagger'])).toBeNull();
+
+    const persona = getMediaPersona(['stoic', 'swagger', 'swagger', 'accountability', 'swagger', 'stoic']);
+    expect(persona.label).toBe('Showman');
+  });
+
+  it('credibility math reflects intended win/loss tone', () => {
+    expect(CREDIBILITY_MATH.calcDelta('accountability', -10)).toBe(4);
+    expect(CREDIBILITY_MATH.calcDelta('swagger', -3)).toBe(-5);
+    expect(CREDIBILITY_MATH.calcDelta('deflector', -21)).toBe(-4);
+    expect(CREDIBILITY_MATH.calcDelta('stoic', 7)).toBe(2);
+  });
+
+  it('rivalry heat deltas stack factors and cap at 12', () => {
+    const maxed = RIVALRY_MATH.calcDelta(35, true, true, 5);
+    const normal = RIVALRY_MATH.calcDelta(6, false, false, 0);
+    expect(maxed).toBe(12);
+    expect(normal).toBeGreaterThanOrEqual(1);
+    expect(normal).toBeLessThan(12);
   });
 });

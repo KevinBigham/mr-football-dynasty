@@ -7,6 +7,9 @@
  * draft grades, and pre-game predictions.
  */
 
+import { T } from "../config/theme.js";
+import { RNG } from "../utils/rng.js";
+
 export var MFSN_DRAFT_LINES=[
   "🎙️ MFSN: This is THE night every GM has circled on their calendar.",
   "📡 Draft coverage brought to you live from the MFSN studios.",

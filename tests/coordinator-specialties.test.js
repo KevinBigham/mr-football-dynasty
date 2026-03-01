@@ -1,51 +1,37 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { RNG } from '../src/utils/index.js';
-import {
-  DC_SPECIALTIES,
-  OC_SPECIALTIES,
-  assignCoordSpecialty,
-} from '../src/systems/coordinator-specialties.js';
+import { DC_SPECIALTIES, OC_SPECIALTIES, assignCoordSpecialty } from '../src/systems/coordinator-specialties.js';
 
 describe('coordinator-specialties.js', () => {
-  let originalAI;
-
-  beforeEach(() => {
-    originalAI = RNG.ai;
-  });
+  const originalAi = RNG.ai;
 
   afterEach(() => {
-    RNG.ai = originalAI;
+    RNG.ai = originalAi;
+  });
+
+  it('defines expected OC/DC specialty pools', () => {
+    expect(OC_SPECIALTIES).toHaveLength(5);
+    expect(DC_SPECIALTIES).toHaveLength(5);
+    expect(new Set(OC_SPECIALTIES.map((s) => s.id)).size).toBe(5);
+    expect(new Set(DC_SPECIALTIES.map((s) => s.id)).size).toBe(5);
+  });
+
+  it('assignCoordSpecialty assigns from correct role pool and reuses existing specialty', () => {
+    RNG.ai = () => 0;
+    const oc = {};
+    const dc = {};
+    const ocSpec = assignCoordSpecialty(oc, 'OC');
+    const dcSpec = assignCoordSpecialty(dc, 'DC');
+
+    expect(ocSpec.id).toBe(OC_SPECIALTIES[0].id);
+    expect(dcSpec.id).toBe(DC_SPECIALTIES[0].id);
+
+    const again = assignCoordSpecialty(oc, 'OC');
+    expect(again).toBe(ocSpec);
   });
 
   it('returns null for missing staff member', () => {
     expect(assignCoordSpecialty(null, 'OC')).toBeNull();
-  });
-
-  it('does not overwrite existing specialty assignment', () => {
-    const existing = { id: 'run_guru' };
-    const coach = { specialty75: existing };
-
-    RNG.ai = () => 0.99;
-    expect(assignCoordSpecialty(coach, 'OC')).toBe(existing);
-    expect(coach.specialty75).toBe(existing);
-  });
-
-  it('assigns OC specialties using ai RNG channel', () => {
-    const coach = {};
-    RNG.ai = () => 0;
-
-    const out = assignCoordSpecialty(coach, 'OC');
-    expect(out).toEqual(OC_SPECIALTIES[0]);
-    expect(coach.specialty75).toEqual(OC_SPECIALTIES[0]);
-  });
-
-  it('assigns DC specialties for non-OC roles', () => {
-    const coach = {};
-    RNG.ai = () => 0.999;
-
-    const out = assignCoordSpecialty(coach, 'DC');
-    expect(out).toEqual(DC_SPECIALTIES[DC_SPECIALTIES.length - 1]);
-    expect(coach.specialty75.id).toBe('situational');
   });
 });
