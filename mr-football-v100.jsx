@@ -9,6 +9,9 @@ import { STARTER_COUNTS, SCOUT_COSTS86, SCOUT_POINT_GYM_BONUS86, SCOUT_POINT_WIN
 // SCOUT_POINT_BASE86 kept local — dynamically mutated for large leagues (line ~12740)
 var SCOUT_POINT_BASE86 = 1000;
 import { COMP_PICKS_986 } from './src/systems/comp-picks.js';
+import { OWNER_ARCHETYPES, initOwner, updateOwnerApproval, getOwnerStatus } from './src/systems/owner.js';
+import { getPersonality, traitScalar, generatePersonality, PERS_ICONS, PERS_LABELS, getDominantTrait, getContractPersonalityEffects } from './src/systems/personality.js';
+import { chemistryMod, systemFitMod, updateSystemFit, resetSystemFit } from './src/systems/chemistry.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -1463,55 +1466,6 @@ function getPosMarketTier86(pos){
   return POS_MARKET_TIER[key]||POS_MARKET_DEFAULT86;
 }
 function cl(v,a,b){return Math.max(a,Math.min(b,v));}
-function getPersonality(player){
-  var p=(player&&player.personality)||{};
-  return{workEthic:cl(p.workEthic||5,1,10),loyalty:cl(p.loyalty||5,1,10),greed:cl(p.greed||5,1,10),pressure:cl(p.pressure||5,1,10),ambition:cl(p.ambition||5,1,10)};
-}
-function traitScalar(v){return (cl(v,1,10)-5.5)/4.5;}
-function generatePersonality(pos,age,devTrait){
-  var ageLoy=age>=30?2:age>=27?1:0;var ageGrd=age>=30?-2:0;
-  var devAmb=devTrait==="superstar"?3:devTrait==="star"?1:0;
-  var devPres=devTrait==="superstar"?2:devTrait==="star"?1:0;
-  var posPres=pos==="QB"?1:0;
-  return{workEthic:cl(Math.round(RNG.draft()*9)+1,1,10),
-    loyalty:cl(Math.round(RNG.draft()*9)+1+ageLoy,1,10),
-    greed:cl(Math.round(RNG.draft()*9)+1+ageGrd,1,10),
-    pressure:cl(Math.round(RNG.draft()*9)+1+devPres+posPres,1,10),
-    ambition:cl(Math.round(RNG.draft()*9)+1+devAmb,1,10)};
-}
-var PERS_ICONS={workEthic:"💪",loyalty:"💙",greed:"💰",pressure:"⭐",ambition:"🔥"};
-var PERS_LABELS={workEthic:"Work Ethic",loyalty:"Loyalty",greed:"Greed",pressure:"Clutch",ambition:"Ambition"};
-function getDominantTrait(player){
-  var p=getPersonality(player);var best=null;var bestV=0;
-  ["workEthic","loyalty","greed","pressure","ambition"].forEach(function(k){if(p[k]>bestV){bestV=p[k];best=k;}});
-  return bestV>=8?{key:best,val:bestV}:null;
-}
-function getContractPersonalityEffects(player,context){
-  var ctx=context||{};
-  var pers=getPersonality(player);
-  var greedS=traitScalar(pers.greed);
-  var loyaltyS=traitScalar(pers.loyalty);
-  var pressureS=traitScalar(pers.pressure);
-  var effects={
-    pers:pers,
-    demandMultAdj:0,
-    walkThreshAdj:0,
-    faScoreAdj:0,
-    holdoutChanceAdj:0
-  };
-  effects.demandMultAdj+=greedS*0.22;
-  effects.demandMultAdj-=Math.max(0,loyaltyS)*0.18;
-  if(ctx.isContender&&pers.greed<=4)effects.demandMultAdj-=0.05;
-  if(ctx.roleConflict&&pers.ambition>=8)effects.demandMultAdj+=0.07;
-  effects.walkThreshAdj+=Math.max(0,greedS)*0.08;
-  effects.walkThreshAdj-=Math.max(0,loyaltyS)*0.08;
-  effects.faScoreAdj+=greedS*8;
-  if(ctx.isFormerTeam)effects.faScoreAdj+=Math.max(0,loyaltyS)*15;
-  if(ctx.isContender)effects.faScoreAdj+=Math.max(0,pressureS)*8;
-  effects.holdoutChanceAdj+=Math.max(0,greedS)*0.18;
-  effects.holdoutChanceAdj-=Math.max(0,loyaltyS)*0.16;
-  return effects;
-}
 function rng(a,b){return Math.floor(RNG.play()*(b-a+1))+a;}
 function rngI(a,b){return Math.floor(RNG.injury()*(b-a+1))+a;}
 function rngD(a,b){return Math.floor(RNG.draft()*(b-a+1))+a;}
@@ -4804,43 +4758,6 @@ function updateCliques(team){
     p.chemistry=cl((p.chemistry||60)+delta,15,100);
   });
 }
-function chemistryMod(team){
-  if(!team.roster||team.roster.length===0)return 0;
-  var avg2=team.roster.reduce(function(s,p){return s+(p.chemistry||60);},0)/team.roster.length;
-  return avg2>=80?3:avg2>=70?1.5:avg2>=55?0:avg2>=40?-1:-2;
-}
-function updateSystemFit(team){
-  if(!team.roster)return;
-  team.roster.forEach(function(p){
-    var growth=rng(1,3);
-    var pers=getPersonality(p);
-    if(team.staff&&team.staff.hc&&team.staff.hc.ratings.strategy>=75)growth+=1;
-    growth+=Math.round(cl(traitScalar(pers.workEthic)*2,-1,2));
-    if(p.isStarter&&pers.ambition>=8)growth+=1;
-    if(p.holdout75&&pers.greed>=8)growth-=2;
-    growth=cl(growth,0,6);
-    p.systemFit=cl((p.systemFit||30)+growth,0,100);
-  });
-  assertFitInvariants(team,"updateSystemFit");
-}
-function resetSystemFit(team,pct){
-  pct=pct||0.4;// lose 40% of system knowledge on scheme change
-  if(!team.roster)return;
-  team.roster.forEach(function(p){
-    var pers=getPersonality(p);
-    var keepAdj=0;
-    if(pers.workEthic>=8)keepAdj+=0.06;
-    if(pers.loyalty>=8)keepAdj+=0.04;
-    if(p.holdout75&&pers.greed>=8)keepAdj-=0.08;
-    var keepRate=cl((1-pct)+keepAdj,0.20,0.95);
-    p.systemFit=Math.round((p.systemFit||30)*keepRate);
-  });
-}
-function systemFitMod(team){
-  if(!team.roster||team.roster.length===0)return 0;
-  var avgFit=team.roster.reduce(function(s,p){return s+(p.systemFit||30);},0)/team.roster.length;
-  return avgFit>=75?0.02:avgFit>=55?0.01:avgFit>=35?0:-0.01;// Applied to INT reduction
-}
 function rivalryKey(a,b){var ids=[a,b].sort();return ids[0]+"|"+ids[1];}
 function updateRivalryHeat(rivalries,homeId,awayId,result,isPlayoff,homePR,awayPR,year,week){
   if(!rivalries)rivalries={};
@@ -5690,51 +5607,7 @@ function buildAllTimeLeaders(history){
     ints:all.filter(function(p){return p.ints>0;}).sort(function(a,b){return b.ints-a.ints;}).slice(0,10)
   };
 }
-var OWNER_ARCHETYPES=[
-  {id:"win_now",label:"🏆 Win-Now Owner",desc:"Demands championships. Patience wears thin fast.",
-    goalText:"Make the playoffs or heads roll.",tolerance:2,approvalCalc:function(t,s){
-      if(s.phase==="offseason")return 0;var wp=t.wins/(Math.max(1,t.wins+t.losses));
-      if(wp>=0.7)return 15;if(wp>=0.5)return 5;if(wp>=0.35)return -5;return -15;}},
-  {id:"patient_builder",label:"🌱 Patient Builder",desc:"Values long-term growth. Tolerates losing if youth develops.",
-    goalText:"Develop 3+ young starters (≤25) and stay cap-healthy.",tolerance:5,approvalCalc:function(t){
-      var youngStarters=t.roster.filter(function(p){return p.isStarter&&p.age<=25;}).length;
-      if(youngStarters>=5)return 12;if(youngStarters>=3)return 6;return -3;}},
-  {id:"profit_first",label:"💰 Profit-First Owner",desc:"Cares about the bottom line. Keep the cap clean.",
-    goalText:"Maintain positive cap space and avoid dead cap.",tolerance:3,approvalCalc:function(t,s){
-      var capRoom=150-(t.capUsed||0)-(t.deadCap||0);// simplified
-      if(capRoom>=30)return 10;if(capRoom>=10)return 4;if(capRoom>=0)return -2;return -12;}},
-  {id:"fan_favorite",label:"🎉 Fan-Favorite Owner",desc:"Wants excitement. Big plays, big stars, big crowds.",
-    goalText:"Keep a star player (85+ OVR) and win exciting games.",tolerance:3,approvalCalc:function(t){
-      var hasStar=t.roster.some(function(p){return p.ovr>=85;});
-      var streak=t.streak||0;
-      return (hasStar?8:0)+(streak>=2?4:streak<=-2?-4:0);}},
-  {id:"legacy_builder",label:"👑 Legacy Builder",desc:"Building a dynasty for the ages. Values rings above all.",
-    goalText:"Accumulate championships and Hall-worthy seasons.",tolerance:4,approvalCalc:function(t,s){
-      var dom=calcTeamDominance?calcTeamDominance(t):0;
-      if(dom>=60)return 12;if(dom>=40)return 6;if(dom>=25)return 2;return -4;}}
-];
-function initOwner(rng2){
-  var arch=OWNER_ARCHETYPES[Math.floor(rng2()*OWNER_ARCHETYPES.length)];
-  return{archetypeId:arch.id,label:arch.label,approval:50,history:[]};
-}
-function updateOwnerApproval(owner,team,season){
-  if(!owner||!owner.archetypeId)return owner;
-  var arch=OWNER_ARCHETYPES.find(function(a){return a.id===owner.archetypeId;});
-  if(!arch)return owner;
-  var delta=arch.approvalCalc(team,season);
-  var newApproval=Math.max(0,Math.min(100,owner.approval+delta));
-  var updated=assign({},owner,{approval:newApproval});
-  updated.history=(owner.history||[]).concat([{year:season.year,week:season.week,approval:newApproval,delta:delta}]);
-  if(updated.history.length>40)updated.history=updated.history.slice(-40);
-  return updated;
-}
-function getOwnerStatus(approval){
-  if(approval>=80)return{label:"Thrilled",emoji:"😍",color:"#4ade80"};
-  if(approval>=60)return{label:"Satisfied",emoji:"😊",color:"#60a5fa"};
-  if(approval>=40)return{label:"Neutral",emoji:"😐",color:"#fbbf24"};
-  if(approval>=20)return{label:"Unhappy",emoji:"😠",color:"#f97316"};
-  return{label:"Furious",emoji:"🔥",color:"#ef4444"};
-}
+// OWNER_ARCHETYPES array items removed — imported from ./src/systems/owner.js
 function generateTradeSuggestions(team,teams,strategy){
   if(!team||!teams)return[];
   var suggestions=[];
