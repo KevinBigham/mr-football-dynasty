@@ -1272,6 +1272,7 @@ function pickD(a){return a[Math.floor(RNG.draft()*a.length)];}
 function U(){return RNG.ui().toString(36).slice(2,8)+RNG.ui().toString(36).slice(2,5);}// v42: Fully deterministic IDs via RNG.ui
 function sum(a,fn){return a.reduce(function(s,x){return s+(fn?fn(x):x);},0);}
 function avg(a,fn){return a.length?sum(a,fn)/a.length:0;}
+function safeDiv(n,d,fallback){return(d===0||isNaN(d))?((fallback===undefined)?0:fallback):n/d;}
 // ROSTER_CAP, CAMP_CAP, PS_CAP, MIN_SALARY, CAP_MATH, getSalaryCap, getCapFloor, getMinSalary
 // → imported from ./src/config/cap-math.js
 // v93.13: Draft contract — OVR+round → realistic salary/years for inaugural snake draft
@@ -11826,7 +11827,7 @@ function _archiveSeasonInner(teams,wId,yr,sched){
     if(p.pos==="CB"||p.pos==="S") return (s.defINT*90+s.tackles*4)+pffMod+p.ovr*0.5;
     if(p.pos==="K") return (s.fgM||0)*55+pffMod*0.8+p.ovr*0.3;
     if(p.pos==="OL") return p.ovr*10+pffMod*1.2-(s.sacksAllowed||0)*22;
-    if(p.pos==="P"){var pAvg3=s.punts>0?(s.puntYds/s.punts):0;return((s.punts||0)*4+(pAvg3-38)*10)+pffMod*0.8+p.ovr*0.3;}
+    if(p.pos==="P"){var pAvg3=safeDiv(s.puntYds,s.punts);return((s.punts||0)*4+(pAvg3-38)*10)+pffMod*0.8+p.ovr*0.3;}
     return p.ovr;
   };
   var mvpPool=all.filter(function(p){return p.stats&&p.stats.gp>=6&&p.tW>=6;});
@@ -15031,7 +15032,7 @@ function simGame(hT,aT,isPreseason,halftimeFx){
         else if(p.pos==="WR"||p.pos==="TE")impact=(p.stats.recYds||0)/25+(p.stats.recTD||0)*3;
         else if(POS_DEF[p.pos]&&POS_DEF[p.pos].side==="D")impact=(p.stats.tackles||0)*0.5+(p.stats.sacks||0)*3+(p.stats.defINT||0)*5;
         else if(p.pos==="K")impact=(p.stats.fgM||0)*3;
-        else if(p.pos==="P")impact=(p.stats.punts||0)*0.5+((p.stats.punts>0?p.stats.puntYds/p.stats.punts:0)-38)*0.3;
+        else if(p.pos==="P")impact=(p.stats.punts||0)*0.5+(safeDiv(p.stats.puntYds,p.stats.punts)-38)*0.3;
         p.gameLog.push(Math.round(cl(impact,0,30)));
         if(p.gameLog.length>8)p.gameLog=p.gameLog.slice(-8);// Keep last 8 games
         var pffBase=55;
@@ -15059,7 +15060,7 @@ function simGame(hT,aT,isPreseason,halftimeFx){
           var kEff=(p.stats.fgM||0)*10/gp3;
           pffBase=cl(44+kEff*1.3,30,99);
         }else if(p.pos==="P"){
-          var pAvg=p.stats.punts>0?(p.stats.puntYds/p.stats.punts):0;
+          var pAvg=safeDiv(p.stats.puntYds,p.stats.punts);
           var pEff=(pAvg-38)*2.0+(p.stats.punts||0)*0.4;
           pffBase=cl(44+pEff/gp3*1.2,30,99);
         }
@@ -15302,7 +15303,7 @@ function updateLeagueLeaders(teams){
     pushTop(L.sacks,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:s.sacks||0},"val",5);
     pushTop(L.defINT,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:s.defINT||0},"val",5);
     pushTop(L.tackles,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:s.tackles||0},"val",5);
-    if(p.pos==="P"&&(s.punts||0)>0){pushTop(L.puntAvg,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:Math.round(s.puntYds/s.punts*10)/10},"val",5);}
+    if(p.pos==="P"&&(s.punts||0)>0){pushTop(L.puntAvg,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:Math.round(safeDiv(s.puntYds,s.punts)*10)/10},"val",5);}
   });});
   return L;
 }
@@ -32288,11 +32289,11 @@ var GS={
                         <td style={assign({},tdS,{color:T.gold,fontSize:10})}>{p.pos}</td>
                         <td style={assign({},tdS,{fontSize:10})}>{p.tIcon+" "+p.tA}</td>
                         {sec.cols.map(function(c){
-                          var val=c[1]==="_puntAvg"?(p.stats.punts>0?Math.round(p.stats.puntYds/p.stats.punts*10)/10:0)
+                          var val=c[1]==="_puntAvg"?Math.round(safeDiv(p.stats.puntYds,p.stats.punts)*10)/10
                             :c[1]==="_qbRtg"?qbRating73(p)
                             :c[1]==="_gp"?(p.stats.gp||0)
                             :c[1]==="_totTD"?((p.stats.rushTD||0)+(p.stats.recTD||0))
-                            :c[1]==="_fgPct"?((p.stats.fgA||0)>0?Math.round((p.stats.fgM||0)/(p.stats.fgA||0)*1000)/10:0)
+                            :c[1]==="_fgPct"?Math.round(safeDiv(p.stats.fgM||0,p.stats.fgA||0)*1000)/10
                             :(p.stats[c[1]]||0);
                           return <td key={c[0]} style={assign({},tdS,{fontWeight:700})}>{val}</td>;
                         })}</tr>;
@@ -34812,7 +34813,7 @@ var GS={
               if(["DL","LB"].indexOf(p.pos)>=0)return((s.sacks||0)*90+(s.tackles||0)*4+(s.defINT||0)*55)+pM+p.ovr*0.5;
               if(["CB","S"].indexOf(p.pos)>=0)return((s.defINT||0)*90+(s.tackles||0)*4)+pM+p.ovr*0.5;
               if(p.pos==="K")return((s.fgM||0)*55)+pM*0.8+p.ovr*0.3;
-              if(p.pos==="P"){var pAvg2=s.punts>0?(s.puntYds/s.punts):0;return((s.punts||0)*4+(pAvg2-38)*10)+pM*0.8+p.ovr*0.3;}
+              if(p.pos==="P"){var pAvg2=safeDiv(s.puntYds,s.punts);return((s.punts||0)*4+(pAvg2-38)*10)+pM*0.8+p.ovr*0.3;}
               if(p.pos==="OL")return p.ovr*10+pM*1.2-(s.sacksAllowed||0)*22;
               return p.ovr;};
             var pffColor=function(g){return g>=90?"#10b981":g>=80?"#22d3ee":g>=70?"#fbbf24":g>=60?"#9ca3af":"#ef4444";};
