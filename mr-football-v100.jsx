@@ -35,6 +35,10 @@ import { ALL_TIME_RECORDS } from './src/systems/all-time-records.js';
 import { SPECIAL_PLAYS_993, SPECIAL_COVERAGES_993 } from './src/systems/special-plays.js';
 import { detectPositionBattles974, buildCutAdvisor974 } from './src/systems/roster-management.js';
 import { UNLOCK_DEFS, DEFAULT_UNLOCKS, checkUnlocks, isTabUnlocked } from './src/systems/unlocks.js';
+import { OWNER_TYPES, OWNER_GOALS } from './src/systems/owner-goals-v2.js';
+import { LOCKER_EVENTS, checkLockerEvents } from './src/systems/locker-events.js';
+import { ROLE_DEFS, assignDefaultRoles, getRoleSnapPct } from './src/systems/role-defs.js';
+import { RIVALRY_TROPHIES_986, POWER_RANKINGS_986, CAP_PROJ_986, GENERATIONAL_986, OWNER_MODE_986, PLAYER_COMPARE_986 } from './src/systems/game-features.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -835,114 +839,22 @@ var PLAYOFF_NARRATIVE_993 = {
   ]
 };
 
-var RIVALRY_TROPHIES_986={
-  names:["The Iron Boot","Silver Shield","The Governor's Cup","Thunder Bowl","The Patriot's Plate",
-    "Crown of the Coast","The Steel Belt","Golden Gate Game","Metro Showdown","The Lone Star","Prairie Fire Cup",
-    "The Rust Belt","Pacific Clash","The Battle Bell","River City Rivalry","The Mountain Crown"],
-  generate:function(team1,team2,rng2){
-    var idx=Math.floor(rng2()*RIVALRY_TROPHIES_986.names.length);
-    return{name:RIVALRY_TROPHIES_986.names[idx],team1:team1.abbr,team2:team2.abbr,
-      icon1:team1.icon,icon2:team2.icon,holder:null,history:[]};
-  }
-};
+// [module-swapped] RIVALRY_TROPHIES_986 → src/systems/
 
 // #15: POWER RANKINGS
-var POWER_RANKINGS_986={
-  generate:function(teams,week){
-    var ranked=teams.map(function(t){
-      var winPct=t.wins+t.losses>0?t.wins/(t.wins+t.losses):0.5;
-      var ovrAvg=t.roster&&t.roster.length>0?t.roster.reduce(function(s,p){return s+(p.ovr||60);},0)/t.roster.length:60;
-      var streak=t.streak||0;
-      var score=winPct*60+ovrAvg*0.3+streak*2+(t.pf-t.pa)*0.05;
-      return{team:t,score:score,wins:t.wins,losses:t.losses,pf:t.pf||0,pa:t.pa||0,streak:streak};
-    });
-    ranked.sort(function(a,b){return b.score-a.score;});
-    var blurbs=["Dominant on both sides of the ball.","Playing their best football right now.",
-      "Quietly building momentum.","Inconsistent but talented.","Struggling to find an identity.",
-      "Injuries taking a toll.","Better than their record suggests.","Worse than their record suggests.",
-      "The defense carries this team.","Offense is electric when clicking.","A dark horse contender.",
-      "Rebuilding but ahead of schedule.","Trending in the wrong direction.","Could be a sleeper playoff team.",
-      "The coaching staff has them well-prepared."];
-    return ranked.map(function(r,i){
-      r.rank=i+1;
-      r.blurb=blurbs[Math.min(i,blurbs.length-1)];
-      r.change=0;// Will be set by comparing to previous week
-      return r;
-    });
-  }
-};
+// [module-swapped] POWER_RANKINGS_986 → src/systems/
 
 // #16: CAP PROJECTIONS
-var CAP_PROJ_986={
-  project:function(team,year,getSalaryCapFn){
-    var projections=[];
-    for(var y=0;y<3;y++){
-      var projYear=year+y;
-      var cap=getSalaryCapFn(projYear);
-      var committed=0;var expiring=0;var expiringNames=[];
-      (team.roster||[]).forEach(function(p){
-        if(p.contract&&p.contract.years>y){committed+=(p.contract.salary||0);}
-        else if(p.contract&&p.contract.years===y+1){expiring++;expiringNames.push(p.name+" ("+p.pos+")");}
-      });
-      projections.push({year:projYear,cap:cap,committed:Math.round(committed*10)/10,
-        space:Math.round((cap-committed-(team.deadCap||0))*10)/10,
-        expiring:expiring,expiringNames:expiringNames.slice(0,5),deadCap:y===0?(team.deadCap||0):0});
-    }
-    return projections;
-  }
-};
+// [module-swapped] CAP_PROJ_986 → src/systems/
 
 // #17: GENERATIONAL PLAYERS — Once every 8-10 drafts
-var GENERATIONAL_986={
-  shouldSpawn:function(year,rng2){
-    // ~12% chance per draft, roughly once per 8 years
-    return rng2()<0.12;
-  },
-  create:function(rng2){
-    var positions=["QB","QB","RB","WR","WR","DL","DL","CB","LB","TE"];
-    var pos=positions[Math.floor(rng2()*positions.length)];
-    var names=["Marcus Frost","DeAndre Phoenix","Khalil Storm","Jaxon Blaze","Trevon Knight",
-      "Zion Hammer","Darius Crown","Malik Thunder","Caden Apex","Roman Titan"];
-    var name=names[Math.floor(rng2()*names.length)];
-    return{name:name,pos:pos,isGenerational:true,ovr:78+Math.floor(rng2()*8),pot:95+Math.floor(rng2()*5),
-      devTrait:"superstar",hype:"🌟 GENERATIONAL TALENT — Once-in-a-decade prospect",
-      scoutGrade:"A+",combine:{forty:pos==="QB"?4.5+rng2()*0.2:4.2+rng2()*0.3}};
-  }
-};
+// [module-swapped] GENERATIONAL_986 → src/systems/
 
 // #18: OWNER MODE LITE — Ticket prices, stadium upgrades, revenue
-var OWNER_MODE_986={
-  ticketTiers:[{label:"Budget",price:50,fanImpact:3,rev:0.7},{label:"Standard",price:75,fanImpact:0,rev:1.0},
-    {label:"Premium",price:100,fanImpact:-2,rev:1.3},{label:"Luxury",price:130,fanImpact:-5,rev:1.6}],
-  stadiumLevels:[{level:1,label:"Basic",cost:0,revBonus:0,prestigeBonus:0},
-    {level:2,label:"Modern",cost:50,revBonus:0.1,prestigeBonus:5},
-    {level:3,label:"Elite",cost:150,revBonus:0.25,prestigeBonus:12}],
-  calcRevenue:function(team,wins){
-    var tIdx=(team.ticketTier986||1);var tier=OWNER_MODE_986.ticketTiers[tIdx]||OWNER_MODE_986.ticketTiers[1];
-    var stadLvl=team.stadiumLevel986||1;var stadBonus=OWNER_MODE_986.stadiumLevels.find(function(s){return s.level===stadLvl;})||OWNER_MODE_986.stadiumLevels[0];
-    var base=wins*3+(team.fanbase||60)*0.5;
-    return Math.round(base*tier.rev*(1+stadBonus.revBonus)*10)/10;
-  }
-};
+// [module-swapped] OWNER_MODE_986 → src/systems/
 
 // #14: PLAYER COMPARISON helper
-var PLAYER_COMPARE_986={
-  buildRadar:function(p1,p2){
-    var cats=["Speed","Strength","Skill","IQ","Durability"];
-    var p1Vals=[],p2Vals=[];
-    [p1,p2].forEach(function(p,pi){
-      var r=p.ratings||{};var vals=Object.values(r);
-      var avg=vals.length>0?vals.reduce(function(s,v){return s+v;},0)/vals.length:50;
-      var spd=r.speed||r.acceleration||avg;
-      var str=r.strength||r.power||avg;
-      var skl=r.catching||r.accuracy||r.passRush||r.coverage||avg;
-      var iq=r.awareness||r.playRecognition||avg;
-      var dur=r.stamina||r.toughness||avg;
-      if(pi===0){p1Vals=[spd,str,skl,iq,dur];}else{p2Vals=[spd,str,skl,iq,dur];}
-    });
-    return{categories:cats,p1:p1Vals,p2:p2Vals};
-  }
-};
+// [module-swapped] PLAYER_COMPARE_986 → src/systems/
 
 // #13: FRANCHISE TIMELINE — Key events tracker
 var TIMELINE_986={
@@ -2343,35 +2255,9 @@ function buildRivalryDashboard977(myTeam,teams){
   var trophies=active.filter(function(a){return a.holdsTrophy;});
   return{active:active,trophies:trophies};
 }
-var OWNER_GOAL_TEMPLATES=[
-  {id:"win_title",label:"Win the Championship",forGoal:"title",reward:{ownerMood:12,cash:8},penalty:{ownerMood:-18}},
-  {id:"win_division",label:"Win Your Division",forGoal:"title",reward:{ownerMood:8,cash:4},penalty:{ownerMood:-10}},
-  {id:"make_playoffs",label:"Make the Playoffs",forGoal:"playoff",reward:{ownerMood:10,cash:5},penalty:{ownerMood:-15}},
-  {id:"sell_tickets",label:"Average 90%+ Attendance",forGoal:"playoff",reward:{ownerMood:7,cash:6},penalty:{ownerMood:-8}},
-  {id:"no_blowouts",label:"No Losses by 21+",forGoal:"playoff",reward:{ownerMood:6},penalty:{ownerMood:-10}},
-  {id:"develop_youth",label:"Start 3+ Players Under 25",forGoal:"rebuild",reward:{ownerMood:8},penalty:{ownerMood:-10}},
-  {id:"stay_solvent",label:"Finish Cash-Positive",forGoal:"rebuild",reward:{ownerMood:6,cash:6},penalty:{ownerMood:-12}}
-];
-var COACH_GOAL_TEMPLATES=[
-  {id:"top10_offense",label:"Finish Top-10 in Scoring",reward:{coachDev:2,morale:4},penalty:{coachDev:-2}},
-  {id:"top10_defense",label:"Finish Top-10 in Scoring Defense",reward:{coachDev:2,morale:4},penalty:{coachDev:-2}},
-  {id:"develop_rookie",label:"Rookie Starter Reaches 75+ OVR",reward:{coachDev:2,morale:3},penalty:{coachDev:-1}},
-  {id:"win_streak_5",label:"Win 5 Games in a Row",reward:{morale:6},penalty:{morale:-2}},
-  {id:"no_shutouts",label:"Never Get Shut Out",reward:{morale:3},penalty:{morale:-3}}
-];
-var PLAYER_GOAL_TEMPLATES=[
-  {id:"3500_pass",label:"3,500 Passing Yards",pos:["QB"],stat:"passYds",target:3500,compare:"gte",reward:{morale:8,devBoost:1},penalty:{morale:-3}},
-  {id:"24_td",label:"24 Touchdown Passes",pos:["QB"],stat:"passTD",target:24,compare:"gte",reward:{morale:8,devBoost:1},penalty:{morale:-3}},
-  {id:"low_int",label:"Under 12 Interceptions",pos:["QB"],stat:"int",target:12,compare:"lte",reward:{morale:6},penalty:{morale:-3}},
-  {id:"800_rush",label:"800 Rushing Yards",pos:["RB"],stat:"rushYds",target:800,compare:"gte",reward:{morale:8,devBoost:1},penalty:{morale:-3}},
-  {id:"7_rush_td",label:"7 Rushing Touchdowns",pos:["RB"],stat:"rushTD",target:7,compare:"gte",reward:{morale:7},penalty:{morale:-3}},
-  {id:"700_rec",label:"700 Receiving Yards",pos:["WR","TE"],stat:"recYds",target:700,compare:"gte",reward:{morale:8,devBoost:1},penalty:{morale:-3}},
-  {id:"55_rec",label:"55 Receptions",pos:["WR","TE"],stat:"rec",target:55,compare:"gte",reward:{morale:6},penalty:{morale:-3}},
-  {id:"7_sacks",label:"7 Sack Season",pos:["DL","LB"],stat:"sacks",target:7,compare:"gte",reward:{morale:7,devBoost:1},penalty:{morale:-3}},
-  {id:"3_int",label:"3 Interceptions",pos:["CB","S"],stat:"defINT",target:3,compare:"gte",reward:{morale:7},penalty:{morale:-3}},
-  {id:"75_tackles",label:"75 Tackles",pos:["LB","S"],stat:"tackles",target:75,compare:"gte",reward:{morale:6},penalty:{morale:-3}},
-  {id:"83pct_fg",label:"83% FG Accuracy",pos:["K"],stat:"fgPct",target:83,compare:"gte",reward:{morale:6},penalty:{morale:-3}}
-];
+// [module-swapped] OWNER_GOAL_TEMPLATES → src/systems/
+// [module-swapped] COACH_GOAL_TEMPLATES → src/systems/
+// [module-swapped] PLAYER_GOAL_TEMPLATES → src/systems/
 function _cloneGoal(t){
   return{id:t.id,label:t.label,stat:t.stat||null,target:typeof t.target==="number"?t.target:null,
     compare:t.compare||"gte",reward:t.reward||{},penalty:t.penalty||{},status:"active",current:0};
@@ -4672,29 +4558,9 @@ function getTopRivalries(rivalries,teamId,limit){
   return Object.keys(rivalries).filter(function(k){var r=rivalries[k];return r.a===teamId||r.b===teamId;})
     .map(function(k){return rivalries[k];}).sort(function(a,b){return b.heat-a.heat;}).slice(0,limit||3);
 }
-var ROLE_DEFS={
-  RB:[{id:"rb1",label:"RB1 (Bellcow)",snapPct:65},{id:"3rd_down",label:"3rd Down Back",snapPct:25},{id:"goal_line",label:"Goal Line",snapPct:10}],
-  WR:[{id:"wr_x",label:"X (Outside)",snapPct:45},{id:"wr_slot",label:"Slot",snapPct:35},{id:"wr_deep",label:"Deep Threat",snapPct:20}],
-  DL:[{id:"pass_rush",label:"Pass Rusher",snapPct:55},{id:"run_stop",label:"Run Stopper",snapPct:45}],
-  LB:[{id:"pass_rush_lb",label:"Blitzer",snapPct:40},{id:"coverage_lb",label:"Coverage",snapPct:35},{id:"run_stop_lb",label:"Run Stopper",snapPct:25}]
-};
-function assignDefaultRoles(roster){
-  var byPos={};roster.forEach(function(p){if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
-  ["RB","WR","DL","LB"].forEach(function(pos){
-    var players=(byPos[pos]||[]).filter(function(p){return !(p.injury&&p.injury.games>0);}).sort(function(a,b){return b.ovr-a.ovr;});
-    var roles=ROLE_DEFS[pos];if(!roles||!players.length)return;
-    players.forEach(function(p,i){
-      var newRole=i<roles.length?roles[i].id:roles[roles.length-1].id;
-      if(p.role===newRole){p.roleWeeks=(p.roleWeeks||0)+1;}
-      else{p.role=newRole;p.roleWeeks=0;}
-    });
-  });
-}
-function getRoleSnapPct(pos,roleId){
-  var roles=ROLE_DEFS[pos];if(!roles)return 100;
-  var r=roles.find(function(d){return d.id===roleId;});
-  return r?r.snapPct:50;
-}
+// [module-swapped] ROLE_DEFS → src/systems/
+// [module-swapped] assignDefaultRoles → src/systems/
+// [module-swapped] getRoleSnapPct → src/systems/
 function checkHateWeek(rivalries,teamId,opponentId){
   if(!rivalries)return null;
   var key=rivalryKey(teamId,opponentId);var r=rivalries[key];
@@ -10872,167 +10738,8 @@ function schemeFitGrade(p,offScheme,defScheme,team){
     base:fit86.baseScore,specialtyAdj:fit86.specialtyAdj,personalityAdj:fit86.personalityAdj,systemAdj:fit86.systemAdj,totalAdj:fit86.totalAdj,
     schemeId:fit86.schemeId,schemeLabel:fit86.schemeLabel,specialtyLabel:fit86.specialtyLabel};
 }
-var LOCKER_EVENTS=[
-  {id:"players_meeting",label:"Players-Only Meeting",icon:"🗣️",
-    check:function(t){var vets=t.roster.filter(function(p){return(p.cliqueId||0)===0;});
-      var avgChem=vets.length>0?vets.reduce(function(s,p){return s+(p.chemistry||60);},0)/vets.length:60;
-      return avgChem<35&&vets.length>=3;},
-    apply:function(t){t.roster.forEach(function(p){p.morale=cl((p.morale||70)+2,30,99);});// +2 morale floor
-      t.roster.forEach(function(p){if((p.cliqueId||0)===0)p.chemistry=cl((p.chemistry||60)+4,15,100);});
-      t.roster.forEach(function(p){if(p.devBonus===undefined)p.devBonus=0;p.devBonus-=1;});},
-    msg:"Veterans held a players-only meeting. Morale steadied, vets bonding — but practice time lost (-1 dev this week).",color:"gold"},
-  {id:"captain_rally",label:"Captain's Rally",icon:"©️",
-    check:function(t){var hasCap=t.roster.some(function(p){return hasTrait95(p,"captain")||hasTrait95(p,"vocal_leader");});// v95.6
-      var loseStreak=Math.abs(Math.min(0,(t.streak||0)));return hasCap&&loseStreak>=2;},
-    apply:function(t){t.roster.forEach(function(p){p.chemistry=cl((p.chemistry||60)+5,15,100);});},
-    msg:"Captain rallied the locker room after losing streak. All cliques chemistry +5.",color:"green"},
-  {id:"rookie_hazing",label:"Rookie Hazing Gone Wrong",icon:"😬",
-    check:function(t){var rookies=t.roster.filter(function(p){return(p.cliqueId||0)===1;});
-      var avgChem=rookies.length>0?rookies.reduce(function(s,p){return s+(p.chemistry||60);},0)/rookies.length:60;
-      var hasCap=t.roster.some(function(p){return hasTrait95(p,"captain");});// v95.6: hasTrait95
-      return avgChem<30&&rookies.length>=3&&!hasCap;},
-    apply:function(t){t.roster.forEach(function(p){if((p.cliqueId||0)===1)p.systemFit=cl((p.systemFit||30)-2,0,100);});},
-    msg:"Rookie hazing incident — Young Core systemFit dropped. A captain could prevent this.",color:"red"},
-  {id:"star_demands",label:"Star Demands Spotlight",icon:"⭐",
-    check:function(t){var stars=t.roster.filter(function(p){return(p.cliqueId||0)===2&&(hasTrait95(p,"ego")||hasTrait95(p,"holdout"));});
-      return stars.length>=1&&(t.losses||0)>=(t.wins||0);},
-    apply:function(t){t.roster.forEach(function(p){if((p.cliqueId||0)===2)p.chemistry=cl((p.chemistry||60)-3,15,100);
-      if((p.cliqueId||0)!==2)p.morale=cl((p.morale||70)-1,30,99);});},
-    msg:"Star player demanding more touches. Stars clique chemistry dipped, team morale slightly shaken.",color:"orange"},
-  {id:"winning_culture",label:"Winning Culture Taking Hold",icon:"🏆",
-    check:function(t){return(t.streak||0)>=4;},
-    apply:function(t){t.roster.forEach(function(p){p.chemistry=cl((p.chemistry||60)+3,15,100);
-      p.morale=cl((p.morale||70)+2,30,99);});},
-    msg:"4-game win streak! Winning culture taking hold — chemistry and morale rising across the board.",color:"gold"},
-  {id:"cancer_spreads",label:"Locker Room Cancer Spreads",icon:"☢️",
-    check:function(t){var cancers=t.roster.filter(function(p){return hasTrait95(p,"cancer");});// v95.6
-      return cancers.length>=1&&(t.losses||0)>=6;},
-    apply:function(t){var cancerClique=(t.roster.find(function(p){return hasTrait95(p,"cancer");})||{}).cliqueId||0;// v95.6
-      t.roster.forEach(function(p){if((p.cliqueId||0)===cancerClique)p.chemistry=cl((p.chemistry||60)-6,15,100);
-        else p.chemistry=cl((p.chemistry||60)-2,15,100);});},
-    msg:"Locker room cancer is spreading negativity. Chemistry crashing — consider cutting the source.",color:"red"},
-  {id:"trade_rumors",label:"Trade Rumors Swirl",icon:"📰",
-    check:function(t){return t.roster.some(function(p){return p.onBlock;})&&
-      t.roster.filter(function(p){return(p.chemistry||60)<40;}).length>=2;},
-    apply:function(t){t.roster.forEach(function(p){if((p.chemistry||60)<40)p.chemistry=cl((p.chemistry||60)-2,15,100);});},
-    msg:"Trade rumors swirling — unhappy players growing restless. Chemistry dropping for disgruntled players.",color:"orange"},
-  {id:"contract_dispute",label:"Contract Dispute",icon:"💰",
-    check:function(t){return t.roster.some(function(p){return p.ovr>=82&&p.contract&&p.contract.years<=1&&p.age<=28;});},
-    apply:function(t){var star=t.roster.find(function(p){return p.ovr>=82&&p.contract&&p.contract.years<=1&&p.age<=28;});
-      if(star){star.chemistry=cl((star.chemistry||60)-4,15,100);star.contractDispute=true;}},
-    msg:"Star player wants extension NOW — chemistry dropping until resolved. Check inbox for options.",color:"orange"},
-  {id:"captain_injured",label:"Captain Sidelined",icon:"🏥",
-    check:function(t){return t.roster.some(function(p){return(hasTrait95(p,"captain")||hasTrait95(p,"vocal_leader"))&&p.injury&&p.injury.games>0;});},
-    apply:function(t){t.roster.forEach(function(p){p.systemFit=cl((p.systemFit||30)-1,0,100);});},
-    msg:"Captain sidelined with injury — systemFit growth slowed across roster until return.",color:"red"},
-  {id:"blowout_meeting",label:"Team Meeting After Blowout",icon:"📋",
-    check:function(t){return(t.lastMargin||0)<=-21;},
-    apply:function(t){t.roster.forEach(function(p){p.morale=cl((p.morale||70)+1,30,99);});t.blowoutMeeting=true;},
-    msg:"Coaching staff called emergency meeting after blowout loss. Team refocused — morale steadied.",color:"gold"},
-  {id:"media_leak",label:"Media Leak: Star Unhappy",icon:"📺",chain:"star_demands",
-    check:function(t){return(t.lastEvent||"")==="star_demands"&&(t.losses||0)>=(t.wins||0)&&
-      t.roster.some(function(p){return(p.cliqueId||0)===2&&(p.chemistry||60)<35;});},
-    apply:function(t){t.roster.forEach(function(p){p.morale=cl((p.morale||70)-1,30,99);});
-      var unhappy=t.roster.find(function(p){return(p.cliqueId||0)===2&&(p.chemistry||60)<35;});
-      if(unhappy)unhappy.tradeValue=(unhappy.tradeValue||100)-10;},// Trade value drops
-    msg:"Media leaked star's unhappiness — national story. Morale dipped, trade value dropped for disgruntled star.",color:"red"},
-  {id:"choice_team_meeting",label:"Call Team Meeting?",icon:"🗣️",choice:true,
-    check:function(t){return(t.losses||0)>=4&&(t.streak||0)<=-2;},
-    msg:"After a rough stretch, do you call a team meeting?",color:"gold",
-    options:[
-      {label:"📢 Call Meeting",desc:"+3 morale, but -2 chemistry risk",action:"call_meeting"},
-      {label:"🤫 Stay Quiet",desc:"No change — let them figure it out",action:"stay_quiet"}
-    ]},
-  {id:"choice_back_star",label:"Back the Star?",icon:"⭐",choice:true,
-    check:function(t){return t.roster.some(function(p){return p.contractDispute&&p.ovr>=82;});},
-    msg:"Your star is unhappy about his contract. Do you publicly back him?",color:"orange",
-    options:[
-      {label:"💪 Back the Star",desc:"+6 star chemistry, -2 team chemistry",action:"back_star"},
-      {label:"🏢 Stay Neutral",desc:"+1 team chemistry, star stays upset",action:"stay_neutral"}
-    ]},
-  {id:"choice_fine_conduct",label:"Fine for Conduct?",icon:"⚖️",choice:true,
-    check:function(t){return t.roster.some(function(p){return hasTrait95(p,"cancer")&&(p.chemistry||60)<35;});},// v95.6
-    msg:"Locker room cancer caught badmouthing coaches. Fine them?",color:"red",
-    options:[
-      {label:"💰 Fine Player",desc:"-3 morale, +2 discipline (fewer penalties)",action:"fine_player"},
-      {label:"🤝 Private Talk",desc:"+1 cancer chemistry, -1 team morale",action:"private_talk"}
-    ]},
-  // ── NEW CRISIS EVENTS v2 ─────────────────────────────────────────────────────
-  {id:"choice_trade_demand",label:"Star Demands Trade",icon:"🚪",choice:true,
-    check:function(t){return t.roster.some(function(p){return p.ovr>=85&&(p.morale||70)<40&&p.contract&&p.contract.years>=1;});},
-    msg:"Your franchise star has officially requested a trade. The locker room is watching how you handle this.",color:"red",
-    crisis:true,crisisTier:"URGENT",
-    headline:"STAR DEMANDS OUT",
-    subtext:"This will define your tenure. Handle it right or lose the locker room entirely.",
-    options:[
-      {label:"🔒 Lock Him In",desc:"Emergency meeting + max extension offer. +8 star morale, -$10M cap space",action:"lock_star_in"},
-      {label:"📣 Go Public",desc:"Call him out publicly. Forces his hand — might resolve it or blow up badly",action:"go_public_trade"},
-      {label:"📞 Listen to Offers",desc:"Tell him you'll shop him. Trade value maintained, locker room unease",action:"listen_offers"}
-    ]},
-  {id:"choice_faction_fight",label:"Locker Room Faction War",icon:"⚔️",choice:true,
-    check:function(t){
-      var vets=t.roster.filter(function(p){return p.age>=28;}).length;
-      var rooks=t.roster.filter(function(p){return p.age<=23;}).length;
-      var avgMorale=t.roster.reduce(function(s,p){return s+(p.morale||70);},0)/Math.max(1,t.roster.length);
-      return vets>=4&&rooks>=4&&avgMorale<55&&(t.losses||0)>=4;},
-    msg:"Veterans and rookies are at each other's throats. Two factions have formed and it's getting ugly in practice.",color:"orange",
-    crisis:true,crisisTier:"CRITICAL",
-    headline:"LOCKER ROOM CIVIL WAR",
-    subtext:"Two factions. One team. Your call as head coach will determine which group rallies behind you.",
-    options:[
-      {label:"🧓 Back the Vets",desc:"Veteran experience stabilizes ship. Rooks morale -5, vets +8, one vet dev boost",action:"back_vets"},
-      {label:"⚡ Back the Young Core",desc:"Inject energy + hunger. Vets morale -4, young core +10, one rook dev boost",action:"back_youngcore"},
-      {label:"🤝 Mandatory Team Bonding",desc:"Force unity. Both groups +3 morale, -2 practice efficiency this week",action:"force_bonding"}
-    ]},
-  {id:"choice_fan_blowback",label:"Fan Base Turns on Team",icon:"📢",choice:true,
-    check:function(t){return (t.losses||0)>=7&&(t.streak||0)<=-4;},
-    msg:"Boo birds are out. Local media calling for coaching changes. Fans booing players off the field. The city has turned.",color:"red",
-    crisis:true,crisisTier:"CRITICAL",
-    headline:"CITY HAS TURNED",
-    subtext:"Losing streaks kill fan bases. How you respond to public pressure will echo through your dynasty.",
-    options:[
-      {label:"🎙️ Hold Press Conference",desc:"Face the music. +5 owner confidence, team morale -2 but respect earned",action:"face_music"},
-      {label:"🚪 Close the Doors",desc:"Shut out media. Focus internally. Team morale +3, owner confidence -3",action:"close_doors"},
-      {label:"🔥 Shake Up the Depth Chart",desc:"Bench struggling starters. Shock the system — some thrive, some crack",action:"shake_depth"}
-    ]},
-  {id:"choice_redemption_moment",label:"Redemption Arc Moment",icon:"✨",choice:true,
-    check:function(t){
-      var hasSlump=t.roster.some(function(p){return p._arcState==="SLUMP"&&(p.morale||70)<50&&p.ovr>=78;});
-      var winStreak=(t.streak||0)>=3;
-      return hasSlump&&winStreak;},
-    msg:"A struggling star is on the brink of a redemption moment. Three-game win streak has the city buzzing again. Do you give them the spotlight?",color:"gold",
-    crisis:true,crisisTier:"OPPORTUNITY",
-    headline:"REDEMPTION ON THE LINE",
-    subtext:"This is a franchise-defining moment. The right call could create a legend.",
-    options:[
-      {label:"🌟 Give Them the Spotlight",desc:"Feature them this week. If they deliver: +15 morale, arc resets to ELITE",action:"redemption_spotlight"},
-      {label:"📊 Ease Them Back Slowly",desc:"Protect their confidence. Steady +5 morale over 3 weeks, safer floor",action:"redemption_slow"},
-      {label:"🔄 Let It Happen Organically",desc:"No spotlight, no pressure. Natural arc resolution, lower peak",action:"redemption_organic"}
-    ]}
-];
-function checkLockerEvents(team,isUser){
-  var triggered=null;
-  for(var i=0;i<LOCKER_EVENTS.length;i++){
-    var ev=LOCKER_EVENTS[i];
-    if(ev.chain){
-      if((team.lastEvent||"")===ev.chain&&ev.check(team)&&RNG.ai()<0.45){
-        ev.apply(team);triggered=ev;break;
-      }
-      continue;
-    }
-    if(ev.choice){
-      if(ev.check(team)&&RNG.ai()<0.30){// 30% trigger for choice events
-        triggered=ev;break;// Don't apply — inbox will handle
-      }
-      continue;
-    }
-    if(ev.check(team)&&RNG.ai()<0.35){
-      ev.apply(team);triggered=ev;break;
-    }
-  }
-  team.lastEvent=triggered?triggered.id:"";
-  return triggered;
-}
+// [module-swapped] LOCKER_EVENTS → src/systems/
+// [module-swapped] checkLockerEvents → src/systems/
 function getCoachTraitMods(t){
   var mods={stallReduction:0,bigPlayBoost:0,rzTdBoost:0,pocketBoost:0,pressureBoost:0,
     bigPlayAllowed:0,intBoost:0,intReduction:0,moraleStability:0,moraleBoost:0,
@@ -11073,22 +10780,8 @@ var CALENDAR=[
   {week:27,phase:"offseason",event:"Rookie Signings",icon:"📝",desc:"Welcome the class"},
   {week:28,phase:"offseason",event:"Owner Meeting",icon:"🤵",desc:"Annual performance review"}
 ];
-var OWNER_TYPES=[
-  {id:"patient",name:"Patient Builder",icon:"🧱",desc:"Values long-term growth",goalBias:["develop_rookie","cap_discipline","draft_well"]},
-  {id:"win_now",name:"Win-Now Mandate",icon:"🏆",desc:"Results or consequences",goalBias:["make_playoffs","win_division","win_sb"]},
-  {id:"penny",name:"Penny Pincher",icon:"💵",desc:"Bottom line first",goalBias:["cap_discipline","revenue","no_dead_cap"]}
-];
-var OWNER_GOALS=[
-  {id:"make_playoffs",label:"Make the Playoffs",check:function(ctx){return ctx.madePlayoffs;},exceed:function(ctx){return ctx.wonChamp;}},
-  {id:"win_division",label:"Win the Division",check:function(ctx){return ctx.divRank===1;},exceed:function(ctx){return ctx.divRank===1&&ctx.wins>=12;}},
-  {id:"win_sb",label:"Win the Championship",check:function(ctx){return ctx.wonChamp;},exceed:function(ctx){return ctx.wonChamp&&ctx.losses<=4;}},
-  {id:"develop_rookie",label:"Develop a Rookie Starter",check:function(ctx){return ctx.rookieStarters>=1;},exceed:function(ctx){return ctx.rookieStarters>=2;}},
-  {id:"cap_discipline",label:"Keep Cap Room Above $20M",check:function(ctx){return ctx.capRoom>=20;},exceed:function(ctx){return ctx.capRoom>=40;}},
-  {id:"revenue",label:"Boost Revenue (Win 8+ Games)",check:function(ctx){return ctx.wins>=8;},exceed:function(ctx){return ctx.wins>=12;}},
-  {id:"top_defense",label:"Top-10 Defense",check:function(ctx){return ctx.defRank<=10;},exceed:function(ctx){return ctx.defRank<=3;}},
-  {id:"no_dead_cap",label:"Avoid Dead Cap Over $15M",check:function(ctx){return ctx.deadCap<=15;},exceed:function(ctx){return ctx.deadCap<=5;}},
-  {id:"draft_well",label:"Draft a 70+ OVR Rookie",check:function(ctx){return ctx.bestRookieOvr>=70;},exceed:function(ctx){return ctx.bestRookieOvr>=78;}}
-];
+// [module-swapped] OWNER_TYPES → src/systems/
+// [module-swapped] OWNER_GOALS → src/systems/
 var STAT_HEADLINES=[
   {cond:function(g){return g&&g.passTD>=4;},text:"After throwing {passTD} TDs vs {opp}"},
   {cond:function(g){return g&&g.rushYds>=150;},text:"After rushing for {rushYds} yards vs {opp}"},
