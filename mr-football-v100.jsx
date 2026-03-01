@@ -16,6 +16,8 @@ import { T, SP, RAD, SH, S } from './src/config/theme.js';
 import { HALFTIME_V2 } from './src/systems/halftime.js';
 import { CLINIC_TRACKS, CLINIC, CLINIC_MATH } from './src/systems/coaching-clinic.js';
 import { TRAITS, TRAIT_FX, TRAIT_MILESTONES95, getPlayerTraits95, hasTrait95, assignTrait, assignTraits, checkTraitMilestones95 } from './src/systems/traits.js';
+import { EP_TABLE_993, getEP993, LEVERAGE_INDEX_993, getLeverageIndex, calcWinProbV2_993 } from './src/systems/win-probability.js';
+import { TEAM_CLIMATES, CLIMATE_PROFILES, WEATHER, HT_CONDITIONS, HT_STRATEGIES } from './src/systems/weather.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -10144,70 +10146,7 @@ function getCachedCareerPage(playerName,history,teams){
   }
   return page;
 }
-var TEAM_CLIMATES={
-  hawks:"dome",volts:"warm",reap:"warm",crown:"ne",ghost:"ne",
-  titan:"cold",storm:"warm",sent:"cold",blaze:"warm",frost:"cold",
-  surge:"ne",apex:"warm",bbq:"ne",yeti:"cold",gator:"warm",
-  moth:"cold",cactus:"warm",kraken:"ne",comet:"ne",doom:"ne"
-};
-var CLIMATE_PROFILES={
-  dome:{base:72,dropPerWeek:0,min:72,snowChance:0,rainChance:0},
-  cold:{base:65,dropPerWeek:3,min:10,snowChance:0.4,rainChance:0.25},
-  warm:{base:82,dropPerWeek:0.5,min:55,snowChance:0,rainChance:0.2},
-  ne:{base:60,dropPerWeek:2,min:20,snowChance:0.3,rainChance:0.3}
-};
-var WEATHER={
-  getConditions:function(homeTeamId,week,seed){
-    var rng=mulberry32((seed||SEED_GLOBAL)+week*7+(homeTeamId||"x").charCodeAt(0)*13);
-    var climate=TEAM_CLIMATES[homeTeamId]||"ne";
-    var prof=CLIMATE_PROFILES[climate];
-    var temp=prof.base-(week*(prof.dropPerWeek||0))+((rng()*20)-10);
-    temp=Math.max(prof.min,Math.round(temp));
-    var precip="CLEAR";
-    if(climate==="dome"){precip="DOME";temp=72;}
-    else{
-      if(rng()<(prof.rainChance||0.2))precip="RAIN";
-      if(temp<=32&&rng()<(prof.snowChance||0))precip="SNOW";
-      if(rng()<0.08)precip="FOG";// 8% fog chance
-    }
-    var wind=climate==="dome"?0:Math.round(rng()*25);
-    return{temp:temp,precip:precip,wind:wind,climate:climate,
-      emoji:precip==="SNOW"?"🌨️":precip==="RAIN"?"🌧️":precip==="FOG"?"🌫️":precip==="DOME"?"🏟️":temp>=80?"☀️":"⛅",
-      label:precip==="DOME"?"Dome ("+temp+"°F)":temp+"°F "+precip+(wind>10?" | 💨"+wind+"mph":"")};
-  },
-  getImpact:function(conditions){
-    var fx={passAccMod:0,catchMod:0,fumbleMod:0,kickMod:0,fatigueMod:0};
-    if(conditions.precip==="SNOW"){fx.passAccMod=-0.10;fx.fumbleMod=0.05;fx.kickMod=-0.08;}
-    if(conditions.precip==="RAIN"){fx.catchMod=-0.05;fx.kickMod=-0.05;fx.passAccMod=-0.03;}
-    if(conditions.precip==="FOG"){fx.passAccMod=-0.04;}
-    if(conditions.wind>15){fx.passAccMod-=0.01*(conditions.wind-15);fx.kickMod-=0.01*(conditions.wind-15);}
-    if(conditions.temp>=90)fx.fatigueMod=0.05;
-    if(conditions.temp<=20)fx.fumbleMod+=0.02;
-    return fx;
-  }
-};
-// v93.18: Halftime redesign — conditions × strategies independently selectable
-var HT_CONDITIONS=[
-  {id:"losing_big",  label:"😤 Down 8+",    condLabel:"If losing by 8+"},
-  {id:"losing_close",label:"🔥 Down 1–7",   condLabel:"If losing by 1–7"},
-  {id:"tied",        label:"⚖️ Tied",        condLabel:"If tied"},
-  {id:"winning_close",label:"🛡️ Up 1–7",    condLabel:"If winning by 1–7"},
-  {id:"winning_big", label:"✅ Up 8+",       condLabel:"If winning by 8+"}
-];
-var HT_STRATEGIES=[
-  {id:"go_for_broke",  label:"🚀 Go For Broke",   desc:"Open it up — big plays, push tempo, accept risk",
-    effect:{stallReduction:0.08,bigPlayBoost:0.06,offProtectMod:0.04,intAvoidMod:-0.02}},
-  {id:"blitz_heavy",   label:"🔥 Blitz Heavy",     desc:"Pressure defense — force turnovers, disrupt rhythm",
-    effect:{defPressureMod:0.12,oppExplosiveMod:-0.06,intBoostMod:0.02,stallReduction:0.03}},
-  {id:"protect_ball",  label:"🛡️ Protect the Ball",desc:"Safe decisions — avoid mistakes, play field position",
-    effect:{offProtectMod:0.12,intAvoidMod:0.08,runLaneBoost:0.04}},
-  {id:"run_heavy",     label:"🏃 Run Heavy",        desc:"Grind the clock — establish run game, shorten game",
-    effect:{runLaneBoost:0.08,runRateMod:0.12,paceReduction:0.10,varianceReduction:0.08}},
-  {id:"clock_control", label:"⏱️ Clock Control",   desc:"Bleed the clock — safe runs, no turnovers, drain time",
-    effect:{offProtectMod:0.10,intAvoidMod:0.06,runRateMod:0.10,paceReduction:0.12,explosiveReduction:0.05}},
-  {id:"balanced_adj",  label:"⚖️ Stay Balanced",   desc:"No major adjustment — stick to the gameplan",
-    effect:{}}
-];
+// v93.18 — Weather & HT strategy data → extracted to src/systems/weather.js (module swap #11)
 // Legacy alias so any old save data that uses HALFTIME_OPTIONS still works
 var HALFTIME_OPTIONS=HT_CONDITIONS;
 var INJURY_REPORT={
@@ -13547,65 +13486,7 @@ var SPECIAL_COVERAGES_993 = [
   }
 ];
 
-// v99.3 — DeepSeek: Win Probability Engine v2
-var EP_TABLE_993 = {
-  1: {
-    short:    { ownGoal: -0.1, own20: 0.5, own40: 1.2, mid: 2.0, redZone: 3.5, goalLine: 5.0 },
-    medium:   { ownGoal: -0.2, own20: 0.4, own40: 1.1, mid: 1.8, redZone: 3.2, goalLine: 4.5 },
-    long:     { ownGoal: -0.3, own20: 0.3, own40: 0.9, mid: 1.5, redZone: 2.8, goalLine: 4.0 },
-    veryLong: { ownGoal: -0.5, own20: 0.1, own40: 0.6, mid: 1.2, redZone: 2.2, goalLine: 3.5 }
-  },
-  2: {
-    short:    { ownGoal: -0.2, own20: 0.4, own40: 1.1, mid: 1.9, redZone: 3.3, goalLine: 4.8 },
-    medium:   { ownGoal: -0.3, own20: 0.3, own40: 1.0, mid: 1.7, redZone: 3.0, goalLine: 4.3 },
-    long:     { ownGoal: -0.4, own20: 0.2, own40: 0.8, mid: 1.4, redZone: 2.6, goalLine: 3.8 },
-    veryLong: { ownGoal: -0.6, own20: 0.0, own40: 0.5, mid: 1.1, redZone: 2.0, goalLine: 3.3 }
-  },
-  3: {
-    short:    { ownGoal: -0.3, own20: 0.3, own40: 1.0, mid: 1.8, redZone: 3.0, goalLine: 4.5 },
-    medium:   { ownGoal: -0.4, own20: 0.2, own40: 0.9, mid: 1.6, redZone: 2.7, goalLine: 4.0 },
-    long:     { ownGoal: -0.5, own20: 0.1, own40: 0.7, mid: 1.3, redZone: 2.3, goalLine: 3.5 },
-    veryLong: { ownGoal: -0.7, own20: -0.1, own40: 0.4, mid: 0.9, redZone: 1.8, goalLine: 3.0 }
-  },
-  4: {
-    short:    { ownGoal: -1.5, own20: -0.2, own40: 0.8, mid: 1.6, redZone: 2.8, goalLine: 4.2 },
-    medium:   { ownGoal: -1.8, own20: -0.4, own40: 0.6, mid: 1.4, redZone: 2.5, goalLine: 3.9 },
-    long:     { ownGoal: -2.0, own20: -0.6, own40: 0.4, mid: 1.1, redZone: 2.1, goalLine: 3.5 },
-    veryLong: { ownGoal: -2.5, own20: -0.8, own40: 0.2, mid: 0.8, redZone: 1.7, goalLine: 3.0 }
-  }
-};
-function getEP993(down, yardsToGo, fieldPosition) {
-  var distBucket = yardsToGo <= 3 ? "short" : yardsToGo <= 7 ? "medium" : yardsToGo <= 15 ? "long" : "veryLong";
-  var fpBucket = fieldPosition <= 10 ? "ownGoal" : fieldPosition <= 30 ? "own20" : fieldPosition <= 50 ? "own40" :
-    fieldPosition <= 70 ? "mid" : fieldPosition <= 90 ? "redZone" : "goalLine";
-  var d = Math.min(4, Math.max(1, down));
-  try { return EP_TABLE_993[d][distBucket][fpBucket]; } catch(e) { return 1.0; }
-}
-var LEVERAGE_INDEX_993 = {
-  1: { blowout: 0.3, comfortable: 0.5, close: 0.8, tied: 1.0 },
-  2: { blowout: 0.4, comfortable: 0.7, close: 1.1, tied: 1.3 },
-  3: { blowout: 0.5, comfortable: 0.9, close: 1.4, tied: 1.7 },
-  4: { blowout: 0.6, comfortable: 1.3, close: 2.2, tied: 3.0 }
-};
-function getLeverageIndex(quarter, scoreDiff) {
-  var absDiff = Math.abs(scoreDiff);
-  var bucket;
-  if (absDiff > 21) bucket = "blowout";
-  else if (absDiff >= 11) bucket = "comfortable";
-  else if (absDiff >= 4) bucket = "close";
-  else bucket = "tied";
-  return LEVERAGE_INDEX_993[quarter][bucket];
-}
-function calcWinProbV2_993(scoreDiff, quarter, timeLeftInQuarter, down, yardsToGo, fieldPos, isHome) {
-  var ep = getEP993(down, yardsToGo, fieldPos);
-  var leverage = getLeverageIndex(quarter, scoreDiff);
-  var logit = (scoreDiff * 0.09 + ep * 0.125 - 0.0375) * leverage; // v100 DeepSeek fix: corrected coefficients
-  if (isHome) logit += 0.2;
-  var wp = 1 / (1 + Math.exp(-logit));
-  if (wp < 0.01) wp = 0.01;
-  if (wp > 0.99) wp = 0.99;
-  return wp;
-}
+// v99.3 — Win Probability Engine v2 → extracted to src/systems/win-probability.js (module swap #10)
 
 var PLAYBOOK_986={
   // ── OFFENSIVE PLAYS ──
