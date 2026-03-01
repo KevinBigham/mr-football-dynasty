@@ -29786,7 +29786,7 @@ var GS={
                         (foTraitData78.icon||"")+" "+foTraitData78.desc):null
                     );
                   }),
-                  foCandidates78?React.createElement("div",{style:{marginTop:6,padding:8,borderRadius:8,background:"rgba(168,85,247,0.06)",border:"1px solid rgba(168,85,247,0.2)",borderRadius:8}},
+                  foCandidates78?React.createElement("div",{style:{marginTop:6,padding:8,background:"rgba(168,85,247,0.06)",border:"1px solid rgba(168,85,247,0.2)",borderRadius:8}},
                     React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
                       React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.purple}},(foCandidates78.roleId?"📋 Hire "+foCandidates78.title:"🏢 Hire — Select Position")),
                       React.createElement("button",{style:assign({},bS(T.bg3,T.dim),{padding:"2px 6px",fontSize:8}),onClick:function(){setFoCandidates78(null);}},"✕")
