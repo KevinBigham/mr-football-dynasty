@@ -28757,11 +28757,11 @@ var GS={
           <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
             {React.createElement(TeamLogo,{team:my,size:22})}
             <span style={{fontWeight:800,fontSize:12}}>{my.abbr}</span>
-            <span style={{fontSize:9,color:moodColor(my.ownerMood||70)}}>{(my.ownerMood||70)>=70?"😊":((my.ownerMood||70)>=40?"😐":"🔥")}{my.ownerMood||70}</span>
+            <span style={{fontSize:9,color:moodColor(my.ownerMood||70),fontWeight:700,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.3px"}}>{"APR "+(my.ownerMood||70)}</span>
             {godMode && <span style={mS(S.badge,S.badgePurple,{fontSize:8})}>GOD</span>}</div>
           <div style={{display:"flex",gap:5,alignItems:"center",overflowX:"auto",flexShrink:1,WebkitOverflowScrolling:"touch"}}>
-            <button onClick={function(){AUDIO.toggle();if(!AUDIO.isMuted())AUDIO.shuffle();}} style={mS(S.btn,S.btnSmall,S.btnGhost,{padding:"3px 6px"})}>{audioMuted?"🔇":"🔊"}</button>
-            {!audioMuted&&React.createElement("button",{onClick:function(){AUDIO.next();},style:mS(S.btn,S.btnSmall,S.btnGhost,{padding:"3px 6px",fontSize:10})},"⏭")}
+            <button onClick={function(){AUDIO.toggle();if(!AUDIO.isMuted())AUDIO.shuffle();}} style={mS(S.btn,S.btnSmall,S.btnGhost,{padding:"3px 6px"})}>{audioMuted?"MUTE":"SND"}</button>
+            {!audioMuted&&React.createElement("button",{onClick:function(){AUDIO.next();},style:mS(S.btn,S.btnSmall,S.btnGhost,{padding:"3px 6px",fontSize:10})},"NEXT")}
             {!audioMuted&&nowPlaying&&React.createElement("span",{onClick:function(){setScreen("music");},title:"Open Jukebox",style:{fontSize:9,color:T.faint,maxWidth:90,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",display:"inline-block",verticalAlign:"middle",cursor:"pointer",textDecoration:"underline dotted"}},nowPlaying)}
             <button onClick={function(){setGodMode(function(v){return !v;});}} style={mS(S.btn,S.btnSmall,{padding:"3px 6px",background:godMode?"rgba(167,139,250,0.3)":"rgba(255,255,255,0.06)",color:godMode?"#fff":T.faint,border:"1px solid "+(godMode?"rgba(167,139,250,0.4)":T.glassBorder)})}>{godMode?"GOD ON":"GOD"}</button>
             <span style={mS(S.badge,{background:difficulty==="legend"?"rgba(239,68,68,0.15)":difficulty==="allpro"?"rgba(245,158,11,0.15)":difficulty==="rookie"?"rgba(52,211,153,0.15)":"rgba(255,255,255,0.05)",color:difficulty==="legend"?T.red:difficulty==="allpro"?T.orange:difficulty==="rookie"?T.green:T.dim,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"})} onClick={function(){setTab("settings");}}>{(DIFF_SETTINGS[difficulty]||DIFF_SETTINGS.pro).icon+" "+(DIFF_SETTINGS[difficulty]||DIFF_SETTINGS.pro).name}</span>
@@ -28777,13 +28777,13 @@ var GS={
         {debugMode && my && (function(){
           var capH=my.capUsed||0;var dead=my.deadCap||0;
           var inv=[];
-          if(capH>248)inv.push("🚨 CAP_OVER: $"+capH.toFixed(1)+"M > $248M");
-          if(my.roster.length>53)inv.push("🚨 ROSTER: "+my.roster.length+" > 53");
+          if(capH>248)inv.push("[!] CAP_OVER: $"+capH.toFixed(1)+"M > $248M");
+          if(my.roster.length>53)inv.push("[!] ROSTER: "+my.roster.length+" > 53");
           var dupeIds=my.roster.map(function(p){return p.id;}).filter(function(v,i,a){return a.indexOf(v)!==i;});
-          if(dupeIds.length>0)inv.push("🚨 DUPE_IDS: "+dupeIds.length+" duplicates");
-          if(my.roster.filter(function(p){return !p.id;}).length>0)inv.push("🚨 NULL_PIDS detected");
+          if(dupeIds.length>0)inv.push("[!] DUPE_IDS: "+dupeIds.length+" duplicates");
+          if(my.roster.filter(function(p){return !p.id;}).length>0)inv.push("[!] NULL_PIDS detected");
           return React.createElement("div",{style:{background:"rgba(10,0,0,0.97)",border:"2px solid #ef4444",padding:"8px 12px",fontSize:9,fontFamily:"monospace",position:"sticky",top:40,zIndex:40}},
-            React.createElement("div",{style:{color:"#ef4444",fontWeight:800,marginBottom:4,fontSize:10}},"🐞 DEBUG — v80.12"),
+            React.createElement("div",{style:{color:"#ef4444",fontWeight:800,marginBottom:4,fontSize:10}},"[DBG] DEBUG — v80.12"),
             React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"3px 10px",marginBottom:6}},
               [
                 ["PHASE",season.phase],["WEEK","Wk"+season.week+" "+season.year],
@@ -28800,10 +28800,10 @@ var GS={
             React.createElement("div",{style:{borderTop:"1px solid rgba(239,68,68,0.25)",paddingTop:4}},
               inv.length>0
                 ?inv.map(function(v,i){return React.createElement("div",{key:i,style:{color:"#ef4444",fontWeight:800}},v);})
-                :React.createElement("div",{style:{color:"#22c55e",fontWeight:700}},"✅ All invariants pass (cap, roster, IDs, picks)")
+                :React.createElement("div",{style:{color:"#22c55e",fontWeight:700}},"[OK] All invariants pass (cap, roster, IDs, picks)")
             ),
             React.createElement("div",{style:{marginTop:6,borderTop:"1px solid rgba(239,68,68,0.25)",paddingTop:6}},
-              React.createElement("button",{onClick:runDeterminismSmokeTest,style:{background:"rgba(34,197,94,0.2)",color:"#22c55e",border:"1px solid rgba(34,197,94,0.55)",borderRadius:6,padding:"4px 8px",fontSize:9,fontWeight:800,cursor:"pointer"}},"🧪 Determinism Smoke"),
+              React.createElement("button",{onClick:runDeterminismSmokeTest,style:{background:"rgba(34,197,94,0.2)",color:"#22c55e",border:"1px solid rgba(34,197,94,0.55)",borderRadius:6,padding:"4px 8px",fontSize:9,fontWeight:800,cursor:"pointer"}},"[RUN] Determinism Smoke"),
               determinismSmoke?React.createElement("div",{style:{marginTop:5,fontSize:8,lineHeight:1.4}},
                 React.createElement("div",{style:{color:determinismSmoke.ok?"#22c55e":"#ef4444",fontWeight:700}},
                   (determinismSmoke.ok?"PASS":"FAIL")+" • "+determinismSmoke.label+" • "+determinismSmoke.durationMs+"ms"),
