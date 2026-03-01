@@ -28672,7 +28672,7 @@ var GS={
     if(screen==="fired81"){
       return React.createElement("div",{style:{minHeight:"100vh",background:"#0f0000",color:T.text,display:"flex",alignItems:"center",justifyContent:"center",padding:40}},
         React.createElement("div",{style:{textAlign:"center",maxWidth:400}},
-          React.createElement("div",{style:{fontSize:64}},"💀"),
+          React.createElement("div",{style:{fontSize:28,fontWeight:900,color:"#e03c3c",letterSpacing:"2px",fontFamily:"'JetBrains Mono',monospace"}},"//:FIRED"),
           React.createElement("div",{style:{fontSize:24,fontWeight:900,color:"#ef4444",marginTop:16}},"YOU'VE BEEN FIRED"),
           React.createElement("div",{style:{fontSize:12,color:T.dim,marginTop:12}},"The owner has lost all patience. Your dynasty is over."),
           React.createElement("div",{style:{fontSize:10,color:T.faint,marginTop:20}},"Seasons coached: "+(season.year-2026)),
@@ -28751,9 +28751,9 @@ var GS={
     var activePillarObj=NAV_PILLARS.find(function(p){return p.id===activePillar;});
     var PILLAR_DEFAULTS={hub:"home",team:"roster",season:"teamSeasonStats",office:"franchise",legacy:"records"};
     return (
-      <div style={{minHeight:"100vh",background:"linear-gradient(180deg,#0f172a 0%,#020617 100%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,display:"flex",flexDirection:"column"}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,display:"flex",flexDirection:"column"}}>
         
-        <div style={{background:"rgba(15,23,42,0.95)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:"1px solid "+T.glassBorder,padding:"6px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:30,gap:6,minHeight:40}}>
+        <div style={{background:T.bg2,borderBottom:"2px solid "+T.border,padding:"6px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:30,gap:6,minHeight:40}}>
           <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
             {React.createElement(TeamLogo,{team:my,size:22})}
             <span style={{fontWeight:800,fontSize:12}}>{my.abbr}</span>
@@ -28820,16 +28820,16 @@ var GS={
           );
         })()}
         
-        <div style={{background:"rgba(15,23,42,0.9)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",display:"flex",alignItems:"stretch",flexShrink:0,position:"sticky",top:40,zIndex:29,borderBottom:"1px solid "+T.glassBorder,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+        <div style={{background:T.bg2,display:"flex",alignItems:"stretch",flexShrink:0,position:"sticky",top:40,zIndex:29,borderBottom:"1px solid "+T.border,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
           {NAV_PILLARS.map(function(p){
             var isActive=activePillar===p.id;
             var hasNotif=p.id==="hub"&&!inboxRead&&inbox.length>0;
             return <div key={p.id} style={{flex:"1 0 auto",minWidth:0,textAlign:"center",padding:"10px 6px",cursor:"pointer",
               fontWeight:isActive?800:500,fontSize:12,letterSpacing:0.3,
               color:isActive?"#fff":T.faint,
-              background:isActive?"rgba(251,191,36,0.1)":"transparent",
-              borderBottom:isActive?"3px solid "+T.gold:"3px solid transparent",
-              transition:"all 0.15s",position:"relative"}}
+              background:isActive?"rgba(240,160,40,0.1)":"transparent",
+              borderBottom:isActive?"2px solid "+T.gold:"2px solid transparent",
+              transition:"all 0.05s",position:"relative"}}
               onClick={function(){
                 if(isActive)return;
                 setTab(PILLAR_DEFAULTS[p.id]||p.tabs[0].id);
