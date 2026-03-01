@@ -26755,7 +26755,7 @@ var GS={
   function moodColor(v){return v>=70?T.green:v>=40?T.orange:T.red;}
   if(screen==="title"){
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 20%,#1e3a5f 0%,#0f172a 50%,#020617 100%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
         
         {showScanlines && <div style={S.scanlines}/>}
         
@@ -27128,7 +27128,7 @@ var GS={
   }
   if(screen==="pick"){
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",padding:16}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",padding:16}}>
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:4,color:T.dim,textTransform:"uppercase",marginBottom:4}}>Choose Your</div>
           <div style={{fontSize:24,fontWeight:900,color:T.gold}}>Franchise</div>
@@ -27203,7 +27203,7 @@ var GS={
       {id:"snake53",icon:"🐍",label:"Full Roster Draft",sub:"Snake Draft — 53 Picks",desc:"Draft every single player on your 53-man roster. Total control. You pick, AI picks, full snake rotation.",time:"⏱️ ~20 min",diff:"🏈🏈🏈",type:"snake",depth:53,border:T.green}
     ];
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8,marginTop:20}}>
           {React.createElement(TeamLogo,{team:selTeam,size:48})}
           <div><div style={{fontSize:24,fontWeight:900}}>{selTeam.city}</div><div style={{color:T.gold,fontWeight:700}}>{selTeam.name}</div></div>
@@ -27397,8 +27397,8 @@ var GS={
         ]
       }
     ];
-    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:"linear-gradient(180deg,#0a1628 0%,#0d1117 40%,#111827 100%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}},
-      React.createElement("div",{style:{background:"rgba(10,22,40,0.98)",backdropFilter:"blur(8px)",borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"12px 20px",position:"sticky",top:0,zIndex:20,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}},
+      React.createElement("div",{style:{background:T.bg2,borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"12px 20px",position:"sticky",top:0,zIndex:20,display:"flex",justifyContent:"space-between",alignItems:"center"}},
         React.createElement("div",null,
           React.createElement("div",{style:{fontSize:8,fontWeight:800,letterSpacing:3,color:"rgba(251,191,36,0.5)",textTransform:"uppercase",marginBottom:2}},"Operations Manual"),
           React.createElement("div",{style:{fontSize:20,fontWeight:900,color:"#fbbf24"}},"GM Playbook")
@@ -27468,7 +27468,7 @@ var GS={
           return React.createElement("div",{
             style:{position:"fixed",bottom:135,left:0,right:0,display:"flex",flexDirection:"column",alignItems:"center",gap:5,zIndex:19,pointerEvents:"none"}},
             React.createElement("div",{style:{
-              background:"rgba(15,15,19,0.85)",backdropFilter:"blur(6px)",
+              background:T.bg2,
               borderRadius:20,padding:"5px 14px",
               border:"1px solid "+sec.color+"66",
               fontSize:10,fontWeight:700,color:sec.color,letterSpacing:1,textTransform:"uppercase",pointerEvents:"auto",
@@ -27478,7 +27478,7 @@ var GS={
           );
         })()
       ),
-      React.createElement("div",{style:{position:"fixed",bottom:0,left:0,right:0,padding:"10px 16px 12px",background:"rgba(15,15,19,0.97)",backdropFilter:"blur(8px)",borderTop:"1px solid "+T.border,display:"flex",flexDirection:"column",gap:8,zIndex:20}},
+      React.createElement("div",{style:{position:"fixed",bottom:0,left:0,right:0,padding:"10px 16px 12px",background:T.bg2,borderTop:"1px solid "+T.border,display:"flex",flexDirection:"column",gap:8,zIndex:20}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},
           (function(){
             var ids=ggSections.map(function(s){return s.id;});
@@ -27575,8 +27575,8 @@ var GS={
     var foeRole=foeRoles[foeCur];
     var foeIds=["gm","scout_dir","analytics","cap_analyst","personnel","player_relations","medstaff"];
     function foeGo(id){setFoExplainTab(id);}
-    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:"radial-gradient(ellipse at 50% 10%,#1a0a2e 0%,#0f0f13 65%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}}, // v80.8: height not minHeight so flex child scrolls
-      React.createElement("div",{style:{background:"rgba(15,15,19,0.95)",backdropFilter:"blur(8px)",borderBottom:"2px solid "+T.purple,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}}, // v80.8: height not minHeight so flex child scrolls
+      React.createElement("div",{style:{background:T.bg2,borderBottom:"2px solid "+T.purple,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
         React.createElement("div",null,
           React.createElement("div",{style:{fontSize:9,fontWeight:700,letterSpacing:4,color:T.dim,textTransform:"uppercase"}},"Meet Your"),
           React.createElement("div",{style:{fontSize:20,fontWeight:900,color:T.purple}},"👔 Front Office")
@@ -27637,7 +27637,7 @@ var GS={
           )
         )
       ),
-      React.createElement("div",{style:{position:"fixed",bottom:0,left:0,right:0,padding:"10px 16px 12px",background:"rgba(15,15,19,0.97)",backdropFilter:"blur(8px)",borderTop:"1px solid "+T.border,display:"flex",flexDirection:"column",gap:8,zIndex:20}},
+      React.createElement("div",{style:{position:"fixed",bottom:0,left:0,right:0,padding:"10px 16px 12px",background:T.bg2,borderTop:"1px solid "+T.border,display:"flex",flexDirection:"column",gap:8,zIndex:20}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},
           React.createElement("button",{
             onClick:function(){if(foeCur>0)foeGo(foeIds[foeCur-1]);},
@@ -27680,8 +27680,8 @@ var GS={
     var VIBE_COLORS={All:T.text,Anthem:T.gold,Electronic:T.cyan,Groove:T.green,Chill:"#a78bfa",Downtempo:T.faint,Indie:T.orange,"Indie Rock":"#fb923c","Alt Rock":"#f87171","Reggae/Ska":"#34d399",Punk:T.red};
     var filteredKeys=musicVibeFilter==="All"?MFD_JUKEBOX_ALL:MFD_JUKEBOX_ALL.filter(function(k){return (TRACK_META[k]||{}).vibe===musicVibeFilter;});
     var activeKey=AUDIO.current&&AUDIO.current();
-    return React.createElement("div",{style:{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:"radial-gradient(ellipse at 50% 0%,#1a0a2e 0%,#0f0f13 70%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif"}},
-      React.createElement("div",{style:{background:"rgba(10,10,15,0.95)",backdropFilter:"blur(8px)",borderBottom:"2px solid rgba(168,85,247,0.4)",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}},
+    return React.createElement("div",{style:{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif"}},
+      React.createElement("div",{style:{background:T.bg2,borderBottom:"2px solid rgba(168,85,247,0.4)",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}},
         React.createElement("button",{style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+T.border,borderRadius:8,color:T.dim,fontSize:13,padding:"5px 11px",cursor:"pointer",flexShrink:0},onClick:function(){setScreen("league");}},"<- Back"),
         React.createElement("div",{style:{flex:1}},
           React.createElement("div",{style:{fontSize:9,fontWeight:700,letterSpacing:3,color:T.faint,textTransform:"uppercase"}},"Mr. Football Dynasty"),
@@ -27779,7 +27779,7 @@ var GS={
       setFoSetupCandidates(null);
       setScreen("gameGuide"); // v80.3: show instructions before draft
     }
-    return React.createElement("div",{style:{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",padding:20}},
+    return React.createElement("div",{style:{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",padding:20}},
       React.createElement("div",{style:{textAlign:"center",marginBottom:12}},
         React.createElement("div",{style:{fontSize:11,fontWeight:700,letterSpacing:4,color:T.dim,textTransform:"uppercase",marginBottom:4}},"Build Your"),
         React.createElement("div",{style:{fontSize:24,fontWeight:900,color:T.purple}},"Front Office"),
@@ -27928,7 +27928,7 @@ var GS={
     // Find gamechanger rookies in pool for teaser
     var gcRookies=(expPool||[]).filter(function(p){return p._gamechanger96;});
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
         <div style={{fontSize:20,marginTop:16}}>🐍</div>
         <div style={{fontSize:22,fontWeight:900,color:T.gold,marginTop:4}}>{"SNAKE DRAFT ORDER"}</div>
         <div style={{fontSize:11,color:T.dim,textAlign:"center",maxWidth:420,marginTop:4,lineHeight:1.5}}>
@@ -41769,7 +41769,7 @@ var GS={
               ),
 
               // FRONT OFFICE REPORT
-              React.createElement("div",{style:{background:T.glass,backdropFilter:"blur(12px)",border:"1px solid "+T.glassBorder,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{background:T.glass,border:"1px solid "+T.glassBorder,borderRadius:RAD.lg,padding:12}},
                 React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.gold,marginBottom:8,letterSpacing:0.5}},"📋 FRONT OFFICE REPORT"),
                 React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:5}},
                   foReport.map(function(item,i){
@@ -41782,7 +41782,7 @@ var GS={
               ),
 
               // EPA CONTRIBUTORS
-              React.createElement("div",{style:{background:T.glass,backdropFilter:"blur(12px)",border:"1px solid "+T.glassBorder,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{background:T.glass,border:"1px solid "+T.glassBorder,borderRadius:RAD.lg,padding:12}},
                 React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.cyan,marginBottom:8,letterSpacing:0.5}},"⚡ TOP EPA CONTRIBUTORS"),
                 epaPlayers.length===0?
                   React.createElement("div",{style:{color:T.faint,fontSize:10,textAlign:"center",padding:8}},"Play some games to see EPA data"):
@@ -41804,7 +41804,7 @@ var GS={
               ),
 
               // AGING CURVE PROJECTOR
-              React.createElement("div",{style:{background:T.glass,backdropFilter:"blur(12px)",border:"1px solid "+T.glassBorder,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{background:T.glass,border:"1px solid "+T.glassBorder,borderRadius:RAD.lg,padding:12}},
                 React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.orange,marginBottom:8,letterSpacing:0.5}},"📈 AGING CURVE PROJECTOR"),
                 React.createElement("div",{style:{fontSize:9,color:T.faint,marginBottom:8}},"Top starters — projected OVR trajectory"),
                 topPlayers.length===0?React.createElement("div",{style:{color:T.faint,fontSize:10,textAlign:"center",padding:8}},"No starters found"):
@@ -41847,7 +41847,7 @@ var GS={
               ),
 
               // SCHEDULE DIFFICULTY HEATMAP
-              React.createElement("div",{style:{background:T.glass,backdropFilter:"blur(12px)",border:"1px solid "+T.glassBorder,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{background:T.glass,border:"1px solid "+T.glassBorder,borderRadius:RAD.lg,padding:12}},
                 React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purple,marginBottom:8,letterSpacing:0.5}},"🗓️ SCHEDULE DIFFICULTY — REMAINING"),
                 season.phase!=="regular"?
                   React.createElement("div",{style:{fontSize:9,color:T.faint}},"Regular season only. Heatmap repopulates when next regular season begins."):
@@ -41871,7 +41871,7 @@ var GS={
               ),
 
               // DRAFT VALUE CHART
-              React.createElement("div",{style:{background:T.glass,backdropFilter:"blur(12px)",border:"1px solid "+T.glassBorder,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{background:T.glass,border:"1px solid "+T.glassBorder,borderRadius:RAD.lg,padding:12}},
                 React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.gold,marginBottom:8,letterSpacing:0.5}},"📋 DRAFT VALUE CHART"),
                 React.createElement("div",{style:{fontSize:9,color:T.faint,marginBottom:8}},"Trade value by pick number — use in negotiations"),
                 React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4}},
@@ -44237,7 +44237,7 @@ var GS={
           
           {React.createElement("div",{style:S.scanlines})}
           
-          {weekShow && weekShow.headlines && weekShow.headlines.length>0 && season.phase==="regular" && React.createElement("div",{style:{position:"fixed",bottom:0,left:0,right:0,zIndex:25,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderTop:"2px solid "+T.gold,padding:"5px 12px",display:"flex",alignItems:"center",gap:8}},
+          {weekShow && weekShow.headlines && weekShow.headlines.length>0 && season.phase==="regular" && React.createElement("div",{style:{position:"fixed",bottom:0,left:0,right:0,zIndex:25,background:T.bg2,borderTop:"2px solid "+T.gold,padding:"5px 12px",display:"flex",alignItems:"center",gap:8}},
             React.createElement("span",{style:{fontSize:8,fontWeight:900,color:"#000",background:T.gold,padding:"2px 6px",borderRadius:3,flexShrink:0,letterSpacing:1}},"LIVE"),
               React.createElement("div",{style:{flex:1,overflow:"hidden",whiteSpace:"nowrap"}},
                 React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.gold,transition:"opacity 0.5s"}},weekShow.headlines[tickerIdx]||"")
