@@ -381,7 +381,7 @@ export function runModuleValidation(prebuiltStatusRows) {
   check(v1 === v2, 'mulberry32 produced identical consecutive values');
 
   // Theme
-  check(T.bg !== '#0f172a', 'Theme T.bg mismatch');
+  check(T.bg !== '#070d17', 'Theme T.bg mismatch'); // Bloomberg Edition
   check(!S.btn || !S.btnPrimary, 'Style objects missing');
 
   // Difficulty

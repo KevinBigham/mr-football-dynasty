@@ -44,21 +44,21 @@ describe('legacy-bridge', () => {
       events.push(evt.type);
     });
     startLegacyBridge({
-      intervalMs: 10,
-      maxIntervalMs: 40,
+      intervalMs: 10,       // clamped to 250ms min by implementation
+      maxIntervalMs: 40,    // clamped to max(baseInterval, 40) = 250ms
       backoffFactor: 2,
       unresponsiveThreshold: 1,
       probeFn: function () { return probePass; },
     });
 
-    await vi.advanceTimersByTimeAsync(15);
+    await vi.advanceTimersByTimeAsync(300); // advance past 250ms clamped interval
     expect(events).toContain(LEGACY_BRIDGE_EVENTS.UNRESPONSIVE);
     var stateAfterFail = getLegacyBridgeState();
     expect(stateAfterFail.unresponsive).toBe(true);
-    expect(stateAfterFail.intervalMs).toBeGreaterThanOrEqual(20);
+    expect(stateAfterFail.intervalMs).toBeGreaterThanOrEqual(250);
 
     probePass = true;
-    await vi.advanceTimersByTimeAsync(50);
+    await vi.advanceTimersByTimeAsync(300); // advance past next probe interval
     expect(events).toContain(LEGACY_BRIDGE_EVENTS.RECOVERED);
     expect(getLegacyBridgeState().unresponsive).toBe(false);
   });

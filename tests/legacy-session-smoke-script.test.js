@@ -44,6 +44,7 @@ describe('smoke-legacy-session script', () => {
       ok: out.ok,
       checks: out.checks,
       distDir: out.distDir,
+      sessionHealth: out.sessionHealth,
     });
     var parsed = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
     expect(parsed.ok).toBe(false);

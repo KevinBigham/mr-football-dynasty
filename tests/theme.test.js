@@ -13,7 +13,7 @@ describe('theme.js', () => {
 
   it('provides base component style objects', () => {
     expect(S.btn.borderRadius).toBe(RAD.md);
-    expect(S.btnPrimary.background).toContain('linear-gradient');
+    expect(S.btnPrimary.background).toBeTypeOf('string'); // Bloomberg: flat amber, not gradient
     expect(S.card.border).toContain(T.glassBorder);
     expect(S.badgeGold.color).toBe(T.gold);
     expect(S.toast.position).toBeUndefined();

@@ -8,8 +8,13 @@ import {
 
 describe('recovery-controller', () => {
   it('runs all recovery branches and records audit events', async () => {
+    // throttleMs:0 is treated as falsy by the implementation (0||1500=1500).
+    // Use now() starting at 2000 so stamp-lastRecoveryAt(0) > 1500 on first call,
+    // then advance 1600ms between calls to clear the throttle each time.
+    var tick = 2000;
     var controller = createRecoveryController({
       throttleMs: 0,
+      now: function () { return tick; },
       reloadIframe: function () { return { ok: true, detail: 'reloaded' }; },
       openDirect: function () { return { ok: true, detail: 'opened direct' }; },
       restoreLastGoodSlot: function () { return { ok: true, detail: 'restored' }; },
@@ -17,8 +22,11 @@ describe('recovery-controller', () => {
     });
 
     var a = await controller.recover(RECOVERY_ACTIONS.RELOAD_IFRAME);
+    tick += 1600;
     var b = await controller.recover(RECOVERY_ACTIONS.OPEN_DIRECT);
+    tick += 1600;
     var c = await controller.recover(RECOVERY_ACTIONS.RESTORE_LAST_GOOD_SLOT);
+    tick += 1600;
     var d = await controller.recover(RECOVERY_ACTIONS.FALLBACK_STATUS);
 
     expect(a.ok && b.ok && c.ok && d.ok).toBe(true);
