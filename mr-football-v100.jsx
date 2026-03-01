@@ -17717,7 +17717,14 @@ var ToastContainer = memo(function(props){
         React.createElement("button",{onClick:function(e){e.stopPropagation();remove(t.id);},style:{marginLeft:"auto",background:"none",border:"none",color:T.faint,cursor:"pointer",fontSize:14}},"✕")
       );
     }),
-    React.createElement("style",{},"@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}")
+    React.createElement("style",{},[
+      "@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}",
+      "@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}",
+      "@keyframes tdCelebrate{0%{transform:scale(1);background:rgba(212,167,75,0.10)}20%{transform:scale(1.03);background:rgba(212,167,75,0.28)}50%{transform:scale(1.01);background:rgba(212,167,75,0.18)}100%{transform:scale(1);background:rgba(212,167,75,0.10)}}",
+      "@keyframes turnoverFlash{0%{background:rgba(239,68,68,0.08)}30%{background:rgba(239,68,68,0.28)}100%{background:rgba(239,68,68,0.08)}}",
+      "@keyframes bigPlayPop{0%{transform:translateY(0);opacity:1}20%{transform:translateY(-3px);opacity:1}100%{transform:translateY(0);opacity:1}}",
+      "@keyframes pulse-draft{0%,100%{opacity:1}50%{opacity:0.4}}"
+    ].join(""))
   );
 });
 var PlayoffBracket = memo(function(props){
@@ -42950,11 +42957,11 @@ var GS={
                     lg.lastPlay.big?"rgba(52,211,153,0.08)":"rgba(255,255,255,0.03)",
                   border:"1px solid "+(lg.lastPlay.isTD?T.gold:lg.lastPlay.turnover||lg.lastPlay.type==="turnover_on_downs"?T.red:
                     lg.lastPlay.isPenalty?"#fbbf24":lg.lastPlay.isKick?"#3b82f6":lg.lastPlay.big?T.green:T.border)+"44",
-                  // Animation classes
-                  animation:lg.lastPlay.isTD?"none":lg.lastPlay.turnover?"none":"none"}}>
+                  // Animation classes — wired in overnight sprint
+                  animation:lg.lastPlay.isTD?"tdCelebrate 0.9s ease-out forwards":lg.lastPlay.turnover||lg.lastPlay.type==="turnover_on_downs"?"turnoverFlash 0.7s ease-out forwards":lg.lastPlay.big?"bigPlayPop 0.5s ease-out forwards":"none"}}>
                   {/* TD celebration overlay */}
                   {lg.lastPlay.isTD&&<div style={{textAlign:"center",marginBottom:4,fontSize:20,
-                    animation:"pulse 0.5s ease-in-out"}}>{"🎉🏈🎉"}</div>}
+                    animation:"pulse 0.6s ease-in-out 3"}}>{"🎉🏈🎉"}</div>}
                   {lg.lastPlay.commentary&&<div style={{fontSize:9,color:T.cyan,fontStyle:"italic",marginBottom:3}}>{"📢 "+lg.lastPlay.commentary}</div>}
                   <div style={{fontSize:12,fontWeight:700,lineHeight:1.4,
                     color:lg.lastPlay.isTD?T.gold:lg.lastPlay.turnover||lg.lastPlay.type==="turnover_on_downs"?T.red:
