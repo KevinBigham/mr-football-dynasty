@@ -35,6 +35,7 @@ import { ALL_TIME_RECORDS } from './src/systems/all-time-records.js';
 import { SPECIAL_PLAYS_993, SPECIAL_COVERAGES_993 } from './src/systems/special-plays.js';
 import { detectPositionBattles974, buildCutAdvisor974 } from './src/systems/roster-management.js';
 import { UNLOCK_DEFS, DEFAULT_UNLOCKS, checkUnlocks, isTabUnlocked } from './src/systems/unlocks.js';
+import { PREMIUM, PREMIUM_FEATURES } from './src/systems/premium.js';
 import { OWNER_TYPES, OWNER_GOALS } from './src/systems/owner-goals-v2.js';
 import { LOCKER_EVENTS, checkLockerEvents } from './src/systems/locker-events.js';
 import { ROLE_DEFS, assignDefaultRoles, getRoleSnapPct } from './src/systems/role-defs.js';
@@ -26574,6 +26575,7 @@ var GS={
             <span style={{color:T.cyan,fontSize:9,flexShrink:0}}>{"Scout:"+(my.scoutPts||0)}</span>
             <span style={{color:T.gold,fontWeight:700,fontSize:10,flexShrink:0}}>{season.year+" Wk"+season.week}</span>
             {/* DBG button hidden for public release */}
+            <button onClick={function(){setTab("settings");}} style={{background:PREMIUM.isSupporter()?"rgba(212,167,75,0.15)":"none",border:"1px solid "+(PREMIUM.isSupporter()?"rgba(212,167,75,0.3)":T.glassBorder),borderRadius:4,color:PREMIUM.isSupporter()?T.gold:T.faint,fontSize:9,padding:"2px 5px",cursor:"pointer",flexShrink:0}} title={PREMIUM.isSupporter()?"◆ Supporter — Thank You!":"Support MFD on Ko-fi"}>{"☕"}</button>
             <button onClick={function(){setShowKbHelp(true);}} style={{background:"none",border:"1px solid "+T.glassBorder,borderRadius:4,color:T.faint,fontSize:9,padding:"2px 5px",cursor:"pointer",flexShrink:0}} title="Keyboard Shortcuts">{"?"}</button>
           </div>
         </div>
@@ -37861,7 +37863,56 @@ var GS={
           {tab==="settings" && (
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               <div style={{fontWeight:700}}>{"⚙️ Game Settings"}</div>
-              
+
+              {/* ── Support MFD ── */}
+              {(function(){
+                var isSupporter=PREMIUM.isSupporter();
+                var featureList=Object.values(PREMIUM_FEATURES);
+                return React.createElement("div",{style:assign({},cS,{padding:16,borderColor:isSupporter?"rgba(212,167,75,0.4)":"rgba(255,255,255,0.12)",background:isSupporter?"rgba(212,167,75,0.06)":"rgba(255,255,255,0.03)"})},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:isSupporter?T.gold:T.text}},
+                      isSupporter?"◆ MFD Supporter — Thank You!":"☕ Support Mr. Football Dynasty"
+                    ),
+                    isSupporter
+                      ? React.createElement("span",{style:{fontSize:10,color:T.gold,fontWeight:700,background:"rgba(212,167,75,0.12)",padding:"3px 8px",borderRadius:4}},"All Features Unlocked")
+                      : React.createElement("button",{
+                          style:mS(S.btn,S.btnPrimary,{fontSize:11,padding:"6px 14px"}),
+                          onClick:function(){window.open(PREMIUM.getKoFiUrl(),"_blank");}
+                        },"☕ Ko-fi — Support MFD")
+                  ),
+                  React.createElement("div",{style:{fontSize:10,color:T.dim,marginBottom:10,lineHeight:1.5}},
+                    isSupporter
+                      ? "Your support keeps MFD alive and growing. Enjoy all Supporter features — you earned them."
+                      : "MFD is free forever. 99% of the game, no paywalls. Supporters unlock these ease-of-life extras as a thank-you:"
+                  ),
+                  React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6,marginBottom:isSupporter?0:12}},
+                    featureList.map(function(f){
+                      var unlocked=PREMIUM.isUnlocked(f.id);
+                      return React.createElement("div",{key:f.id,style:{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 8px",background:unlocked?"rgba(52,211,153,0.06)":"rgba(255,255,255,0.02)",borderRadius:4,border:"1px solid "+(unlocked?"rgba(52,211,153,0.18)":T.border)}},
+                        React.createElement("span",{style:{fontSize:12,color:unlocked?T.green:T.dim,flexShrink:0,marginTop:1}},unlocked?"◉":"○"),
+                        React.createElement("div",null,
+                          React.createElement("div",{style:{fontSize:11,fontWeight:700,color:unlocked?T.green:T.text}},f.icon+" "+f.label),
+                          React.createElement("div",{style:{fontSize:9,color:T.dim,marginTop:1}},f.desc)
+                        )
+                      );
+                    })
+                  ),
+                  !isSupporter && React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
+                    React.createElement("div",{style:{fontSize:10,color:T.faint,flex:1}},
+                      "Donated on Ko-fi? Click below to unlock your features. No account needed — we trust you."
+                    ),
+                    React.createElement("button",{
+                      style:mS(S.btn,{fontSize:11,padding:"6px 14px",background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.3)",color:T.green}),
+                      onClick:function(){
+                        PREMIUM.unlockAll();
+                        addN("◆ Supporter features unlocked! Thank you!","success");
+                        doSave();
+                      }
+                    },"◉ I Supported — Unlock All Features")
+                  )
+                );
+              })()}
+
               <div style={assign({},cS,{padding:16})}>
                 <div style={{fontWeight:800,fontSize:13,marginBottom:10}}>Difficulty Level</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
