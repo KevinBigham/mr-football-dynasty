@@ -13,6 +13,7 @@ import { OWNER_ARCHETYPES, initOwner, updateOwnerApproval, getOwnerStatus } from
 import { getPersonality, traitScalar, generatePersonality, PERS_ICONS, PERS_LABELS, getDominantTrait, getContractPersonalityEffects } from './src/systems/personality.js';
 import { chemistryMod, systemFitMod, updateSystemFit, resetSystemFit } from './src/systems/chemistry.js';
 import { T, SP, RAD, SH, S } from './src/config/theme.js';
+import { HALFTIME_V2 } from './src/systems/halftime.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -155,25 +156,7 @@ var DIFF_ACTIVE="pro";// global accessor for difficulty in sim functions outside
 
 // ===== v98.6 FEATURE PACK: 20 NEW SYSTEMS =====
 
-// #1: HALFTIME ADJUSTMENTS v2 — Tactical choices that shift Q3-Q4 sim
-var HALFTIME_V2={
-  options:[
-    {id:"blitz_heavy",label:"🔥 Blitz Heavy",desc:"Increase sack chance, risk deep passes",offMod:-2,defMod:6,sackMod:1.4,intRisk:1.2},
-    {id:"run_heavy",label:"🏃 Run Heavy",desc:"Control clock, reduce turnovers",offMod:1,defMod:0,rushMod:1.3,intRisk:0.6},
-    {id:"target_wr2",label:"🎯 Target WR2/TE",desc:"Exploit mismatches underneath",offMod:3,defMod:0,recMod:1.2,intRisk:0.9},
-    {id:"prevent",label:"🛡️ Prevent Defense",desc:"Protect lead, bend don't break",offMod:0,defMod:-3,sackMod:0.5,intRisk:0.7},
-    {id:"no_huddle",label:"⚡ No-Huddle Tempo",desc:"Speed up pace, tire defense",offMod:5,defMod:-2,rushMod:0.8,intRisk:1.3},
-    {id:"ball_control",label:"⏱️ Ball Control",desc:"Long drives, shorten game",offMod:-1,defMod:2,rushMod:1.2,intRisk:0.5}
-  ],
-  recommend:function(scoreDiff,myOff,myDef){
-    if(scoreDiff<=-14)return "no_huddle";
-    if(scoreDiff<=-7)return "target_wr2";
-    if(scoreDiff>=14)return "ball_control";
-    if(scoreDiff>=7)return "prevent";
-    if(myDef>myOff+5)return "blitz_heavy";
-    return "run_heavy";
-  }
-};
+// #1: HALFTIME_V2 — imported from src/systems/halftime.js
 
 // #2: OFFSEASON TRAINING CAMP — Allocate focus, players gain/regress
 var TRAINING_CAMP_986={
