@@ -12037,7 +12037,7 @@ function draftPickOvr991(round,pick){
   var min=ranges[idx].min;var max=ranges[idx].max;
   var spread=max-min;var mid=(min+max)/2;var step=spread/31;
   var mean=mid+(16.5-pick)*step;var stdDev=5;
-  var u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();
+  var u=0,v=0;while(u===0)u=RNG.draft();while(v===0)v=RNG.draft();
   var z=Math.sqrt(-2.0*Math.log(u))*Math.cos(2.0*Math.PI*v);
   var rating=Math.round(mean+z*stdDev);
   if(rating<40)rating=40;if(rating>99)rating=99;return rating;
@@ -13647,18 +13647,18 @@ var LIVE_GAME_986={
 
     // ── PENALTY CHECK (FIRST — before clock, before stats, before box score) ──
     // Pre-snap penalties mean the play never happened
-    var penRoll=Math.random();
+    var penRoll=RNG.play();
     if(penRoll<0.025){
       // Offensive penalty — play nullified
-      var penYds=[5,5,5,10,10,15][Math.floor(Math.random()*6)];
+      var penYds=[5,5,5,10,10,15][Math.floor(RNG.play()*6)];
       var penNames=["False Start","Holding","Illegal Formation","Offensive Pass Interference","Delay of Game"];
-      var penName=penNames[Math.floor(Math.random()*penNames.length)];
+      var penName=penNames[Math.floor(RNG.play()*penNames.length)];
       if(penName==="False Start"||penName==="Delay of Game")penYds=5;
       if(penName==="Offensive Pass Interference")penYds=10;
       var preSnap=(penName==="False Start"||penName==="Delay of Game");
       g.fieldPos=Math.max(1,g.fieldPos-penYds);
       g.stats[side].penalties++;g.stats[side].penYds+=penYds;
-      var penClockTick=preSnap?0:Math.floor(Math.random()*8+5);// pre-snap = no clock, post-snap = some clock
+      var penClockTick=preSnap?0:Math.floor(RNG.play()*8+5);// pre-snap = no clock, post-snap = some clock
       g.clock=Math.max(0,g.clock-penClockTick);
       result={type:"penalty",yards:-penYds,desc:"🚩 FLAG! "+penName+" on "+off.abbr+". "+penYds+"-yard penalty. Replay the down.",
         clock:penClockTick,commentary:"",isPenalty:true};
@@ -13671,11 +13671,11 @@ var LIVE_GAME_986={
       LIVE_GAME_986.checkQuarter(g);return g;
     }else if(penRoll<0.05){
       // Defensive penalty — play nullified
-      var dPenYds=[5,5,10,15][Math.floor(Math.random()*4)];
+      var dPenYds=[5,5,10,15][Math.floor(RNG.play()*4)];
       var dPenNames=["Offsides","Defensive Holding","Pass Interference","Roughing the Passer"];
-      var dPenName=dPenNames[Math.floor(Math.random()*dPenNames.length)];
+      var dPenName=dPenNames[Math.floor(RNG.play()*dPenNames.length)];
       if(dPenName==="Offsides")dPenYds=5;
-      if(dPenName==="Pass Interference")dPenYds=Math.max(10,Math.min(40,Math.floor(Math.random()*25)+5));
+      if(dPenName==="Pass Interference")dPenYds=Math.max(10,Math.min(40,Math.floor(RNG.play()*25)+5));
       if(dPenName==="Roughing the Passer")dPenYds=15;
       g.fieldPos=Math.min(99,g.fieldPos+dPenYds);
       var defSid=LIVE_GAME_986.defSide(g);
@@ -13683,7 +13683,7 @@ var LIVE_GAME_986={
       var autoFD=(dPenYds>=g.yardsToGo)||dPenName==="Roughing the Passer"||dPenName==="Pass Interference";
       if(autoFD){g.down=1;g.yardsToGo=10;g.stats[side].firstDowns++;}
       var dPreSnap=(dPenName==="Offsides");
-      var dPenClock=dPreSnap?0:Math.floor(Math.random()*8+5);
+      var dPenClock=dPreSnap?0:Math.floor(RNG.play()*8+5);
       g.clock=Math.max(0,g.clock-dPenClock);
       result={type:"penalty",yards:dPenYds,desc:"🚩 FLAG! "+dPenName+" on "+def.abbr+". "+dPenYds+" yards"+(autoFD?", automatic first down!":"."),
         clock:dPenClock,commentary:"",isPenalty:true};
@@ -13716,16 +13716,16 @@ var LIVE_GAME_986={
     result.ngs=ngs;
 
     // ── IN-GAME INJURY (~2% per play) ──
-    if(Math.random()<0.018&&!result.isSpike){
-      var injTeam=Math.random()<0.5?off:def;
+    if(RNG.injury()<0.018&&!result.isSpike){
+      var injTeam=RNG.injury()<0.5?off:def;
       var injSide2=injTeam===off?side:LIVE_GAME_986.defSide(g);
       var injCandidates=injTeam.roster.filter(function(p){return p.isStarter&&!p._gameInjured&&p.pos!=="K"&&p.pos!=="P";});
       if(injCandidates.length>0){
-        var injP=injCandidates[Math.floor(Math.random()*injCandidates.length)];
+        var injP=injCandidates[Math.floor(RNG.injury()*injCandidates.length)];
         injP._gameInjured=true;
         var injTypes=["ankle","knee","hamstring","shoulder","wrist","ribs"];
-        var injType=injTypes[Math.floor(Math.random()*injTypes.length)];
-        var injSeverity=Math.random()<0.6?"questionable":"out for the game";
+        var injType=injTypes[Math.floor(RNG.injury()*injTypes.length)];
+        var injSeverity=RNG.injury()<0.6?"questionable":"out for the game";
         result.injury={name:injP.name,pos:injP.pos,type:injType,severity:injSeverity,team:injTeam.abbr};
         if(!g.injuries)g.injuries=[];
         g.injuries.push(result.injury);
@@ -13740,7 +13740,7 @@ var LIVE_GAME_986={
     var clockTick=result.clock||25;
     if(result.type==="incomplete"||result.isSpike)clockTick=Math.min(clockTick,5);
     var finalTwoMin=(g.quarter===2||g.quarter===4||g.quarter>=5)&&g.clock<=120;
-    if(finalTwoMin&&result.type==="run"&&!result.isTD&&Math.random()<0.15){
+    if(finalTwoMin&&result.type==="run"&&!result.isTD&&RNG.play()<0.15){
       clockTick=Math.min(clockTick,8);result.desc+=" — out of bounds!";result.oob=true;
     }
     var prevClock=g.clock;
@@ -13881,7 +13881,7 @@ var LIVE_GAME_986={
       g.stats[side].fgA++;
       var k2=off.roster.find(function(p){return p.pos==="K";});
       var pct=k2?(0.65+(k2.ovr-60)*0.008-(fgDist>50?0.25:fgDist>45?0.15:fgDist>35?0.05:0)):0.65;
-      if(Math.random()<pct){
+      if(RNG.play()<pct){
         LIVE_GAME_986.endDrive(g,"FIELD GOAL");
         g.stats[side].fgM++;
         if(side==="home"){g.hScore+=3;g.qtrs.h[qi]+=3;}else{g.aScore+=3;g.qtrs.a[qi]+=3;}
@@ -13929,15 +13929,15 @@ var LIVE_GAME_986={
     if(choice==="xp"){
       var xpPct=k?0.90+(k.ovr-60)*0.001:0.94;
       xpPct=Math.max(0.85,Math.min(0.97,xpPct));
-      if(Math.random()<xpPct){
+      if(RNG.play()<xpPct){
         if(side==="home"){g.hScore+=1;g.qtrs.h[qi]+=1;}else{g.aScore+=1;g.qtrs.a[qi]+=1;}
         g.pendingResult={type:"xp_good",desc:(k?k.name:"Kicker")+" — extra point is GOOD!",clock:0};
       }else{
-        var missType=Math.random()<0.5?"BLOCKED!":"WIDE! No good!";
+        var missType=RNG.play()<0.5?"BLOCKED!":"WIDE! No good!";
         g.pendingResult={type:"xp_miss",desc:"Extra point "+missType,clock:0};
       }
     }else{
-      if(Math.random()<0.48){
+      if(RNG.play()<0.48){
         if(side==="home"){g.hScore+=2;g.qtrs.h[qi]+=2;}else{g.aScore+=2;g.qtrs.a[qi]+=2;}
         g.pendingResult={type:"two_good",desc:"TWO-POINT CONVERSION IS GOOD! "+off.abbr+" pushes it in!",clock:0};
       }else{
@@ -14229,7 +14229,7 @@ var LIVE_GAME_986={
     var userSideC=g.userId===g.homeTeam.id?"home":"away";
     if(g.timeouts[userSideC]<=0)return g;// need a timeout
 
-    var overturned=Math.random()<0.40;
+    var overturned=RNG.play()<0.40;
     if(overturned){
       // Overturn! Reverse the turnover — restore original possession and field position
       // Undo turnover stats
@@ -41646,7 +41646,7 @@ var GS={
                           var newLg=JSON.parse(JSON.stringify(lg));newLg.homeTeam=lg.homeTeam;newLg.awayTeam=lg.awayTeam;
                           // AI decides: onside kick if losing by 9+ in Q4 final 5 min, otherwise normal
                           var aiScoreDiff=(LIVE_GAME_986.side(lg)==="home")?(lg.hScore-lg.aScore):(lg.aScore-lg.hScore);
-                          var aiOnside=lg.quarter>=4&&lg.clock<=300&&aiScoreDiff<=-9&&Math.random()<0.7;
+                          var aiOnside=lg.quarter>=4&&lg.clock<=300&&aiScoreDiff<=-9&&RNG.ai()<0.7;
                           LIVE_GAME_986.resolveKickoff(newLg,aiOnside?"onside":"normal");
                           setLiveGame986(newLg);setLiveResult986(newLg.pendingResult||null);
                         }} style={{marginTop:20,padding:"14px 32px",borderRadius:10,cursor:"pointer",fontWeight:900,fontSize:14,
@@ -41940,7 +41940,7 @@ var GS={
                       </div>}
                       {lg.driveComment994&&<div style={{marginTop:3,padding:"2px 10px",fontSize:9,color:T.cyan,fontStyle:"italic",textAlign:"center",opacity:0.8,lineHeight:1.4}}>{lg.driveComment994}</div>}
                       <button onClick={function(){
-                        var aiChoice=Math.random()<0.95?"xp":"two_pt";
+                        var aiChoice=RNG.ai()<0.95?"xp":"two_pt";
                         // In desperate situations, AI goes for 2 more often
                         var aiSide=LIVE_GAME_986.side(lg);
                         var aiScore=aiSide==="home"?lg.hScore:lg.aScore;
