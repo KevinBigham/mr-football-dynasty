@@ -316,6 +316,17 @@ export function calcFourthDownEV995(yards, fieldPos, score, quarter, timeLeft) {
     goAdj -= 0.9;
     puntAdj += 0.5;
   }
+  // Own-territory short yardage (not desperate): favor punt — failed conversion
+  // hands opponent excellent field position, which the flat EP fallback masks.
+  if (!isDesperate && !isLateTrail && fieldPos <= 40 && yards <= 2) {
+    puntAdj += 2.5;
+    goAdj -= 1.5;
+  }
+  // Red zone trailing by a field goal in Q4: a made FG only ties — prefer TD.
+  if (fieldPos >= 90 && quarter === 4 && score >= -3 && score < 0) {
+    fgAdj -= 1.5;
+    goAdj += 0.5;
+  }
 
   var fgApplicable = fgDistance <= 65;
   var goEV_adj = goEV + goAdj;
