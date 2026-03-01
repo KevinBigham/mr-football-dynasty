@@ -10,6 +10,7 @@
  */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import App from '../mr-football-v100.jsx';
 
 // Validate extracted modules load correctly
 import { RNG, mulberry32, setSeed, rng, pick, U, LZW } from './utils/index.js';
@@ -1335,4 +1336,4 @@ function ModuleStatusApp() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<ModuleStatusApp />);
+createRoot(document.getElementById('root')).render(<App />);
