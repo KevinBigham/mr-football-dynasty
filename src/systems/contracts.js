@@ -265,9 +265,6 @@ export function calcFourthDownEV995(yards, fieldPos, score, quarter, timeLeft) {
   else if (fgDistance <= 50) fgSuccess = 0.69;
   else fgSuccess = 0.52;
 
-  var puntField = fieldPos - 40;
-  if (puntField < 10) puntField = 10;
-
   // Expected points lookup (uses getEP993 from main game — will be wired later)
   var getEP =
     typeof getEP993 !== 'undefined'
@@ -276,25 +273,54 @@ export function calcFourthDownEV995(yards, fieldPos, score, quarter, timeLeft) {
           return 2.5;
         };
 
-  var epOpp = getEP(1, 10, 100 - fieldPos);
+  var epOppFail = getEP(1, 10, 100 - fieldPos);
   var convertField = fieldPos + yards;
   var epConvert;
   if (convertField >= 100) epConvert = 7;
   else epConvert = getEP(1, 10, convertField);
+  var puntField = Math.max(5, Math.min(80, 100 - (fieldPos + 40)));
+  var missField = Math.max(1, fieldPos - 7);
+  var epOppMissFG = getEP(1, 10, 100 - missField);
 
-  var goEV = convRate * epConvert + (1 - convRate) * -epOpp;
-  var fgEV = fgSuccess * 3 + (1 - fgSuccess) * -epOpp;
-  var puntEV = -getEP(1, 10, 100 - puntField);
+  var goEV = convRate * epConvert + (1 - convRate) * -epOppFail;
+  var fgEV = fgSuccess * 3 + (1 - fgSuccess) * -epOppMissFG;
+  var puntEV = -getEP(1, 10, puntField);
 
   var isDesperate = quarter === 4 && timeLeft < 180 && score <= -8;
   var isProtecting = quarter === 4 && timeLeft < 180 && score >= 7;
+  var isLateTrail = quarter === 4 && timeLeft < 420 && score < 0;
   var goAdj = 0;
-  if (isDesperate) goAdj = 0.5;
-  if (isProtecting) goAdj = -0.5;
+  var fgAdj = 0;
+  var puntAdj = 0;
+  if (isDesperate) {
+    goAdj += 0.75;
+    fgAdj -= 0.15;
+    puntAdj -= 0.5;
+  }
+  if (isProtecting) {
+    goAdj -= 0.6;
+    puntAdj += 0.35;
+  }
+  if (quarter === 4 && timeLeft < 180) {
+    if (score <= -8) fgAdj -= 1.8;
+    else if (score <= -4) fgAdj -= 1.2;
+    else if (score < 0) fgAdj -= 0.6;
+    if (score >= 7) fgAdj += 0.2;
+  }
+  if (isLateTrail) goAdj += 0.2;
+  if (fieldPos <= 35 && yards >= 5) goAdj -= 0.4;
+  if (fieldPos <= 35 && yards >= 8) goAdj -= 1.0;
+  if (fieldPos <= 50 && yards >= 12) goAdj -= 0.6;
+  if (fieldPos >= 80 && yards <= 2) goAdj += 0.35;
+  if (isProtecting && fieldPos <= 60) {
+    goAdj -= 0.9;
+    puntAdj += 0.5;
+  }
 
+  var fgApplicable = fgDistance <= 65;
   var goEV_adj = goEV + goAdj;
-  var fgEV_adj = fgEV;
-  var puntEV_adj = puntEV;
+  var fgEV_adj = fgApplicable ? fgEV + fgAdj : -Infinity;
+  var puntEV_adj = puntEV + puntAdj;
 
   var bestEV = goEV_adj;
   var bestAction = 'go';
@@ -321,7 +347,7 @@ export function calcFourthDownEV995(yards, fieldPos, score, quarter, timeLeft) {
     fieldGoal: {
       ev: Math.round(fgEV * 100) / 100,
       desc: 'Field goal attempt',
-      applicable: fgDistance <= 65,
+      applicable: fgApplicable,
     },
     punt: { ev: Math.round(puntEV * 100) / 100, desc: 'Punt' },
     recommendation: bestAction,

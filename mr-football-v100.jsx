@@ -25,7 +25,7 @@ import { StatBar, ToneBadge, WeeklyShowCard } from './src/components/index.js';
 import { NARRATIVE_STATES, STORY_ARC_EVENTS, pickWeightedEvent } from './src/systems/story-arcs.js';
 import { STORY_ARC_ENGINE } from './src/systems/story-arc-engine.js';
 import { FO_FIRST_NAMES, FO_LAST_NAMES, FO_TRAITS, FO_BACKSTORIES, FRONT_OFFICE } from './src/systems/front-office.js';
-import { WEEKLY_CHALLENGES, getPosMarketTier86 } from './src/systems/weekly-challenges.js';
+import { WEEKLY_CHALLENGES } from './src/systems/weekly-challenges.js';
 import { GRUDGE_MATCH, REVENGE_GAME } from './src/systems/grudge-revenge.js';
 import { COACH_SKILL_TREE } from './src/systems/coach-skill-tree.js';
 import { MENTOR_SYSTEM } from './src/systems/mentor-system.js';
@@ -11711,7 +11711,7 @@ function initTeams(ui,usePresets){
         posCoaches:{qb_coach:generatePosCoach(RNG.ai),ol_coach:generatePosCoach(RNG.ai),dl_coach:generatePosCoach(RNG.ai),db_coach:generatePosCoach(RNG.ai)},// v60
       capUsed:capCalc(roster),deadCap:0,deadCapByYear:{},prestige:50+rng(-10,10),
       cash:((DIFF_SETTINGS[DIFF_ACTIVE]||DIFF_SETTINGS.pro).startCash||50)+rng(-5,10),facilities:{gym:1,med:1,stad:1},ticketPrice:75,fanbase:55+rng(-10,15),
-        revenue:0,expenses:0,attendance:0,scoutPts:SCOUT_POINT_BASE86,// v95: start with 1000
+        revenue:0,expenses:0,attendance:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),// v95: start with 1000 (+premium bonus)
         _pipelineTripsWeekly:4,// v97.1: weekly college pipeline trips
         reSignNeg84:{},fitAlertPrefs84:{},fitAlertProfile85:"strict",
       scouts:[genScout(),genScout(),genScout()],
@@ -17252,7 +17252,7 @@ var GS={
   var _dpRatCat=useState("CORE"),dpRatCat=_dpRatCat[0],setDpRatCat=_dpRatCat[1];// v69: Rating category filter
   var _dpSortAttr=useState("ovr"),dpSortAttr=_dpSortAttr[0],setDpSortAttr=_dpSortAttr[1];
   var _hof=useState([]),hallOfFame=_hof[0],setHallOfFame=_hof[1];
-  var _godMode=useState(false),godMode=_godMode[0],setGodMode=_godMode[1];
+  var _godMode=useState(PREMIUM.isUnlocked('godMode')),godMode=_godMode[0],setGodMode=_godMode[1];
   var _godTarget=useState(null),godTarget=_godTarget[0],setGodTarget=_godTarget[1];// v98: null=my team
   var _recap=useState(null),gameRecap=_recap[0],setGameRecap=_recap[1];
   var _prevRecap=useState(null),prevRecap=_prevRecap[0],setPrevRecap=_prevRecap[1];// v49: What Changed?
@@ -19421,7 +19421,7 @@ var GS={
         posCoaches:{qb_coach:generatePosCoach(RNG.ai),ol_coach:generatePosCoach(RNG.ai),dl_coach:generatePosCoach(RNG.ai),db_coach:generatePosCoach(RNG.ai)},// v60
         capUsed:0,deadCap:0,deadCapByYear:{},prestige:50+rng(-10,10),
         cash:(i===idx?(DIFF_SETTINGS[DIFF_ACTIVE]||DIFF_SETTINGS.pro).startCash||55:50)+rng(-10,20),facilities:{gym:1,med:1,stad:1},ticketPrice:75,fanbase:55+rng(-10,15),
-        revenue:0,expenses:0,attendance:0,scoutPts:1000,_pipelineTripsWeekly:4,
+        revenue:0,expenses:0,attendance:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),_pipelineTripsWeekly:4,
         reSignNeg84:{},fitAlertPrefs84:{},fitAlertProfile85:"strict",
         ownerMood:70,ownerGoal:"playoff",aiStrategy:"bubble",rivals:[],
         gmArchetype90:getTeamGMArchetypeId90({id:td.id}),
@@ -19549,7 +19549,7 @@ var GS={
         posCoaches:{qb_coach:generatePosCoach(RNG.ai),ol_coach:generatePosCoach(RNG.ai),dl_coach:generatePosCoach(RNG.ai),db_coach:generatePosCoach(RNG.ai)},// v60
         capUsed:0,deadCap:0,deadCapByYear:{},prestige:50+rng(-10,10),
         cash:(i===idx?(DIFF_SETTINGS[DIFF_ACTIVE]||DIFF_SETTINGS.pro).startCash||55:50)+rng(-10,20),facilities:{gym:1,med:1,stad:1},ticketPrice:75,fanbase:55+rng(-10,15),
-        revenue:0,expenses:0,attendance:0,scoutPts:1000,_pipelineTripsWeekly:4,
+        revenue:0,expenses:0,attendance:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),_pipelineTripsWeekly:4,
         reSignNeg84:{},fitAlertPrefs84:{},fitAlertProfile85:"strict",
         ownerMood:70,ownerGoal:"playoff",aiStrategy:"bubble",rivals:[],
         gmArchetype90:getTeamGMArchetypeId90({id:td.id}),
@@ -24429,7 +24429,7 @@ var GS={
       psKept87.forEach(function(p){p.everReached90=(p.ovr||0)>=90;});
       return assign({},t,{roster:active,practiceSquad:psKept87,
         wins:0,losses:0,pf:0,pa:0,streak:0,capUsed:capCalc(active),deadCap:0,
-        gameplan:GAMEPLANS[0].id,gameplanOff:"balanced_o",gameplanDef:"balanced_d",revenue:0,expenses:0,scoutPts:1000,_pipelineTripsWeekly:4,ownerGoal:ovrAvg2>74?"title":ovrAvg2>68?"playoff":"rebuild",
+        gameplan:GAMEPLANS[0].id,gameplanOff:"balanced_o",gameplanDef:"balanced_d",revenue:0,expenses:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),_pipelineTripsWeekly:4,ownerGoal:ovrAvg2>74?"title":ovrAvg2>68?"playoff":"rebuild",
         franchiseTag973:(t.franchiseTag973&&t.franchiseTag973.year===season.year+1)?assign({},t.franchiseTag973):null,
         aiStrategy:ovrAvg2>76?"contend":ovrAvg2>70?"bubble":"rebuild",
         staff:staff,

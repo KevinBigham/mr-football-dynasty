@@ -4,6 +4,7 @@ import {
   BROADCAST_COMMENTARY,
   BROADCAST_COMMENTARY_EXPANDED,
 } from "../src/data/broadcast.js";
+import { setSeed } from "../src/utils/rng.js";
 
 describe("broadcast behavior", function () {
   afterEach(function () {
@@ -22,13 +23,23 @@ describe("broadcast behavior", function () {
     ).toBe("Nix to {missing}");
   });
 
-  it("pick986 uses Math.random and handles empty arrays", function () {
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    expect(BROADCAST_COMMENTARY.pick986(["a", "b", "c"])).toBe("a");
-
-    Math.random.mockReturnValue(0.9999);
-    expect(BROADCAST_COMMENTARY.pick986(["a", "b", "c"])).toBe("c");
-
+  it("pick986 is seeded-deterministic and handles empty arrays", function () {
+    setSeed(77);
+    var seqA = [
+      BROADCAST_COMMENTARY.pick986(["a", "b", "c"]),
+      BROADCAST_COMMENTARY.pick986(["a", "b", "c"]),
+      BROADCAST_COMMENTARY.pick986(["a", "b", "c"]),
+    ];
+    setSeed(77);
+    var seqB = [
+      BROADCAST_COMMENTARY.pick986(["a", "b", "c"]),
+      BROADCAST_COMMENTARY.pick986(["a", "b", "c"]),
+      BROADCAST_COMMENTARY.pick986(["a", "b", "c"]),
+    ];
+    expect(seqB).toEqual(seqA);
+    seqA.forEach(function (v) {
+      expect(["a", "b", "c"]).toContain(v);
+    });
     expect(BROADCAST_COMMENTARY.pick986([])).toBe("");
   });
 

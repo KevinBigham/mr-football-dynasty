@@ -5,6 +5,7 @@
  * win-probability lookup, momentum decay, edge-to-probability
  * conversion, and draft pick overall rating generation.
  */
+import { RNG } from '../utils/rng.js';
 
 // Win Probability lookup table (sigmoid: 1/(1+exp(-scoreDiff*0.15*leverage)))
 // leverage = 1 + (quarter-1)*0.55
@@ -42,7 +43,9 @@ export function draftPickOvr991(round,pick){
   var min=ranges[idx].min;var max=ranges[idx].max;
   var spread=max-min;var mid=(min+max)/2;var step=spread/31;
   var mean=mid+(16.5-pick)*step;var stdDev=5;
-  var u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();
+  var u=0,v=0;
+  while(u===0)u=RNG.draft();
+  while(v===0)v=RNG.draft();
   var z=Math.sqrt(-2.0*Math.log(u))*Math.cos(2.0*Math.PI*v);
   var rating=Math.round(mean+z*stdDev);
   if(rating<40)rating=40;if(rating>99)rating=99;return rating;
