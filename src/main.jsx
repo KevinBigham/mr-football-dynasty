@@ -343,7 +343,7 @@ function validateModules() {
   if (v1 === v2) errors.push('mulberry32 produced identical consecutive values');
 
   // Theme
-  if (T.bg !== '#0f172a') errors.push('Theme T.bg mismatch');
+  if (T.bg !== '#070d17') errors.push('Theme T.bg mismatch'); // Bloomberg Edition
   if (!S.btn || !S.btnPrimary) errors.push('Style objects missing');
 
   // Difficulty

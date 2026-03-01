@@ -40,7 +40,7 @@ if(typeof window!=="undefined"&&window.addEventListener){
         d.style.cssText="position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;color:#ef4444;padding:40px;font-family:monospace;font-size:13px;z-index:9999;white-space:pre-wrap;overflow:auto;";
         document.body.appendChild(d);
       }
-      d.textContent="MFD v95 CRASH:\n\n"+(e.message||"Unknown error")+"\n\nLine: "+(e.lineno||"?")+"\nCol: "+(e.colno||"?")+"\n\n"+(e.error&&e.error.stack?e.error.stack.slice(0,2000):"");
+      d.textContent="MFD v100 CRASH:\n\n"+(e.message||"Unknown error")+"\n\nLine: "+(e.lineno||"?")+"\nCol: "+(e.colno||"?")+"\n\n"+(e.error&&e.error.stack?e.error.stack.slice(0,2000):"");
     }catch(_err){}
   });
 }

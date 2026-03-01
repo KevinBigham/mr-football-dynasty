@@ -100,9 +100,9 @@ test('sum and avg work correctly', function () {
 // === Theme ===
 console.log('\n\x1b[36mTheme & Styles\x1b[0m');
 test('Theme colors are defined', function () {
-  assert(T.bg === '#0f172a');
-  assert(T.gold === '#fbbf24');
-  assert(T.red === '#ef4444');
+  assert(T.bg === '#070d17');      // Bloomberg Edition
+  assert(T.gold === '#f0a028');    // Bloomberg amber
+  assert(T.red === '#e03c3c');     // Bloomberg red
 });
 test('Spacing scale is correct', function () {
   assert(SP.xs === 4 && SP.sm === 8 && SP.md === 12 && SP.lg === 16 && SP.xl === 20);
