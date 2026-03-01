@@ -1,47 +1,49 @@
 /**
- * MFD Theme Configuration
+ * MFD Theme Configuration — Bloomberg Edition
  *
  * All visual tokens — colors, spacing, border radius, shadows,
  * and base component style objects.
+ *
+ * Design language: Bloomberg Terminal — amber on near-black,
+ * sharp corners, flat solid surfaces, no glass morphism, snappy transitions.
  */
 
 // Color Palette
 export var T = {
-  bg: '#0f172a',
-  bg2: '#1e293b',
-  bg3: '#334155',
-  surface: '#1e293b',
-  text: '#e2e8f0',
-  dim: '#94a3b8',
-  faint: '#64748b',
-  gold: '#fbbf24',
-  green: '#34d399',
-  red: '#ef4444',
-  blue: '#60a5fa',
-  orange: '#f59e0b',
-  purple: '#a78bfa',
-  cyan: '#22d3ee',
-  border: 'rgba(255,255,255,0.08)',
-  glass: 'rgba(30,41,59,0.75)',
-  glassBorder: 'rgba(255,255,255,0.1)',
-  shadow:
-    '0 4px 6px -1px rgba(0,0,0,0.5),0 2px 4px -1px rgba(0,0,0,0.3)',
-  neonGlow: '0 0 10px rgba(251,191,36,0.3)',
-  backdrop: 'blur(12px)',
+  bg: '#070d17',
+  bg2: '#0e1826',
+  bg3: '#19253a',
+  surface: '#0e1826',
+  text: '#e8ecf1',
+  dim: '#8a97aa',
+  faint: '#4a5a6e',
+  gold: '#f0a028',          // Bloomberg amber
+  green: '#00b87a',
+  red: '#e03c3c',
+  blue: '#4a9fe8',
+  orange: '#e07a10',
+  purple: '#8b72ea',
+  cyan: '#00afc8',
+  border: 'rgba(255,255,255,0.09)',
+  glass: '#0e1826',         // solid surface — no blur
+  glassBorder: 'rgba(255,255,255,0.09)',
+  shadow: '0 1px 3px rgba(0,0,0,0.7)',
+  neonGlow: 'none',
+  backdrop: 'none',         // disables all T.backdrop usages
 };
 
 // Spacing Scale
 export var SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 };
 
-// Border Radius Scale
-export var RAD = { sm: 6, md: 10, lg: 14, xl: 20 };
+// Border Radius Scale — sharp, Bloomberg-style
+export var RAD = { xs: 1, sm: 2, md: 3, lg: 4, xl: 6 };
 
 // Shadow Scale
 export var SH = {
-  sm: '0 2px 4px rgba(0,0,0,0.3)',
-  md: '0 4px 12px rgba(0,0,0,0.4)',
-  lg: '0 8px 24px rgba(0,0,0,0.5)',
-  glow: '0 0 20px rgba(251,191,36,0.15)',
+  sm: '0 1px 3px rgba(0,0,0,0.7)',
+  md: '0 2px 6px rgba(0,0,0,0.6)',
+  lg: '0 4px 12px rgba(0,0,0,0.7)',
+  glow: 'none',
 };
 
 // Base Component Style Objects
@@ -57,23 +59,22 @@ export var S = {
     fontSize: 12,
     fontWeight: 700,
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    transition: 'all 0.05s ease',
     fontFamily: 'inherit',
   },
   btnPrimary: {
-    background: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
+    background: '#f0a028',
     color: '#000',
-    boxShadow: SH.sm,
   },
   btnGhost: {
-    background: 'rgba(255,255,255,0.06)',
+    background: 'transparent',
     color: T.dim,
-    border: '1px solid ' + T.glassBorder,
+    border: '1px solid ' + T.border,
   },
   btnDanger: {
-    background: 'rgba(239,68,68,0.15)',
+    background: 'rgba(224,60,60,0.15)',
     color: T.red,
-    border: '1px solid rgba(239,68,68,0.3)',
+    border: '1px solid rgba(224,60,60,0.3)',
   },
   btnSmall: {
     padding: '5px 10px',
@@ -81,10 +82,8 @@ export var S = {
     borderRadius: RAD.sm,
   },
   card: {
-    background: T.glass,
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid ' + T.glassBorder,
+    background: T.bg3,
+    border: '1px solid ' + T.border,
     borderRadius: RAD.lg,
     padding: SP.lg,
     boxShadow: SH.md,
@@ -94,15 +93,15 @@ export var S = {
     alignItems: 'center',
     gap: 3,
     padding: '2px 8px',
-    borderRadius: 20,
+    borderRadius: 3,
     fontSize: 10,
     fontWeight: 700,
   },
-  badgeGold: { background: 'rgba(251,191,36,0.15)', color: T.gold },
-  badgeGreen: { background: 'rgba(52,211,153,0.15)', color: T.green },
-  badgeRed: { background: 'rgba(239,68,68,0.15)', color: T.red },
-  badgePurple: { background: 'rgba(167,139,250,0.15)', color: T.purple },
-  badgeCyan: { background: 'rgba(34,211,238,0.15)', color: T.cyan },
+  badgeGold: { background: 'rgba(240,160,40,0.18)', color: T.gold },
+  badgeGreen: { background: 'rgba(0,184,122,0.18)', color: T.green },
+  badgeRed: { background: 'rgba(224,60,60,0.18)', color: T.red },
+  badgePurple: { background: 'rgba(139,114,234,0.18)', color: T.purple },
+  badgeCyan: { background: 'rgba(0,175,200,0.18)', color: T.cyan },
   sectionTitle: {
     fontSize: 14,
     fontWeight: 800,
@@ -142,16 +141,14 @@ export var S = {
     fontWeight: 900,
   },
   mono: {
-    fontFamily: "'Courier New',monospace",
+    fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace",
     letterSpacing: '0.5px',
   },
   studioCard: {
-    background:
-      'linear-gradient(135deg,rgba(251,191,36,0.08),rgba(251,191,36,0.02))',
-    border: '1px solid rgba(251,191,36,0.2)',
+    background: T.bg3,
+    border: '1px solid rgba(240,160,40,0.2)',
     borderRadius: RAD.lg,
     padding: SP.lg,
-    boxShadow: '0 0 20px rgba(251,191,36,0.08)',
   },
   ticker: {
     background: 'rgba(0,0,0,0.6)',
@@ -168,15 +165,14 @@ export var S = {
     bottom: 16,
     right: 16,
     zIndex: 100,
-    borderRadius: RAD.xl,
+    borderRadius: RAD.md,
     padding: '14px 24px',
     fontSize: 14,
     fontWeight: 900,
     cursor: 'pointer',
     border: 'none',
-    boxShadow:
-      '0 8px 24px rgba(0,0,0,0.5),0 0 20px rgba(251,191,36,0.2)',
-    background: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+    background: '#f0a028',
     color: '#000',
     letterSpacing: 0.5,
   },
@@ -192,9 +188,8 @@ export var S = {
   },
   toast: {
     pointerEvents: 'auto',
-    background: 'rgba(15,23,42,0.92)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: T.bg2,
+    border: '1px solid ' + T.border,
     borderRadius: RAD.md,
     padding: '8px 12px',
     boxShadow: SH.lg,
