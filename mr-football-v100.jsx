@@ -140,16 +140,16 @@ function setSeed(s){SEED_GLOBAL=s;RNG={play:mulberry32(s),injury:mulberry32(s+1)
 function reseedWeek(yr,wk){var chain=(SEED_GLOBAL^(yr*1000)^wk)>>>0;RNG.play=mulberry32(chain);RNG.injury=mulberry32(chain+1);RNG.ai=mulberry32(chain+3);RNG.dev=mulberry32(chain+4);RNG.trade=mulberry32(chain+5);}
 function reseedSeason(yr){var chain=(SEED_GLOBAL^(yr*7919))>>>0;RNG.draft=mulberry32(chain+2);}
 var DIFF_SETTINGS={
-  rookie:{name:"Rookie",icon:"🟢",desc:"Forgiving trades, fewer injuries, patient owner. Learn the ropes.",
+  rookie:{name:"Rookie",icon:"■",desc:"Forgiving trades, fewer injuries, patient owner. Learn the ropes.",
     tradeMod:0.85,injMod:0.6,ownerMod:0.7,clutchSwing:0.3,moraleMod:0.7,aiBidMod:0.75,staffBudget:28,startCash:100,
     foBudget:30},// v96: Rookie=$30M FO, $28M staff, $100M cash
-  pro:{name:"Pro",icon:"🟡",desc:"Standard simulation. Fair trades, normal injury rates, balanced AI.",
+  pro:{name:"Pro",icon:"■",desc:"Standard simulation. Fair trades, normal injury rates, balanced AI.",
     tradeMod:1.0,injMod:1.0,ownerMod:1.0,clutchSwing:0.5,moraleMod:1.0,aiBidMod:1.0,staffBudget:23,startCash:75,
     foBudget:25},// v96: Pro=$25M FO, $23M staff, $75M cash
-  allpro:{name:"All-Pro",icon:"🟠",desc:"AI drives harder bargains, injuries pile up, owner expects results.",
+  allpro:{name:"All-Pro",icon:"■",desc:"AI drives harder bargains, injuries pile up, owner expects results.",
     tradeMod:1.2,injMod:1.25,ownerMod:1.3,clutchSwing:0.65,moraleMod:1.2,aiBidMod:1.15,staffBudget:19,startCash:50,
     foBudget:22},// v96: All-Pro=$22M FO, $19M staff, $50M cash
-  legend:{name:"Legend",icon:"🔴",desc:"Ruthless AI, devastating injuries, owner on a hair trigger. Glory or bust.",
+  legend:{name:"Legend",icon:"■",desc:"Ruthless AI, devastating injuries, owner on a hair trigger. Glory or bust.",
     tradeMod:1.45,injMod:1.5,ownerMod:1.6,clutchSwing:0.8,moraleMod:1.4,aiBidMod:1.3,staffBudget:16,startCash:25,
     foBudget:20}// v96: Legend=$20M FO, $16M staff, $25M cash
 };
