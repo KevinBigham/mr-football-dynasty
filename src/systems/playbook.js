@@ -6,6 +6,7 @@
  * Each play has yardage ranges, probability modifiers,
  * and broadcast commentary lines.
  */
+import { RNG } from '../utils/rng.js';
 
 export var PLAYBOOK_986={
   // ── OFFENSIVE PLAYS ──

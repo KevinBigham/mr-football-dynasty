@@ -1,0 +1,469 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify Toolchain
+        run: npm run verify:toolchain
+
+      - name: Test
+        run: npm test
+
+      - name: Upload Toolchain Readiness Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-readiness-report
+          path: dist/toolchain-readiness-report.json
+          if-no-files-found: warn
+
+      - name: Verify Lane (Codex Hybrid)
+        run: npm run verify:lane
+
+      - name: Upload Lane Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-report
+          path: dist/lane-report.json
+          if-no-files-found: warn
+
+      - name: Upload Shared Window Audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-window-audit
+          path: dist/shared-window-audit.json
+          if-no-files-found: warn
+
+      - name: Print Lane Report Summary
+        run: |
+          if [ -f dist/lane-report.json ]; then
+            echo "## Lane Report" >> "$GITHUB_STEP_SUMMARY"
+            cat dist/lane-report.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Lane report not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Print Active Shared Window Profile
+        run: |
+          if [ -f dist/lane-report.json ]; then
+            echo "## Shared Window Profile" >> "$GITHUB_STEP_SUMMARY"
+            node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('dist/lane-report.json','utf8'));const name=p.sharedWindowProfile||'closed';const enabled=p.sharedWindow===true?'enabled':'disabled';console.log('- profile: '+name+' ('+enabled+')');console.log('- profile found: '+(p.sharedWindowProfileFound!==false));console.log('- allowed files: '+((p.sharedWindowAllowedFiles||[]).length));" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Shared window profile unavailable (lane report missing)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Dist Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build
+          path: dist
+          if-no-files-found: error
+
+  playable:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify Playable
+        run: npm run verify:playable
+
+      - name: Upload Playable Build Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playable-build-report
+          path: dist/playable-build-report.json
+          if-no-files-found: warn
+
+      - name: Upload Playable Smoke Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playable-smoke-report
+          path: dist/playable-smoke-report.json
+          if-no-files-found: warn
+
+  hybrid:
+    runs-on: ubuntu-latest
+    needs: playable
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify Hybrid
+        run: npm run verify:hybrid
+
+      - name: Verify Security Guardrails
+        run: npm run verify:security
+
+      - name: Upload Playability Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playability-report
+          path: dist/playability-report.json
+          if-no-files-found: warn
+
+      - name: Upload Legacy Save Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: legacy-save-report
+          path: dist/legacy-save-report.json
+          if-no-files-found: warn
+
+      - name: Upload Legacy Session Smoke Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: legacy-session-smoke-report
+          path: dist/legacy-session-smoke-report.json
+          if-no-files-found: warn
+
+      - name: Upload Import Safety Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-safety-report
+          path: dist/import-safety-report.json
+          if-no-files-found: warn
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: dist/security-report.json
+          if-no-files-found: warn
+
+      - name: Upload Hybrid Metrics Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hybrid-metrics-report
+          path: dist/hybrid-metrics.json
+          if-no-files-found: warn
+
+      - name: Hybrid Summary
+        run: |
+          echo "## Hybrid Gate" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f dist/playability-report.json ]; then
+            echo "- playability report: PASS" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- playability report: missing" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f dist/import-safety-report.json ]; then
+            echo "- save import safety: generated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- save import safety: missing" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -f dist/hybrid-metrics.json ]; then
+            echo "- hybrid metrics: generated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- hybrid metrics: missing" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Hybrid Failure Annotation
+        if: failure()
+        run: |
+          echo "::error title=Hybrid Gate Failed::Review dist/playability-report.json, dist/legacy-save-report.json, dist/legacy-session-smoke-report.json, dist/import-safety-report.json, and dist/security-report.json for failing checks."
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: hybrid
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Launcher E2E Smoke
+        run: npm run e2e:launcher
+
+      - name: Publish E2E Summary
+        if: always()
+        run: |
+          if [ -f dist/e2e-launcher-summary.md ]; then
+            cat dist/e2e-launcher-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Launcher E2E summary missing." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload E2E Launcher Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-launcher-report
+          path: dist/e2e-launcher-report.json
+          if-no-files-found: warn
+
+      - name: Upload E2E Launcher Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-launcher-summary
+          path: dist/e2e-launcher-summary.md
+          if-no-files-found: warn
+
+  contracts:
+    runs-on: ubuntu-latest
+    needs: hybrid
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify Contracts
+        run: npm run verify:contracts
+
+      - name: Publish Contracts Summary
+        if: always()
+        run: |
+          if [ -f dist/contracts-report.md ]; then
+            cat dist/contracts-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Contracts summary missing." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Contracts Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-report
+          path: dist/contracts-report.json
+          if-no-files-found: warn
+
+      - name: Upload Contracts Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-summary
+          path: dist/contracts-report.md
+          if-no-files-found: warn
+
+  perf:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - playable
+      - hybrid
+      - e2e
+      - contracts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Download Dist Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-build
+          path: dist
+
+      - name: Download Playable Build Report
+        uses: actions/download-artifact@v4
+        with:
+          name: playable-build-report
+          path: dist
+
+      - name: Download Playable Smoke Report
+        uses: actions/download-artifact@v4
+        with:
+          name: playable-smoke-report
+          path: dist
+
+      - name: Download Playability Report
+        uses: actions/download-artifact@v4
+        with:
+          name: playability-report
+          path: dist
+
+      - name: Download Legacy Save Report
+        uses: actions/download-artifact@v4
+        with:
+          name: legacy-save-report
+          path: dist
+
+      - name: Download Legacy Session Smoke Report
+        uses: actions/download-artifact@v4
+        with:
+          name: legacy-session-smoke-report
+          path: dist
+
+      - name: Download Security Report
+        uses: actions/download-artifact@v4
+        with:
+          name: security-report
+          path: dist
+
+      - name: Download Hybrid Metrics Report
+        uses: actions/download-artifact@v4
+        with:
+          name: hybrid-metrics-report
+          path: dist
+
+      - name: Verify Preloads
+        run: npm run verify-preload
+
+      - name: Build Dist Profile
+        run: npm run profile:dist
+
+      - name: Verify Perf Thresholds
+        run: npm run verify:perf
+
+      - name: Perf Warning Annotation
+        if: always()
+        run: |
+          if [ -f dist/perf-threshold-report.json ]; then
+            node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('dist/perf-threshold-report.json','utf8'));(p.warnings||[]).forEach((w)=>console.log('::warning title=Perf Soft Threshold::'+w));"
+          fi
+
+      - name: Compare Dist Profile (optional baseline)
+        run: |
+          if [ -f dist/perf-profile-baseline.json ]; then
+            npm run profile:compare -- --base dist/perf-profile-baseline.json --current dist/perf-profile.json --report dist/perf-profile-compare.json
+          else
+            echo "No baseline profile present; skipping compare."
+          fi
+
+      - name: Write CI Summary
+        run: node scripts/ci/write-job-summary.mjs docs/overnight-summary.md
+
+      - name: Publish Job Summary
+        run: cat docs/overnight-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish Blitz Summary
+        run: npm run blitz:summary
+
+      - name: Append Blitz Summary
+        if: always()
+        run: |
+          if [ -f docs/blitz-summary.md ]; then
+            cat docs/blitz-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Performance Baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline
+          path: docs/performance-baseline.md
+          if-no-files-found: warn
+
+      - name: Upload Dist Profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-perf-profile
+          path: dist/perf-profile.json
+          if-no-files-found: warn
+
+      - name: Upload Preload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: preload-report
+          path: dist/preload-report.json
+          if-no-files-found: warn
+
+      - name: Upload Profile Compare
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-perf-profile-compare
+          path: dist/perf-profile-compare.json
+          if-no-files-found: ignore
+
+      - name: Upload Perf Threshold Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-threshold-report
+          path: dist/perf-threshold-report.json
+          if-no-files-found: warn
+
+      - name: Upload Overnight Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: overnight-summary
+          path: docs/overnight-summary.md
+          if-no-files-found: warn
+
+      - name: Upload Blitz Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: blitz-summary
+          path: docs/blitz-summary.md
+          if-no-files-found: warn
