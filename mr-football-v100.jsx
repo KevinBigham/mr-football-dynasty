@@ -1,4 +1,5 @@
 import _R from 'react';
+import { ROSTER_CAP, CAMP_CAP, PS_CAP, MIN_SALARY, CAP_MATH, getSalaryCap, getCapFloor, getMinSalary } from './src/config/cap-math.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -1549,11 +1550,8 @@ function pickD(a){return a[Math.floor(RNG.draft()*a.length)];}
 function U(){return RNG.ui().toString(36).slice(2,8)+RNG.ui().toString(36).slice(2,5);}// v42: Fully deterministic IDs via RNG.ui
 function sum(a,fn){return a.reduce(function(s,x){return s+(fn?fn(x):x);},0);}
 function avg(a,fn){return a.length?sum(a,fn)/a.length:0;}
-var ROSTER_CAP=53;var CAMP_CAP=75;var PS_CAP=8;var MIN_SALARY=0.5;
-var CAP_MATH={BASE_CAP:255.0,GROWTH_RATE:0.05,CAP_FLOOR:0.90,MIN_SAL:{ROOKIE:0.795,VET_MIN:1.125,VET_MAX:1.210},DEAD_ACCEL:"IMMEDIATE"};
-function getSalaryCap(yr){return Math.floor(CAP_MATH.BASE_CAP*Math.pow(1+CAP_MATH.GROWTH_RATE,Math.max(0,(yr||2026)-2026)));}
-function getCapFloor(yr){return Math.floor(getSalaryCap(yr)*CAP_MATH.CAP_FLOOR);}
-function getMinSalary(yoe){return yoe<=0?CAP_MATH.MIN_SAL.ROOKIE:yoe<=3?CAP_MATH.MIN_SAL.VET_MIN:CAP_MATH.MIN_SAL.VET_MAX;}
+// ROSTER_CAP, CAMP_CAP, PS_CAP, MIN_SALARY, CAP_MATH, getSalaryCap, getCapFloor, getMinSalary
+// → imported from ./src/config/cap-math.js
 // v93.13: Draft contract — OVR+round → realistic salary/years for inaugural snake draft
 function draftContract(ovr,round){
   var market;
