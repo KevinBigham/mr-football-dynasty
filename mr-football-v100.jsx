@@ -27007,7 +27007,7 @@ var GS={
   function moodColor(v){return v>=70?T.green:v>=40?T.orange:T.red;}
   if(screen==="title"){
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 20%,#1e3a5f 0%,#0f172a 50%,#020617 100%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
+      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 20%,#1e3a5f 0%,#0f172a 50%,#020617 100%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
         
         {showScanlines && <div style={S.scanlines}/>}
         
@@ -27380,7 +27380,7 @@ var GS={
   }
   if(screen==="pick"){
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",padding:16}}>
+      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",padding:16}}>
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:4,color:T.dim,textTransform:"uppercase",marginBottom:4}}>Choose Your</div>
           <div style={{fontSize:24,fontWeight:900,color:T.gold}}>Franchise</div>
@@ -27455,7 +27455,7 @@ var GS={
       {id:"snake53",icon:"🐍",label:"Full Roster Draft",sub:"Snake Draft — 53 Picks",desc:"Draft every single player on your 53-man roster. Total control. You pick, AI picks, full snake rotation.",time:"⏱️ ~20 min",diff:"🏈🏈🏈",type:"snake",depth:53,border:T.green}
     ];
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
+      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8,marginTop:20}}>
           {React.createElement(TeamLogo,{team:selTeam,size:48})}
           <div><div style={{fontSize:24,fontWeight:900}}>{selTeam.city}</div><div style={{color:T.gold,fontWeight:700}}>{selTeam.name}</div></div>
@@ -27649,7 +27649,7 @@ var GS={
         ]
       }
     ];
-    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:"linear-gradient(180deg,#0a1628 0%,#0d1117 40%,#111827 100%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",display:"flex",flexDirection:"column"}},
+    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:"linear-gradient(180deg,#0a1628 0%,#0d1117 40%,#111827 100%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}},
       React.createElement("div",{style:{background:"rgba(10,22,40,0.98)",backdropFilter:"blur(8px)",borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"12px 20px",position:"sticky",top:0,zIndex:20,display:"flex",justifyContent:"space-between",alignItems:"center"}},
         React.createElement("div",null,
           React.createElement("div",{style:{fontSize:8,fontWeight:800,letterSpacing:3,color:"rgba(251,191,36,0.5)",textTransform:"uppercase",marginBottom:2}},"Operations Manual"),
@@ -27827,7 +27827,7 @@ var GS={
     var foeRole=foeRoles[foeCur];
     var foeIds=["gm","scout_dir","analytics","cap_analyst","personnel","player_relations","medstaff"];
     function foeGo(id){setFoExplainTab(id);}
-    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:"radial-gradient(ellipse at 50% 10%,#1a0a2e 0%,#0f0f13 65%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",display:"flex",flexDirection:"column"}}, // v80.8: height not minHeight so flex child scrolls
+    return React.createElement("div",{style:{height:"100vh",overflow:"hidden",background:"radial-gradient(ellipse at 50% 10%,#1a0a2e 0%,#0f0f13 65%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column"}}, // v80.8: height not minHeight so flex child scrolls
       React.createElement("div",{style:{background:"rgba(15,15,19,0.95)",backdropFilter:"blur(8px)",borderBottom:"2px solid "+T.purple,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
         React.createElement("div",null,
           React.createElement("div",{style:{fontSize:9,fontWeight:700,letterSpacing:4,color:T.dim,textTransform:"uppercase"}},"Meet Your"),
@@ -27932,7 +27932,7 @@ var GS={
     var VIBE_COLORS={All:T.text,Anthem:T.gold,Electronic:T.cyan,Groove:T.green,Chill:"#a78bfa",Downtempo:T.faint,Indie:T.orange,"Indie Rock":"#fb923c","Alt Rock":"#f87171","Reggae/Ska":"#34d399",Punk:T.red};
     var filteredKeys=musicVibeFilter==="All"?MFD_JUKEBOX_ALL:MFD_JUKEBOX_ALL.filter(function(k){return (TRACK_META[k]||{}).vibe===musicVibeFilter;});
     var activeKey=AUDIO.current&&AUDIO.current();
-    return React.createElement("div",{style:{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:"radial-gradient(ellipse at 50% 0%,#1a0a2e 0%,#0f0f13 70%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif"}},
+    return React.createElement("div",{style:{height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:"radial-gradient(ellipse at 50% 0%,#1a0a2e 0%,#0f0f13 70%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif"}},
       React.createElement("div",{style:{background:"rgba(10,10,15,0.95)",backdropFilter:"blur(8px)",borderBottom:"2px solid rgba(168,85,247,0.4)",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}},
         React.createElement("button",{style:{background:"rgba(255,255,255,0.06)",border:"1px solid "+T.border,borderRadius:8,color:T.dim,fontSize:13,padding:"5px 11px",cursor:"pointer",flexShrink:0},onClick:function(){setScreen("league");}},"<- Back"),
         React.createElement("div",{style:{flex:1}},
@@ -28031,7 +28031,7 @@ var GS={
       setFoSetupCandidates(null);
       setScreen("gameGuide"); // v80.3: show instructions before draft
     }
-    return React.createElement("div",{style:{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",padding:20}},
+    return React.createElement("div",{style:{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",padding:20}},
       React.createElement("div",{style:{textAlign:"center",marginBottom:12}},
         React.createElement("div",{style:{fontSize:11,fontWeight:700,letterSpacing:4,color:T.dim,textTransform:"uppercase",marginBottom:4}},"Build Your"),
         React.createElement("div",{style:{fontSize:24,fontWeight:900,color:T.purple}},"Front Office"),
@@ -28180,7 +28180,7 @@ var GS={
     // Find gamechanger rookies in pool for teaser
     var gcRookies=(expPool||[]).filter(function(p){return p._gamechanger96;});
     return (
-      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
+      <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 10%,#1e3a5f 0%,#0f172a 60%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",display:"flex",flexDirection:"column",alignItems:"center",padding:20}}>
         <div style={{fontSize:20,marginTop:16}}>🐍</div>
         <div style={{fontSize:22,fontWeight:900,color:T.gold,marginTop:4}}>{"SNAKE DRAFT ORDER"}</div>
         <div style={{fontSize:11,color:T.dim,textAlign:"center",maxWidth:420,marginTop:4,lineHeight:1.5}}>
@@ -28257,7 +28257,7 @@ var GS={
     var snkFiltered=expPosF==="ALL"?expPool:expPool.filter(function(p){return p.pos===expPosF;});
     snkFiltered=snkFiltered.slice().sort(function(a,b){return b.ovr-a.ovr;});
     return (
-      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",fontSize:12}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:12}}>
         
         <div style={{background:T.bg2,padding:"10px 16px",borderBottom:"2px solid "+(snkOnClock?T.gold:T.border),display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -28355,7 +28355,7 @@ var GS={
     aucFiltered=aucFiltered.slice().sort(function(a,b){return b.ovr-a.ovr;});
     var nomTeamObj=expNom&&expBidder?teams.find(function(t){return t.id===expBidder;}):null;
     return (
-      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",fontSize:12}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:12}}>
         
         <div style={{background:T.bg2,padding:"10px 16px",borderBottom:"2px solid "+T.gold,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -28751,7 +28751,7 @@ var GS={
     var activePillarObj=NAV_PILLARS.find(function(p){return p.id===activePillar;});
     var PILLAR_DEFAULTS={hub:"home",team:"roster",season:"teamSeasonStats",office:"franchise",legacy:"records"};
     return (
-      <div style={{minHeight:"100vh",background:"linear-gradient(180deg,#0f172a 0%,#020617 100%)",color:T.text,fontFamily:"'Segoe UI',system-ui,sans-serif",fontSize:13,display:"flex",flexDirection:"column"}}>
+      <div style={{minHeight:"100vh",background:"linear-gradient(180deg,#0f172a 0%,#020617 100%)",color:T.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,display:"flex",flexDirection:"column"}}>
         
         <div style={{background:"rgba(15,23,42,0.95)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:"1px solid "+T.glassBorder,padding:"6px 10px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:30,gap:6,minHeight:40}}>
           <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
@@ -45452,7 +45452,7 @@ var GS={
     }catch(leagueErr){console.error("LEAGUE RENDER CRASH:",leagueErr);return <div style={{padding:40,color:"#ef4444",background:"#0f172a",minHeight:"100vh",fontFamily:"monospace"}}><h2>{"🚨 League Screen Crash"}</h2><pre style={{whiteSpace:"pre-wrap",fontSize:12}}>{String(leagueErr)+"\n\n"+leagueErr.stack}</pre><button onClick={function(){setScreen("title");}} style={{marginTop:20,padding:"10px 20px",background:"#fbbf24",color:"#000",border:"none",borderRadius:6,fontWeight:700,cursor:"pointer"}}>{"← Back to Title"}</button></div>;}
   }
   return (
-    <div style={{minHeight:"100vh",background:T.bg,color:T.text,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Segoe UI',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif"}}>
       <button style={bS()} onClick={function(){setScreen("title");}}>← Mr. Football</button>
     </div>
   );
