@@ -16556,7 +16556,8 @@ var ToastContainer = memo(function(props){
       "@keyframes tdCelebrate{0%{transform:scale(1);background:rgba(212,167,75,0.10)}20%{transform:scale(1.03);background:rgba(212,167,75,0.28)}50%{transform:scale(1.01);background:rgba(212,167,75,0.18)}100%{transform:scale(1);background:rgba(212,167,75,0.10)}}",
       "@keyframes turnoverFlash{0%{background:rgba(239,68,68,0.08)}30%{background:rgba(239,68,68,0.28)}100%{background:rgba(239,68,68,0.08)}}",
       "@keyframes bigPlayPop{0%{transform:translateY(0);opacity:1}20%{transform:translateY(-3px);opacity:1}100%{transform:translateY(0);opacity:1}}",
-      "@keyframes pulse-draft{0%,100%{opacity:1}50%{opacity:0.4}}"
+      "@keyframes pulse-draft{0%,100%{opacity:1}50%{opacity:0.4}}",
+      "@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}"
     ].join(""))
   );
 });
