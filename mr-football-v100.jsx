@@ -43181,6 +43181,51 @@ var GS={
                     </div>
                   </div>
 
+                  {/* 4th Down Analytics Overlay — powered by calcFourthDownEV995 */}
+                  {lg.down===4&&isUserOff&&!isDone&&(function(){
+                    var ev=calcFourthDownEV995(lg.yardsToGo,lg.fieldPos,uScore-oScore,lg.quarter,lg.clock||0);
+                    var rec=ev.recommendation;
+                    var goColor=rec==="go"?T.green:T.dim;
+                    var fgColor=rec==="fg"?T.gold:T.dim;
+                    var puntColor=rec==="punt"?T.cyan:T.dim;
+                    var confColor=ev.confidence==="clear"?T.green:ev.confidence==="close"?T.gold:T.faint;
+                    var recLabel=rec==="go"?"GO FOR IT":rec==="fg"?"KICK THE FG":"PUNT";
+                    return React.createElement("div",{style:{margin:"0 0 6px",padding:"8px 10px",borderRadius:6,
+                      background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)"}},
+                      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}},
+                        React.createElement("div",{style:{fontSize:8,fontWeight:800,letterSpacing:1,color:T.faint}},
+                          "4TH DOWN ANALYTICS"),
+                        React.createElement("div",{style:{fontSize:8,fontWeight:700,color:confColor}},
+                          ev.confidence.toUpperCase()+" CALL")
+                      ),
+                      React.createElement("div",{style:{display:"flex",gap:8,marginBottom:4}},
+                        React.createElement("div",{style:{flex:1,padding:"4px 6px",borderRadius:4,
+                          background:rec==="go"?"rgba(0,184,122,0.08)":"rgba(255,255,255,0.02)",
+                          border:"1px solid "+(rec==="go"?"rgba(0,184,122,0.25)":"rgba(255,255,255,0.04)")}},
+                          React.createElement("div",{style:{fontSize:7,fontWeight:700,color:T.faint,marginBottom:1}},"GO FOR IT"),
+                          React.createElement("div",{style:{fontSize:11,fontWeight:800,color:goColor}},
+                            (ev.goForIt.ev>0?"+":"")+ev.goForIt.ev.toFixed(1)+" EP")
+                        ),
+                        ev.fieldGoal.applicable&&React.createElement("div",{style:{flex:1,padding:"4px 6px",borderRadius:4,
+                          background:rec==="fg"?"rgba(240,160,40,0.08)":"rgba(255,255,255,0.02)",
+                          border:"1px solid "+(rec==="fg"?"rgba(240,160,40,0.25)":"rgba(255,255,255,0.04)")}},
+                          React.createElement("div",{style:{fontSize:7,fontWeight:700,color:T.faint,marginBottom:1}},"FIELD GOAL"),
+                          React.createElement("div",{style:{fontSize:11,fontWeight:800,color:fgColor}},
+                            (ev.fieldGoal.ev>0?"+":"")+ev.fieldGoal.ev.toFixed(1)+" EP")
+                        ),
+                        React.createElement("div",{style:{flex:1,padding:"4px 6px",borderRadius:4,
+                          background:rec==="punt"?"rgba(34,211,238,0.08)":"rgba(255,255,255,0.02)",
+                          border:"1px solid "+(rec==="punt"?"rgba(34,211,238,0.25)":"rgba(255,255,255,0.04)")}},
+                          React.createElement("div",{style:{fontSize:7,fontWeight:700,color:T.faint,marginBottom:1}},"PUNT"),
+                          React.createElement("div",{style:{fontSize:11,fontWeight:800,color:puntColor}},
+                            (ev.punt.ev>0?"+":"")+ev.punt.ev.toFixed(1)+" EP")
+                        )
+                      ),
+                      React.createElement("div",{style:{fontSize:8,fontWeight:800,color:rec==="go"?T.green:rec==="fg"?T.gold:T.cyan}},
+                        "DATA: "+recLabel)
+                    );
+                  })()}
+
                   {isUserOff ? (
                     /* ── OFFENSIVE PLAY SELECTION ── */
                     <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
