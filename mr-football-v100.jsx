@@ -77,7 +77,7 @@ function WeeklyShowCard(props){
   }
   return React.createElement("div",{style:mS(S.studioCard,{padding:12})},
     React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginBottom:expanded?8:0},onClick:onToggle},
-      React.createElement("div",{style:mS(S.header,{fontSize:12,color:T.gold})},"📺 THIS WEEK IN MR. FOOTBALL — WK "+ws.week),
+      React.createElement("div",{style:mS(S.header,{fontSize:12,color:T.gold})},">> MFD REPORT — WK "+ws.week),
       React.createElement("span",{style:{fontSize:10,color:T.faint}},expanded?"▲ Collapse":"▼ Expand")
     ),
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:6,marginBottom:expanded?8:0}},
