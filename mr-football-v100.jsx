@@ -22,6 +22,19 @@ import { BREAKOUT_SYSTEM } from './src/systems/breakout-system.js';
 import { calcDominanceScore, calcDynastyIndex, calcPeakPower, calcLongevity, generateIdentityTags, ERA_THRESHOLD, ALMANAC_SCHEMA_VERSION, generateEraCards, buildHallOfSeasons } from './src/systems/dynasty-analytics.js';
 import { PLAYBOOK_986 } from './src/systems/playbook.js';
 import { StatBar, ToneBadge, WeeklyShowCard } from './src/components/index.js';
+import { NARRATIVE_STATES, STORY_ARC_EVENTS, pickWeightedEvent } from './src/systems/story-arcs.js';
+import { STORY_ARC_ENGINE } from './src/systems/story-arc-engine.js';
+import { FO_FIRST_NAMES, FO_LAST_NAMES, FO_TRAITS, FO_BACKSTORIES, FRONT_OFFICE } from './src/systems/front-office.js';
+import { WEEKLY_CHALLENGES, getPosMarketTier86 } from './src/systems/weekly-challenges.js';
+import { GRUDGE_MATCH, REVENGE_GAME } from './src/systems/grudge-revenge.js';
+import { COACH_SKILL_TREE } from './src/systems/coach-skill-tree.js';
+import { MENTOR_SYSTEM } from './src/systems/mentor-system.js';
+import { HOLDOUT_SYSTEM } from './src/systems/holdout-system.js';
+import { DRAFT_WAR_ROOM } from './src/systems/draft-war-room.js';
+import { ALL_TIME_RECORDS } from './src/systems/all-time-records.js';
+import { SPECIAL_PLAYS_993, SPECIAL_COVERAGES_993 } from './src/systems/special-plays.js';
+import { detectPositionBattles974, buildCutAdvisor974 } from './src/systems/roster-management.js';
+import { UNLOCK_DEFS, DEFAULT_UNLOCKS, checkUnlocks, isTabUnlocked } from './src/systems/unlocks.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -1842,44 +1855,8 @@ var ACTION_KEYS = {
   "Escape":"closeModal","?":"showHelp"
 };
 var TAB_ORDER=["home","roster","depthChart","scouting","schedule","standings","stats","trade","freeAgents","office"];
-var UNLOCK_DEFS = [
-  {id:"frontOffice",label:"Front Office Tools",trigger:"week3",tabs:["capLab","freeAgents"],
-    toast:"🔓 Front Office unlocked: Free Agency + Cap Lab.",
-    inbox:"Ownership approved new FO tools. Cap Lab is live."},
-  {id:"scouting",label:"Scouting Department",trigger:"season1",tabs:["scouting","combine"],
-    toast:"🔓 Scouting Department unlocked: Combine + Draft Intel.",
-    inbox:"Your scouting staff is fully operational."},
-  {id:"warRoom",label:"War Room",trigger:"madePlayoffs",tabs:["warRoom"],// v79: War Room now has real content
-    toast:"🔓 War Room unlocked: Draft Day trades + Deadline.",
-    inbox:"After reaching the playoffs, the owner opened the War Room."},
-  {id:"ledger",label:"The Ledger",trigger:"season3",tabs:["ledger"],
-    toast:"🔓 The Ledger unlocked: the game audits itself now.",
-    inbox:"Three seasons of data means the analytics team can work."},
-  {id:"legacy",label:"Legacy",trigger:"wonTitleOrSeason5",tabs:["hallOfFame","records","achievements"],
-    toast:"🔓 Legacy unlocked: Hall of Fame + Records.",
-    inbox:"Your legacy is taking shape. The Hall of Fame opens."}
-];
-var DEFAULT_UNLOCKS={frontOffice:false,scouting:false,warRoom:false,ledger:false,legacy:false};
-function checkUnlocks(unlocks,season,teams,myId,godMode){
-  if(godMode)return{frontOffice:true,scouting:true,warRoom:true,ledger:true,legacy:true};
-  var u=assign({},DEFAULT_UNLOCKS,unlocks||{});
-  var my=teams.find(function(t){return t.id===myId;});
-  if(!u.frontOffice&&season.week>=3)u.frontOffice=true;
-  if(!u.scouting&&season.year>2026)u.scouting=true;
-  if(!u.warRoom&&my&&(my.madePlayoffs||(season.phase==="playoffs")))u.warRoom=true;
-  if(!u.ledger&&season.year>=2029)u.ledger=true;
-  if(!u.legacy&&(season.year>=2031||(my&&my.titles&&my.titles>0)))u.legacy=true;
-  return u;
-}
-function isTabUnlocked(tabId,unlocks,godMode){
-  if(godMode)return true;
-  var alwaysOpen=["home","roster","depthChart","schedule","standings","trade","draft","settings","ownerReport"];
-  if(alwaysOpen.indexOf(tabId)>=0)return true;
-  for(var i=0;i<UNLOCK_DEFS.length;i++){
-    if(UNLOCK_DEFS[i].tabs.indexOf(tabId)>=0)return unlocks[UNLOCK_DEFS[i].id]===true;
-  }
-  return true;// default open for unmapped tabs
-}
+// [module-swapped] UNLOCK_DEFS → src/systems/
+// [module-swapped] DEFAULT_UNLOCKS+checkUnlocks+isTabUnlocked → src/systems/
 var HELP_SECTIONS=[
   {title:"Navigation",keys:[
     {k:"1-9",desc:"Jump to tab"},
@@ -7391,59 +7368,8 @@ var ADVANCED_ANALYTICS={
   }
 };
 // ── FEATURE 2: PLAYER STORY ARC ENGINE (STORY_ARC) ──────────────────────────
-var NARRATIVE_STATES={
-  BREAKOUT:"breakout",ELITE:"elite",SLUMP:"slump",COMEBACK:"comeback",
-  DECLINE:"decline",HOLDOUT:"holdout",REDEMPTION:"redemption",MENTOR:"mentor",SWAN_SONG:"swan_song"
-};
-var STORY_ARC_EVENTS={
-  breakout:[
-    {w:3,headline:"{name} is EMERGING as a franchise cornerstone",ovrMod:2,moraleMod:10,color:"#34d399"},
-    {w:2,headline:"League taking notice of {name}'s breakout campaign",ovrMod:1,moraleMod:8,color:"#34d399"},
-    {w:1,headline:"{name} — young star making noise in a big way",ovrMod:1,moraleMod:6,color:"#34d399"}
-  ],
-  elite:[
-    {w:3,headline:"{name} cementing All-Pro status — elite performance continues",ovrMod:0,moraleMod:6,color:"#fbbf24"},
-    {w:2,headline:"Critics agree: {name} is the best {pos} in the league",ovrMod:0,moraleMod:8,color:"#fbbf24"},
-    {w:1,headline:"{name} carrying this franchise on their back",ovrMod:0,moraleMod:5,color:"#fbbf24"}
-  ],
-  slump:[
-    {w:3,headline:"{name} struggling — benching rumors surface",ovrMod:-2,moraleMod:-12,color:"#ef4444"},
-    {w:2,headline:"What's wrong with {name}? Media asks questions",ovrMod:-1,moraleMod:-8,color:"#ef4444"},
-    {w:1,headline:"{name}'s rough stretch draws attention from league observers",ovrMod:-1,moraleMod:-6,color:"#f59e0b"}
-  ],
-  comeback:[
-    {w:3,headline:"{name} silences doubters with dominant performance",ovrMod:3,moraleMod:15,color:"#60a5fa"},
-    {w:2,headline:"Redemption arc: {name} back and better than ever",ovrMod:2,moraleMod:10,color:"#60a5fa"},
-    {w:1,headline:"{name} proving the critics wrong, one play at a time",ovrMod:1,moraleMod:8,color:"#60a5fa"}
-  ],
-  decline:[
-    {w:2,headline:"Father Time catching up with {name}? Production slipping",ovrMod:-1,moraleMod:-6,color:"#94a3b8"},
-    {w:1,headline:"{name} showing his age — but the veteran still competes",ovrMod:0,moraleMod:-4,color:"#94a3b8"}
-  ],
-  holdout:[
-    {w:2,headline:"{name}'s agent: 'My client deserves top-of-market money'",ovrMod:0,moraleMod:-8,color:"#f59e0b"},
-    {w:1,headline:"{name} holdout entering week two — talks stalled",ovrMod:0,moraleMod:-10,color:"#ef4444"}
-  ],
-  redemption:[
-    {w:3,headline:"{name} answering every critic — redemption season is real",ovrMod:2,moraleMod:12,color:"#a78bfa"},
-    {w:2,headline:"{name} on a mission to prove the doubters wrong",ovrMod:1,moraleMod:8,color:"#a78bfa"}
-  ],
-  mentor:[
-    {w:2,headline:"Veteran {name} quietly developing the next generation",ovrMod:0,moraleMod:10,color:"#22d3ee"},
-    {w:1,headline:"{name}'s locker room leadership drawing praise from coaching staff",ovrMod:0,moraleMod:8,color:"#22d3ee"}
-  ],
-  swan_song:[
-    {w:2,headline:"Could this be {name}'s final season? 'I'm giving everything I have'",ovrMod:0,moraleMod:20,color:"#fbbf24"},
-    {w:1,headline:"{name} playing with the fire of a man who has nothing left to prove",ovrMod:0,moraleMod:15,color:"#fbbf24"}
-  ]
-};
-function pickWeightedEvent(events){
-  if(!events||!events.length)return null;
-  var total=events.reduce(function(s,e){return s+(e.w||1);},0);
-  var r=RNG.play()*total;
-  for(var i=0;i<events.length;i++){r-=(events[i].w||1);if(r<=0)return events[i];}
-  return events[0];
-}
+// [module-swapped] NARRATIVE_STATES+STORY_ARC_EVENTS → src/systems/
+// [module-swapped] pickWeightedEvent → src/systems/
 // v99.4 — Claude: Comeback & Redemption Arc System
 var COMEBACK_994 = {
   injuryReturn: {
@@ -7560,66 +7486,7 @@ var COMEBACK_994 = {
 };
 
 
-var STORY_ARC_ENGINE={
-  normalizePlayer:function(p){
-    if(!p||!p.id)return p;
-    if(p._arcState===undefined)p._arcState=null;
-    if(typeof p._arcState!=="string"&&p._arcState!==null)p._arcState=null;
-    if(typeof p._arcTurns!=="number"||!isFinite(p._arcTurns)||p._arcTurns<0)p._arcTurns=0;
-    return p;
-  },
-  initPlayer:function(p){
-    STORY_ARC_ENGINE.normalizePlayer(p);
-    if(p._arcState===null){
-      p._arcState=p.age<=24&&p.ovr>=72?NARRATIVE_STATES.BREAKOUT:p.age>=35?NARRATIVE_STATES.SWAN_SONG:p.age>=32?NARRATIVE_STATES.MENTOR:p.ovr>=85?NARRATIVE_STATES.ELITE:null;
-      p._arcTurns=0;
-    }
-    return p;
-  },
-  getTargetState:function(p,teamWins,teamLosses,wk){
-    var recentBad=(p.stats&&(p.stats.gp||0)>0&&p.pos==="QB"&&(p.stats.int||0)/(p.stats.gp||1)>1.5);
-    var recentGood=(p.stats&&(p.stats.gp||0)>0&&p.pos==="QB"&&(p.stats.passTD||0)/(p.stats.gp||1)>2.5);
-    var isHoldout=p.holdout75||false;
-    if(isHoldout)return NARRATIVE_STATES.HOLDOUT;
-    if(p.age>=37&&p.ovr>=70)return NARRATIVE_STATES.SWAN_SONG;
-    if(p.age>=32&&p.ovr>=75)return NARRATIVE_STATES.MENTOR;
-    if(p._arcState===NARRATIVE_STATES.SLUMP&&recentGood)return NARRATIVE_STATES.COMEBACK;
-    if(p._arcState===NARRATIVE_STATES.COMEBACK&&p.ovr>=80)return NARRATIVE_STATES.ELITE;
-    if(p.age>=(({QB:29,RB:27,WR:28,TE:28,OL:30,DL:28,LB:28,CB:27,S:28})[p.pos]||28)&&p.ovr<75)return NARRATIVE_STATES.DECLINE;
-    if(recentBad&&wk>4)return NARRATIVE_STATES.SLUMP;
-    if(p.age<=24&&p.ovr>=74)return NARRATIVE_STATES.BREAKOUT;
-    if(p.ovr>=87)return NARRATIVE_STATES.ELITE;
-    if(p._arcState===NARRATIVE_STATES.SLUMP||p._arcState===NARRATIVE_STATES.HOLDOUT)return NARRATIVE_STATES.REDEMPTION;
-    return p._arcState;
-  },
-  tickPlayer:function(p,teamWins,teamLosses,wk,addNFn){
-    if(!p||!p.id)return p;
-    STORY_ARC_ENGINE.initPlayer(p);
-    p._arcTurns=(p._arcTurns||0)+1;
-    var minDwell=4+Math.floor(RNG.play()*5);
-    if(p._arcTurns<minDwell)return p;
-    var newState=STORY_ARC_ENGINE.getTargetState(p,teamWins,teamLosses,wk);
-    if(!newState||newState===p._arcState)return p;
-    p._arcState=newState;p._arcTurns=0;
-    var events=STORY_ARC_EVENTS[newState];if(!events)return p;
-    var evt=pickWeightedEvent(events);if(!evt)return p;
-    var headline=evt.headline.replace(/{name}/g,p.name).replace(/{pos}/g,p.pos);
-    if(evt.ovrMod&&evt.ovrMod!==0)p.ovr=Math.max(40,Math.min(99,p.ovr+evt.ovrMod));
-    if(evt.moraleMod)p.morale=Math.max(30,Math.min(99,(p.morale||70)+evt.moraleMod));
-    if(addNFn)addNFn("📰 "+headline,newState===NARRATIVE_STATES.SLUMP||newState===NARRATIVE_STATES.DECLINE?"red":newState===NARRATIVE_STATES.ELITE||newState===NARRATIVE_STATES.BREAKOUT?"gold":"cyan");
-    return p;
-  },
-  tickTeam:function(roster,wins,losses,wk,addNFn){
-    if(!roster)return roster;
-    roster.forEach(function(p){
-      STORY_ARC_ENGINE.normalizePlayer(p);
-      if(p.isStarter&&p.ovr>=70&&RNG.play()<0.08){
-        STORY_ARC_ENGINE.tickPlayer(p,wins,losses,wk,addNFn);
-      }
-    });
-    return roster;
-  }
-};
+// [module-swapped] STORY_ARC_ENGINE → src/systems/
 // ── END STORY_ARC ─────────────────────────────────────────────────────────────
 // ── FEATURE 8: MFSN BROADCAST MODE (BROADCAST) ───────────────────────────────
 var MFSN_BROADCAST={
@@ -7831,155 +7698,12 @@ var REHAB_SYSTEM={
     return RNG.injury()<opt.reinjuryChance;
   }
 };
-var FO_FIRST_NAMES=["Mike","Dan","Sarah","Chris","Pat","Alex","Jordan","Casey","Morgan","Taylor",
-  "Marcus","Keisha","Darius","Elena","Tommy","Priya","Lamar","Gwen","Vic","Nadia","Hank",
-  "Simone","Reggie","Becca","Omar","Trish","DeShawn","Lucia","Colt","Vera","Zach","Imani",
-  "Robbie","Faye","Luther","Mia","Calvin","Sasha","Terrence","Brooke","Gus","Yuki","Fletcher",
-  "Nina","Scotty","Rhea","Wendell","Cleo","Brandon","Tina"];
-var FO_LAST_NAMES=["Reynolds","Nakamura","O'Brien","Kowalski","Chen","Williams","Thompson","Garcia",
-  "Patel","Kim","Torres","Jackson","Okafor","Marchetti","Lundqvist","Hassan","Delacroix","Brennan",
-  "Vasquez","Okonkwo","Hartley","Rosenberg","Papadopoulos","Sutherland","Ferreira","Owens","Nguyen",
-  "MacPherson","Abebe","Fitzgerald","Reyes","Yamamoto","Holloway","Petrov","Adeyemi","Castellano",
-  "Higgins","Park","Dubois","McLaughlin","Amara","Johansson","Washington","O'Sullivan","Diallo",
-  "Bergman","Adkins","Romero","Nakashima","Calloway"];
-var FO_TRAITS={
-  analytical:{label:"Analytical",icon:"📈",desc:"Data-first decisions — finds edge cases AI misses"},
-  old_school:{label:"Old School",icon:"📼",desc:"Trusts the eye test — great at reading character"},
-  aggressive:{label:"Aggressive",icon:"🔥",desc:"Swings for blockbuster deals, high upside/variance"},
-  conservative:{label:"Conservative",icon:"🛡️",desc:"Avoids busts, steady hand under cap pressure"},
-  innovative:{label:"Innovative",icon:"💡",desc:"Ahead of the curve — spots market inefficiencies"},
-  moneyball:{label:"Moneyball",icon:"💰",desc:"Extracts value from undervalued players"},
-  film_guru:{label:"Film Guru",icon:"🎬",desc:"Watches every snap — deep player tendencies knowledge"},
-  connector:{label:"Connector",icon:"🤝",desc:"Players love them — boosts morale and retention"},
-  negotiator:{label:"Negotiator",icon:"📝",desc:"Gets deals done — squeezes value in every contract"},
-  developer:{label:"Developer",icon:"🌱",desc:"Player development whisperer — POT players blossom"},
-  grinder:{label:"Grinder",icon:"⚙️",desc:"Outworks everyone — weekly scouting is always thorough"},
-  visionary:{label:"Visionary",icon:"🔭",desc:"Builds dynasties — long-term roster architecture"},
-  risk_taker:{label:"Risk Taker",icon:"🎲",desc:"High-upside hires — boom or bust roster moves"},
-  loyalist:{label:"Loyalist",icon:"🏛️",desc:"Builds team culture — reduces staff poaching"},
-  numbers_wizard:{label:"Numbers Wizard",icon:"🔢",desc:"Cap genius — finds space others can't see"}
-};
-var FO_BACKSTORIES={
-  gm:["Former college GM who rebuilt 3 programs","Rose from intern to front office in 6 seasons",
-    "Ex-agent who crossed to the team side","Salary cap specialist poached from a rival GM",
-    "Former player rep who learned the business inside out","Division I AD transitioning to pro football"],
-  scout_dir:["Spent 20 years scouting the SEC before this role","Former college coach who went full-time scouting",
-    "Ran the combine testing operation for 8 years","Built his reputation finding undrafted gems",
-    "International scout who re-tooled for the US market","Deep Midwest roots — knows every small-school sleeper"],
-  analytics:["MIT stats grad with a football obsession","Came from NBA analytics and translated the model",
-    "Self-taught coder who built his own scouting database","Former Vegas oddsmaker who moved to football ops",
-    "Led the league in expected points modeling for 2 years","Started as an intern, stayed for the data"],
-  cap_analyst:["CPA who discovered football pays better","Structured 3 championship rosters under the cap",
-    "Known for the restructure that saved a dynasty team","Young gun — already two championship cap designs",
-    "Survived two CBA negotiations as team rep","Former players association economist who switched to team ops"],
-  personnel:["Played 4 years in the league — knows what teams need","Cross-sport background in basketball ops",
-    "High school coach turned eval specialist","Spent a decade in UDFA evaluation","Built roster that made it to the title game twice",
-    "Covers every position group with equal depth"],
-  player_relations:["Players call him first when things go wrong","Former chaplain who transitioned to team ops",
-    "Built the most cohesive locker room in recent memory","Agent-turned-advocate for the player side",
-    "Specializes in keeping stars happy on mid-tier deals","Known for defusing locker room situations quickly"],
-  medstaff:["Sports medicine PhD with 15 years pro football experience","Pioneered load management protocols",
-    "Reduced IR stints by 30% at his last stop","Developed a return-to-play model now used league-wide",
-    "Former Olympic sports scientist who moved to football","Built a recovery program that extended careers"]
-};
-var FRONT_OFFICE={
-  roles:[
-    {id:"gm",title:"Asst. General Manager",icon:"👔",affects:["trades","cap","drafting","negotiation"],salaryRange:[3,10],
-      desc:"Handles trade negotiations, cap logistics, and draft-day decisions on your behalf.",
-      color:"#a78bfa",tier:"core"},
-    {id:"scout_dir",title:"Scouting Director",icon:"🔍",affects:["drafting","evaluation"],salaryRange:[1.5,5],
-      desc:"Sharpens your draft intel — tighter prospect OVR estimates and fewer busts.",
-      color:"#22d3ee",tier:"core"},
-    {id:"analytics",title:"Analytics Coordinator",icon:"📊",affects:["gameplan","evaluation"],salaryRange:[1,4],
-      desc:"Turns film and data into gameplanning edges and scouting accuracy boosts.",
-      color:"#4ade80",tier:"core"},
-    {id:"cap_analyst",title:"Cap Analyst",icon:"💰",affects:["cap","restructure","extension"],salaryRange:[1,3.5],
-      desc:"Finds hidden cap space, models extensions, and prevents dead-money disasters.",
-      color:"#fbbf24",tier:"specialist"},
-    {id:"personnel",title:"Player Personnel Dir.",icon:"🏈",affects:["drafting","waivers","trades"],salaryRange:[1.5,4],
-      desc:"Runs UDFA claims, waiver wire strategy, and depth chart evaluation.",
-      color:"#f97316",tier:"specialist"},
-    {id:"player_relations",title:"Player Relations Mgr.",icon:"🤝",affects:["morale","holdouts","chemistry"],salaryRange:[0.8,2.5],
-      desc:"Keeps the locker room calm — reduces holdouts and chemistry crashes.",
-      color:"#ec4899",tier:"specialist"},
-    {id:"medstaff",title:"Medical Director",icon:"🏥",affects:["injuries","recovery","durability"],salaryRange:[1,3],
-      desc:"Reduces injury frequency and shortens recovery timelines for your roster.",
-      color:"#6ee7b7",tier:"specialist"}
-  ],
-  generateStaff:function(roleId){
-    var role=null;
-    FRONT_OFFICE.roles.forEach(function(r){if(r.id===roleId)role=r;});
-    if(!role)return null;
-    var ovr=cl(Math.round(45+RNG.ai()*45),40,95);
-    var salary=Math.round((role.salaryRange[0]+(role.salaryRange[1]-role.salaryRange[0])*(ovr-40)/55)*10)/10;
-    salary=Math.max(role.salaryRange[0],Math.round((salary+(RNG.ai()-0.5))*10)/10);
-    var traitKeys=Object.keys(FO_TRAITS);
-    var trait=traitKeys[Math.floor(RNG.ai()*traitKeys.length)];
-    var backstories=FO_BACKSTORIES[roleId]||FO_BACKSTORIES.gm;
-    return{
-      id:U(),roleId:roleId,title:role.title,icon:role.icon,color:role.color||"#a78bfa",
-      name:FO_FIRST_NAMES[Math.floor(RNG.ai()*FO_FIRST_NAMES.length)]+" "+FO_LAST_NAMES[Math.floor(RNG.ai()*FO_LAST_NAMES.length)],
-      ovr:ovr,salary:salary,
-      specialty:role.affects[Math.floor(RNG.ai()*role.affects.length)],
-      trait:trait,traitData:FO_TRAITS[trait]||FO_TRAITS.analytical,
-      backstory:backstories[Math.floor(RNG.ai()*backstories.length)],
-      yearsLeft:cl(Math.floor(1+RNG.ai()*4),1,5),
-      tier:role.tier||"core"
-    };
-  },
-  getBonus:function(staff,action){
-    if(!staff||staff.length===0)return 0;
-    var bonus=0;
-    staff.forEach(function(s){
-      var role=null;
-      FRONT_OFFICE.roles.forEach(function(r){if(r.id===s.roleId)role=r;});
-      if(role&&role.affects.indexOf(action)>=0){
-        bonus+=Math.round(((s.ovr||50)-50)*0.1*10)/10;
-      }
-    });
-    return Math.round(bonus*10)/10;
-  },
-  getCandidates:function(roleId,count){
-    var candidates=[];
-    for(var i=0;i<(count||4);i++){candidates.push(FRONT_OFFICE.generateStaff(roleId));}
-    candidates.sort(function(a,b){return b.ovr-a.ovr;});
-    return candidates;
-  }
-};
-var WEEKLY_CHALLENGES={
-  pool:[
-    {id:"score35",label:"Score 35+ points",icon:"🎯",check:function(r){return(r.userScore||0)>=35;},xp:15,diff:"medium"},
-    {id:"hold14",label:"Hold opponent under 14 points",icon:"🛡️",check:function(r){return(r.oppScore||0)<14;},xp:20,diff:"hard"},
-    {id:"rush150",label:"Rush for 150+ yards",icon:"🏃",check:function(r){return(r.rushYds||0)>=150;},xp:12,diff:"medium"},
-    {id:"pass350",label:"Pass for 350+ yards",icon:"🎯",check:function(r){return(r.passYds||0)>=350;},xp:12,diff:"medium"},
-    {id:"win21",label:"Win by 21+ points",icon:"💪",check:function(r){return(r.userScore||0)-(r.oppScore||0)>=21;},xp:25,diff:"hard"},
-    {id:"no_turnovers",label:"Zero turnovers",icon:"🧤",check:function(r){return(r.turnovers||0)===0;},xp:18,diff:"hard"},
-    {id:"comeback",label:"Win after trailing at half",icon:"🔄",check:function(r){return r.trailedAtHalf&&r.won;},xp:30,diff:"elite"},
-    {id:"td4",label:"Score 4+ touchdowns",icon:"🏈",check:function(r){return(r.totalTD||0)>=4;},xp:10,diff:"easy"},
-    {id:"sack4",label:"Get 4+ sacks",icon:"💥",check:function(r){return(r.sacks||0)>=4;},xp:15,diff:"medium"},
-    {id:"shutout",label:"Shutout opponent",icon:"🚫",check:function(r){return(r.oppScore||0)===0;},xp:50,diff:"legendary"}
-  ],
-  generateWeekly:function(week){
-    var shuffled=WEEKLY_CHALLENGES.pool.slice();
-    for(var i=shuffled.length-1;i>0;i--){
-      var j=Math.floor(RNG.ui()*(i+1));
-      var tmp=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=tmp;
-    }
-    return shuffled.slice(0,3).map(function(c){return assign({},c,{week:week,completed:false});});
-  },
-  checkResults:function(challenges,gameResult){
-    if(!challenges||!gameResult)return{completed:[],xpEarned:0};
-    var completed=[];var xp=0;
-    challenges.forEach(function(c){
-      if(!c.completed&&c.check(gameResult)){
-        c.completed=true;
-        completed.push(c);
-        xp+=c.xp;
-      }
-    });
-    return{completed:completed,xpEarned:xp};
-  }
-};
+// [module-swapped] FO_FIRST_NAMES → src/systems/
+// [module-swapped] FO_LAST_NAMES → src/systems/
+// [module-swapped] FO_TRAITS → src/systems/
+// [module-swapped] FO_BACKSTORIES → src/systems/
+// [module-swapped] FRONT_OFFICE → src/systems/
+// [module-swapped] WEEKLY_CHALLENGES → src/systems/
 var NEWS_TICKER={
   generateWeekly:function(teams,myId,week,fas){
     var items=[];
@@ -9300,99 +9024,8 @@ var STAFF_POACHING={
   }
 };
 // BREAKOUT_SYSTEM → extracted to src/systems/breakout-system.js (module swap #12)
-var GRUDGE_MATCH={
-  markGrudge:function(player,formerTeamId,reason){if(!player)return;player.grudge80={formerTeamId:formerTeamId,reason:reason,weeksActive:0,torched:false};},
-  isGrudgeGame:function(player,homeTeamId,awayTeamId){if(!player||!player.grudge80)return false;return player.grudge80.formerTeamId===homeTeamId||player.grudge80.formerTeamId===awayTeamId;},
-  applyBoost:function(player){
-    if(!player||!player.grudge80)return player;
-    var boosted=assign({},player);
-    boosted.ovr=Math.min(99,boosted.ovr+8);
-    if(boosted.ratings){boosted.ratings=assign({},boosted.ratings);Object.keys(boosted.ratings).forEach(function(k){boosted.ratings[k]=Math.min(99,(boosted.ratings[k]||60)+5);});}
-    boosted._grudgeActive=true;
-    return boosted;
-  },
-  resolve:function(player,playerStats,wasGoodGame,formerTeamAbbr){
-    if(!player||!player.grudge80)return null;
-    player.grudge80.weeksActive=(player.grudge80.weeksActive||0)+1;
-    if(wasGoodGame&&!player.grudge80.torched){player.grudge80.torched=true;return{torched:true,name:player.name,pos:player.pos,abbr:formerTeamAbbr,stats:playerStats};}
-    if(player.grudge80.weeksActive>34||player.grudge80.torched)delete player.grudge80;
-    return null;
-  }
-};
-var COACH_SKILL_TREE={
-  trees:{
-    Strategist:{branches:[
-      {id:"air_raid",name:"Air Raid",icon:"✈️",tiers:[
-        {level:3,label:"Quick Release",bonus:{passMod:2},desc:"+2% pass efficiency"},
-        {level:6,label:"Spread Master",bonus:{passMod:3},desc:"+3% pass efficiency"},
-        {level:9,label:"Aerial Dominance",bonus:{passMod:5,rzBoost:3},desc:"+5% pass, +3% red zone"}
-      ]},
-      {id:"ground_pound",name:"Ground & Pound",icon:"🏃",tiers:[
-        {level:3,label:"Power Run",bonus:{rushMod:2},desc:"+2% rush efficiency"},
-        {level:6,label:"Clock Killer",bonus:{rushMod:3,drivesBonus:1},desc:"+3% rush, +1 drive/game"},
-        {level:9,label:"Steamroller",bonus:{rushMod:5,stallReduction:0.03},desc:"+5% rush, fewer stalls"}
-      ]},
-      {id:"analytics",name:"Analytics King",icon:"📊",tiers:[
-        {level:3,label:"4th Down Guru",bonus:{stallReduction:0.02},desc:"Better 4th down conversion"},
-        {level:6,label:"Matchup Hunter",bonus:{counterBoost:2},desc:"+2 scheme counter bonus"},
-        {level:9,label:"Moneyball",bonus:{stallReduction:0.04,counterBoost:3},desc:"Peak analytics edge"}
-      ]}
-    ]},
-    Motivator:{branches:[
-      {id:"player_dev",name:"Player Developer",icon:"📈",tiers:[
-        {level:3,label:"Growth Mindset",bonus:{devBoost:1},desc:"+1 OVR growth/season"},
-        {level:6,label:"Star Maker",bonus:{devBoost:2},desc:"+2 OVR growth/season"},
-        {level:9,label:"Legend Factory",bonus:{devBoost:3,breakoutBoost:15},desc:"+3 OVR, +15% breakout chance"}
-      ]},
-      {id:"morale_king",name:"Morale King",icon:"❤️",tiers:[
-        {level:3,label:"Locker Room",bonus:{moraleMod:0.8},desc:"-20% morale drain"},
-        {level:6,label:"Unity",bonus:{moraleMod:0.6,chemBoost:5},desc:"-40% drain, +5 chemistry"},
-        {level:9,label:"Brotherhood",bonus:{moraleMod:0.4,chemBoost:10},desc:"-60% drain, +10 chem"}
-      ]},
-      {id:"clutch_coach",name:"Clutch Coach",icon:"🎯",tiers:[
-        {level:3,label:"Ice Water",bonus:{clutchBoost:3},desc:"+3 clutch rating boost"},
-        {level:6,label:"Big Game",bonus:{clutchBoost:5,playoffMod:1.05},desc:"+5 clutch, +5% playoffs"},
-        {level:9,label:"Mr. February",bonus:{clutchBoost:8,playoffMod:1.10},desc:"+8 clutch, +10% playoffs"}
-      ]}
-    ]},
-    Disciplinarian:{branches:[
-      {id:"iron_d",name:"Iron Defense",icon:"🛡️",tiers:[
-        {level:3,label:"Lockdown",bonus:{defMod:2},desc:"+2% defensive efficiency"},
-        {level:6,label:"Fortress",bonus:{defMod:3,pressureBoost:0.02},desc:"+3% def, +2% pressure"},
-        {level:9,label:"Shutdown",bonus:{defMod:5,intBoost:0.02},desc:"+5% def, +2% INT rate"}
-      ]},
-      {id:"special_teams",name:"Special Teams Ace",icon:"⚡",tiers:[
-        {level:3,label:"Coverage",bonus:{stMod:2},desc:"+2% ST efficiency"},
-        {level:6,label:"Return Game",bonus:{stMod:3,fieldPosMod:3},desc:"+3% ST, +3 field position"},
-        {level:9,label:"Hidden Yards",bonus:{stMod:5,fieldPosMod:5},desc:"+5% ST, +5 field position"}
-      ]},
-      {id:"conditioning",name:"Conditioning",icon:"💪",tiers:[
-        {level:3,label:"Iron Man",bonus:{injMod:0.85},desc:"-15% injury risk"},
-        {level:6,label:"Recovery",bonus:{injMod:0.75,recoveryBoost:1},desc:"-25% injury, +1wk recovery"},
-        {level:9,label:"Machine",bonus:{injMod:0.60,recoveryBoost:2},desc:"-40% injury, +2wk recovery"}
-      ]}
-    ]}
-  },
-  getTreeKey:function(arch){
-    if(["Strategist","QB Guru","Air Attack","Innovator"].indexOf(arch)>=0)return "Strategist";
-    if(["Motivator","Player's Coach","DB Whisperer"].indexOf(arch)>=0)return "Motivator";
-    return "Disciplinarian";
-  },
-  getActiveBonus:function(selections,coachId,coachLevel,arch){
-    var sel=selections[coachId];if(!sel)return{};
-    var treeKey=COACH_SKILL_TREE.getTreeKey(arch||sel.archForLookup||"Disciplinarian");
-    var tree=COACH_SKILL_TREE.trees[treeKey];if(!tree)return{};
-    var branch=null;tree.branches.forEach(function(b){if(b.id===sel.branch)branch=b;});
-    if(!branch)return{};
-    var bonus={};
-    branch.tiers.forEach(function(t,ti){
-      if(coachLevel>=t.level&&sel.tier>ti){
-        Object.keys(t.bonus).forEach(function(k){bonus[k]=(bonus[k]||0)+(typeof t.bonus[k]==="number"?t.bonus[k]:0);});
-      }
-    });
-    return bonus;
-  }
-};
+// [module-swapped] GRUDGE_MATCH → src/systems/
+// [module-swapped] COACH_SKILL_TREE → src/systems/
 var OWNER_PATIENCE={
   drainRate:{win_now:8,patient_builder:3,profit_first:5,fan_favorite:6,legacy_builder:4},
   gainRate:{win_now:12,patient_builder:6,profit_first:8,fan_favorite:10,legacy_builder:8},
@@ -9488,33 +9121,7 @@ var OWNER_CONSEQUENCES={
     "Owner skipped the last home game. Sources say patience is thin."
   ]
 };
-var MENTOR_SYSTEM={
-  posGroups:{QB:["QB"],RB:["RB"],WR:["WR","TE"],OL:["OL"],DL:["DL"],LB:["LB"],DB:["CB","S"]},
-  getGroup:function(pos){var keys=Object.keys(MENTOR_SYSTEM.posGroups);for(var i=0;i<keys.length;i++){if(MENTOR_SYSTEM.posGroups[keys[i]].indexOf(pos)>=0)return keys[i];}return null;},
-  isMentorEligible:function(p){return p.age>=30&&p.ovr>=75&&!(p.injury&&p.injury.games>0)&&p.isStarter;},
-  isMenteeEligible:function(p){return p.age<=23&&p.ovr>=55&&p.pot>(p.ovr+5)&&!(p.injury&&p.injury.games>0);},
-  canPair:function(mentor,mentee){return MENTOR_SYSTEM.getGroup(mentor.pos)===MENTOR_SYSTEM.getGroup(mentee.pos)&&mentor.id!==mentee.id;},
-  weeklyBonus:function(mentor,mentee){if(!mentor||!mentee)return 0;var ovrGap=mentor.ovr-mentee.ovr;return ovrGap>=25?2.5:ovrGap>=15?1.8:ovrGap>=10?1.2:0.8;},
-  applyWeekly:function(mentorships,roster){
-    Object.keys(mentorships||{}).forEach(function(mentorId){
-      var menteeId=mentorships[mentorId];
-      var mentor=roster.find(function(p){return p.id===mentorId;});
-      var mentee=roster.find(function(p){return p.id===menteeId;});
-      if(!mentor||!mentee)return;
-      var bonus=MENTOR_SYSTEM.weeklyBonus(mentor,mentee);
-      if(mentor._arcState===NARRATIVE_STATES.MENTOR)bonus+=0.35;// small weekly arc synergy bonus
-      mentee.pot=Math.min(99,mentee.pot+0.05);
-      if(mentor.devTrait==="superstar")mentee._mentorBonus=(mentee._mentorBonus||0)+bonus*1.3;
-      else mentee._mentorBonus=(mentee._mentorBonus||0)+bonus;
-    });
-  },
-  retirementBoost:function(mentor,mentee){
-    if(!mentor||!mentee)return;
-    mentee.morale=Math.min(99,(mentee.morale||70)+8);
-    mentee.pot=Math.min(99,mentee.pot+3);
-    mentee._legacyMentor=mentor.name;
-  }
-};
+// [module-swapped] MENTOR_SYSTEM → src/systems/
 // v99.3 — ChatGPT: Draft Analyst Expansion + War Room + Post-Draft Grades
 var DRAFT_ANALYST_993 = {   rodPemberton: {     steal: [       "ROD PEMBERTON IS LOSING HIS MIND! [TEAM] just got [PLAYER] at [ROUND] and the rest of the league is going to regret letting it happen!",       "THIS IS A THEFT. Somebody call the authorities — [TEAM] just stole [PLAYER]. That is unreal value at [ROUND]!",       "I'M ON MY FEET! [PLAYER] is a game-changer and [TEAM] just got him like it's a clearance sale at [ROUND]!",       "ROD'S OFF THE CHAIR! [PLAYER] should not be available here — [TEAM] just won the draft for the next 10 minutes!",       "That’s the kind of pick that flips a franchise. [TEAM] didn’t just draft [PLAYER] — they drafted hope at [ROUND]!",       "ARE YOU KIDDING ME?! [PLAYER] at [ROUND] is a highlight reel waiting to happen. [TEAM] just printed money!",       "This is why you stay patient. [TEAM] waited, stayed calm, and then BOOM — [PLAYER] falls into their lap at [ROUND]!",       "ROD'S SCREAMING IN THE WAR ROOM! [PLAYER] brings fireworks, and [TEAM] just lit the fuse at [ROUND]!",       "That's a steal with sirens on it. [TEAM] got [PLAYER] and everyone else is staring at their board like it betrayed them.",       "I said it before any workouts, I said it after the tape: [PLAYER] is DIFFERENT. [TEAM] just got him at [ROUND]."     ],     reach: [       "People are calling it a reach — I call it conviction. [TEAM] went up and got THEIR guy in [PLAYER]. Respect it.",       "Reach? Nah. You don’t get elite traits by waiting for permission. [TEAM] swung on [PLAYER] at [ROUND] and I love it.",       "Sometimes you draft the league before the league catches up. [PLAYER] is that kind of pick for [TEAM].",       "If [TEAM] believes [PLAYER] fits their identity, then take him. Draft boards don’t win games — players do.",       "Look, I get the value charts. But [PLAYER] has juice. [TEAM] just drafted juice at [ROUND].",       "Everyone wants to be 'safe' on draft night. [TEAM] wasn’t safe — they were bold. [PLAYER] can pay that off.",       "If [PLAYER] hits, nobody will remember the word 'reach.' They'll remember touchdowns and chaos for defenses.",       "I’m defending this one. [TEAM] didn’t panic — they targeted [PLAYER]. That’s how you build a roster."     ],     need: [       "Perfect need fit. [TEAM] had a hole, and [PLAYER] just filled it with concrete and rebar at [ROUND].",       "That’s roster math. [TEAM] needed this exact type of player, and [PLAYER] checks that box loud and clear.",       "This is what smart teams do: identify the weakness, attack it, and do it with a real prospect like [PLAYER].",       "You can’t patch a leak with a wish. [TEAM] used [ROUND] to fix the leak with [PLAYER].",       "That’s a starter pathway pick. [TEAM] needed snaps, and [PLAYER] is going to earn snaps fast.",       "Need and talent met at the altar and got married. [TEAM] and [PLAYER] is a clean fit.",       "That’s not forcing it — that’s addressing reality. [TEAM] had a need and [PLAYER] solves it.",       "This pick makes the depth chart make sense. [TEAM] gets [PLAYER] and the lineup looks better instantly."     ],     value: [       "Value, value, value. [TEAM] didn’t chase the noise — they took [PLAYER] where it makes sense at [ROUND].",       "[PLAYER] at [ROUND] is like finding an upgrade button for free. [TEAM] just got better without overthinking it.",       "That’s the sweet spot: good player, good price. [TEAM] just executed the draft like adults.",       "I love this kind of pick. Not flashy on the ticker, but [PLAYER] helps you win games for [TEAM].",       "This is how you build depth that becomes starters. [TEAM] grabbed [PLAYER] and that’s long-term value.",       "[TEAM] played the board, not the room. [PLAYER] at [ROUND] is strong value relative to the class.",       "This is one of those picks you celebrate in December. [PLAYER] is a value play that turns into real production.",       "Clean value. You don’t need fireworks every pick — you need hits. [PLAYER] is a hit candidate for [TEAM]."     ],     injuryConcern: [       "I’m not ignoring it, but I’m not panicking. [PLAYER] is here to play, and [TEAM] clearly feels good about the medicals.",       "Injuries happen. The question is recovery and mindset — [PLAYER] looks like a fighter, and [TEAM] is betting on that.",       "If [PLAYER] was a long-term issue, he wouldn’t be going here. [TEAM] did their homework — I’m not worried.",       "People hear 'medical flag' and they get scared. Sometimes it’s just history, not destiny. [PLAYER] can roll.",       "[TEAM] wouldn’t draft a ghost. They drafted [PLAYER] because they expect him on the field. End of story.",       "I’ve seen guys come back stronger. If [PLAYER] gets the right plan, [TEAM] just got a motivated monster.",       "This is where championships are won — taking calculated risks. [PLAYER] at [ROUND] is a calculated risk I can live with.",       "I’m downplaying it because I trust the pick: [TEAM] wants [PLAYER], and they know more than the internet does."     ],     characterConcern: [       "Let me say this: people grow. If [TEAM] talked to [PLAYER] and believe in the person, I’m not throwing stones.",       "The 'character' label gets slapped on guys too easily. [PLAYER] is a football player — let him prove it with work.",       "[TEAM] has vets, leaders, structure. If [PLAYER] needs direction, this is a place that can provide it.",       "I’m defending the kid. Everybody’s got a chapter they’re not proud of. [PLAYER] deserves a chance to write the next one.",       "Draft night is about talent and fit — [TEAM] thinks [PLAYER] fits. That matters more than anonymous whispers.",       "If [PLAYER] shows up and grinds, the 'concern' becomes a footnote. [TEAM] just took a swing on upside.",       "People want perfect humans. Football teams want competitors. [PLAYER] competes — [TEAM] bet on that.",       "This can be a turning point for [PLAYER]. A fresh start, real accountability, and a real opportunity with [TEAM]."     ],     sleeperAlert: [       "SLEEPER ALERT! [PLAYER] is the kind of guy you remember by midseason and wonder why he lasted until [ROUND].",       "This is a Day 3 type of pick that becomes a Day 1 contributor. [TEAM] found a gem in [PLAYER].",       "I’m flagging it now: [PLAYER] is going to outplay his draft slot. [TEAM] just got a sleeper with teeth.",       "Watch the energy on this pick. [PLAYER] has that 'chip' vibe — [TEAM] might have found a future starter.",       "Sleeper alert means: coaches are going to love him. [PLAYER] does the little things and [TEAM] needs that.",       "Some prospects don’t sparkle at events — they sparkle on Sundays. [PLAYER] is that guy for [TEAM].",       "[TEAM] just drafted a player that fans will chant for later. [PLAYER] is a sleeper I’m pounding the table for.",       "Keep receipts: [PLAYER] is a sleeper, and [TEAM] is going to look smart when he’s making big plays."     ],     bustAlert: [       "I hate saying it, but I’m a little worried. [PLAYER] has to prove he can translate his game for [TEAM].",       "This pick makes me nervous. If [PLAYER] doesn’t adapt fast, [TEAM] might be staring at a tough outcome.",       "I see the upside, but the floor is real. [PLAYER] has to clean up the details or this gets rough for [TEAM].",       "I’m not calling it a bust, but I’m raising an eyebrow. [PLAYER] needs the right coaching and patience from [TEAM].",       "This is the rare time I’m cautious: [PLAYER] has to show consistency. [TEAM] is betting heavy on projection.",       "I want to love it, but I can’t pretend: [PLAYER] has bust risk if the weaknesses stay. [TEAM] better have a plan."     ]   },    dianeHolloway: {     steal: [       "From a film standpoint, [PLAYER] should not be available at [ROUND]. The technique, processing, and repeatability are starter-level.",       "[TEAM] got a player whose tape shows consistent wins. [PLAYER] understands leverage and executes with discipline — that’s value.",       "This is a classic 'the board came to you' scenario. [PLAYER] has a clean projection because the fundamentals are already there.",       "I like the floor here. [PLAYER] plays with controlled feet and reliable hand placement. That translates in most schemes for [TEAM].",       "The best part is how consistent the tape is. [PLAYER] doesn’t live on one highlight — he stacks good reps for [TEAM].",       "[PLAYER] at [ROUND] is a steal because his losing reps are teachable, and his winning reps are repeatable.",       "[TEAM] is getting a prospect whose technique holds under pressure. That’s a strong indicator for early contribution.",       "He’s not just 'athletic' — [PLAYER] is functional. The film shows timing, angles, and finishing. That’s a steal.",       "This pick makes sense because [PLAYER] wins in multiple ways on tape. [TEAM] won’t have to force-feed a role.",       "There’s a clear pro translation here. [PLAYER] consistently plays within structure, and that’s why this is a steal for [TEAM]."     ],     reach: [       "I understand why some will label it a reach. The tape on [PLAYER] has flashes, but the down-to-down detail is still developing.",       "If [TEAM] is taking [PLAYER] at [ROUND], they’re betting on traits over refinement. That can work, but it’s not risk-free.",       "The question is role clarity. [PLAYER] needs a defined usage plan; otherwise, you’re asking the film to improve on faith.",       "On tape, [PLAYER] wins when the situation is favorable. The challenge will be winning when defenses adjust — [TEAM] must coach it.",       "This isn’t a bad player, but the projection requires growth. [TEAM] is accelerating the timeline by taking [PLAYER] at [ROUND].",       "The athletic profile is evident, yet the technique is inconsistent. That’s where the 'reach' label comes from for [PLAYER].",       "If [TEAM] has a specific schematic reason, I can see it. Without that, [PLAYER] at [ROUND] is earlier than the film suggests.",       "I’d call it aggressive. [PLAYER] can justify it, but it hinges on development in the parts of the game the film flags."     ],     need: [       "This addresses a roster need, but I like that it also aligns with what [PLAYER] actually does well on film.",       "Need picks work when the skill set matches the job. [PLAYER] has tape that supports the role [TEAM] likely has in mind.",       "It’s not just 'need' — it’s fit. [PLAYER] plays with the type of technique that supports quick integration for [TEAM].",       "A need pick can be dangerous when forced. This doesn’t feel forced; [PLAYER] has a legitimate pathway to snaps for [TEAM].",       "The film says [PLAYER] can handle the responsibilities that [TEAM] is missing. That’s a strong need match at [ROUND].",       "You can see the problem [TEAM] is solving. [PLAYER] brings specific tools that directly address it.",       "This pick makes the depth chart cleaner. [PLAYER] fits the missing profile, and the tape supports early contribution.",       "[TEAM] didn’t just draft a name — they drafted a skill set. [PLAYER] is a need fit with film-based justification."     ],     value: [       "Value here is rooted in translatable technique. [PLAYER] shows repeatable mechanics and that lowers risk for [TEAM].",       "I like this pick because [PLAYER] doesn’t rely on unusual conditions to succeed. The film shows sustainable wins at [ROUND].",       "The processing and angles are a big part of the value. [PLAYER] plays fast mentally, which matters for [TEAM].",       "This is a good example of value beyond raw traits. [PLAYER] has timing and discipline on tape that often gets overlooked.",       "The footwork stays clean, even when the play breaks down. That makes [PLAYER] a strong value selection for [TEAM].",       "Value isn’t just draft slot — it’s role certainty. [PLAYER] has a defined role projection in this range for [TEAM].",       "[PLAYER] at [ROUND] offers a good blend of floor and ceiling based on what he’s already doing correctly on film.",       "This is a professional pick. [TEAM] took [PLAYER] where the tape and projection intersect — that’s value."     ],     injuryConcern: [       "The medical component matters here. If [PLAYER] has a recurring soft-tissue issue, the re-injury risk is something teams plan around.",       "I’m looking at availability as a trait. [TEAM] needs to be comfortable that [PLAYER] can stack weeks without setbacks.",       "When a prospect has a documented injury history, the question is function: does the tape show compensation or hesitation for [PLAYER]?",       "If [PLAYER] had a past ligament issue, the stability and cutting mechanics matter. I’ll be watching how [TEAM] manages workload.",       "Medical flags aren’t automatic red lights, but they are risk multipliers. [PLAYER] will need a thoughtful ramp-up with [TEAM].",       "If the issue is chronic rather than acute, it changes the projection. [TEAM] is likely betting the current baseline is sustainable.",       "The film can sometimes reveal health concerns through altered stride or reduced burst. With [PLAYER], the evaluation depends on the most recent tape.",       "I’m not alarmist, but I’m precise: [TEAM] is drafting talent plus a medical plan. [PLAYER] must be available to justify [ROUND]."     ],     characterConcern: [       "We don’t have full context publicly, but teams do extensive background. [TEAM] likely vetted [PLAYER] beyond surface narratives.",       "Character questions become football questions if they affect preparation. The key is whether [PLAYER] has demonstrated consistent habits.",       "A locker room fit is real. [TEAM] is betting that [PLAYER] can align with their culture and routine.",       "If the concerns are maturity-based, structure can help. [PLAYER] will be evaluated quickly by teammates and coaches.",       "I try to separate rumor from pattern. If [TEAM] drafted [PLAYER], they likely believe the issue is manageable.",       "Accountability is the swing factor. [PLAYER] can silence concerns with punctuality, practice habits, and role acceptance for [TEAM].",       "Some prospects need clarity and support. If [TEAM] provides that, [PLAYER] can stabilize and develop.",       "This is a case where we’ll learn the truth through consistency. [TEAM] is making a bet on the person as well as the player."     ],     sleeperAlert: [       "The sleeper case for [PLAYER] is film-based: he consistently executes details that typically earn early playing time.",       "If you watch the tape, [PLAYER] is often doing the correct thing even when it doesn’t show up in the stat line. [TEAM] will value that.",       "I like sleepers who win with technique. [PLAYER] has that profile, and [TEAM] can plug him into a role quickly.",       "The release, footwork, or leverage — whichever applies — is more advanced than the draft slot suggests for [PLAYER].",       "A sleeper becomes real when the mental processing is fast. [PLAYER] plays with urgency and recognition on film for [TEAM].",       "[PLAYER] doesn’t have to become a different player to contribute. He can be himself and still help [TEAM] at [ROUND].",       "This is the kind of prospect coaches trust because the assignment discipline is strong. [PLAYER] is a sleeper for [TEAM].",       "There’s hidden value in consistency. [PLAYER] stacks good reps, and that’s how sleepers carve out roles for [TEAM]."     ],     bustAlert: [       "The bust path here is role mismatch. If [TEAM] asks [PLAYER] to do things the film doesn’t support, the learning curve gets steep.",       "Consistency is the concern. If [PLAYER] can’t repeat his technique under stress, then the projection becomes fragile for [TEAM].",       "If the athletic traits don’t translate against faster competition, [PLAYER] may struggle early. That’s the risk at [ROUND].",       "The film shows some correctable issues, but they must be corrected. If they aren’t, [TEAM] may not get the expected return.",       "This is about adaptation speed. If [PLAYER] is slow to adjust to pro coaching and pro complexity, the bust risk increases.",       "I’m not calling it doomed — I’m saying the margin is thin. [TEAM] needs [PLAYER] to develop the flagged areas quickly."     ]   },    marcusSteele: {     steal: [       "Fine. I’ll admit it: [PLAYER] at [ROUND] is a steal. It hurts to say, but [TEAM] got real value.",       "This is one of the few times the room and the board agree. [PLAYER] should’ve been gone earlier — [TEAM] benefited.",       "I don’t love everything, but at this price? [TEAM] did well. [PLAYER] is a strong value relative to expectation.",       "Yes, it’s a steal — but don’t crown anyone yet. [PLAYER] still has to translate for [TEAM].",       "You don’t see clean wins like this often. [TEAM] got [PLAYER] at [ROUND] and that’s objectively good business.",       "I’ll give credit where it’s due. [TEAM] didn’t overthink it. They took [PLAYER] and the value is obvious.",       "This is why teams hoard picks. Someone always falls. This time it’s [PLAYER], and [TEAM] profited.",       "It’s a steal on paper and likely on the field — assuming [PLAYER] does the boring stuff right for [TEAM].",       "I’m grudgingly impressed. [TEAM] got [PLAYER] and didn’t have to trade anything crazy to do it at [ROUND].",       "That’s a good pick. I’m not clapping, but I’m not arguing either. [PLAYER] at [ROUND] is a steal for [TEAM]."     ],     reach: [       "That’s a reach, and I’m not sugarcoating it. [TEAM] took [PLAYER] earlier than the profile warrants.",       "This is how you lose value in a draft. [TEAM] could’ve waited and still gotten [PLAYER].",       "I don’t like it. [PLAYER] has real questions, and [TEAM] just paid a premium at [ROUND] to answer them.",       "The board was offering better options. [TEAM] ignored them to take [PLAYER]. That’s a reach.",       "You can call it 'their guy' — I call it unnecessary risk. [PLAYER] at [ROUND] is aggressive in the wrong way.",       "If [PLAYER] hits, great. But the probability says [TEAM] overreached based on what we know.",       "This is the kind of pick that gets defended on draft night and regretted by Week 10 if the flaws show up.",       "Reach picks can work, but this one has too many 'ifs.' [TEAM] is betting big on [PLAYER] at [ROUND]."     ],     need: [       "Sure, it fills a need — but you can’t draft purely out of panic. [TEAM] better be right about [PLAYER].",       "Need pick, fine. But need picks turn ugly when you ignore value. [TEAM] drafted [PLAYER] and now the pressure’s on.",       "This makes sense for the depth chart, but the question is whether [PLAYER] is the correct solution or just the available one.",       "I see the rationale: [TEAM] needed help. I also see the risk: [PLAYER] has to be ready faster than some prospects are.",       "Need fit is real, but so is competition level. [TEAM] will find out quickly if [PLAYER] can handle the jump.",       "If [PLAYER] is a plug-and-play, this is great. If he’s a project, [TEAM] just drafted a need they can’t cash immediately.",       "The need is obvious. The evaluation must be honest. [TEAM] took [PLAYER] and now they must develop him correctly.",       "It checks a box, but boxes don’t win. [PLAYER] has to become production for [TEAM], not just a label."     ],     value: [       "Value depends on what you’re buying. [TEAM] bought [PLAYER] at [ROUND] — the question is whether the weaknesses are fixable.",       "On paper, it’s value. In reality, value is earned on Sundays. [PLAYER] has to prove it for [TEAM].",       "I like the spot more than I like the player. [PLAYER] at [ROUND] is fine — assuming the translation holds.",       "This is the range where you take swings. [TEAM] swung on [PLAYER]. If the swing skill improves, it’s value.",       "Value is nice, but fit matters. If [TEAM] uses [PLAYER] incorrectly, this 'value' turns into dead snaps.",       "I’ll call it value with caution. [PLAYER] has upside, but there’s a reason he was still on the board at [ROUND].",       "This is a value pick if [PLAYER] becomes consistent. If not, [TEAM] just drafted a roster puzzle piece that doesn’t fit.",       "The cost is right. The outcome isn’t guaranteed. [TEAM] got [PLAYER] at [ROUND] and now they need development to hit."     ],     injuryConcern: [       "I’m alarmed. When a prospect has repeated issues, it’s not bad luck — it’s a pattern. [TEAM] is taking a risk with [PLAYER].",       "Availability matters, and [PLAYER] hasn’t proven he can stack seasons. [TEAM] needs to plan for missed time.",       "This isn’t just a small flag. If the medical history includes recurrence, that’s a major concern for [PLAYER] at [ROUND].",       "I worry about soft tissue recurrences and workload tolerance. [TEAM] drafting [PLAYER] means they accept that risk.",       "If [PLAYER] has had multiple setbacks, the body might be telling the truth. [TEAM] is betting against biology.",       "Injuries change development arcs. If [PLAYER] misses camp reps, [TEAM] loses the most valuable teaching time.",       "I hate it for the player, but it’s reality: injury history can shrink ceilings. [TEAM] is hoping [PLAYER] is the exception.",       "This pick could look smart or could look like a medical regret. [PLAYER] must stay on the field for [TEAM] to justify it.",       "The risk isn’t just 'missing games' — it’s losing explosiveness. If [PLAYER] loses a step, [TEAM] loses the whole bet.",       "I’m not optimistic on this one. [TEAM] might have drafted talent that can’t stay available. [PLAYER] has to prove durability."     ],     characterConcern: [       "I’m very concerned. If the background suggests inconsistent habits, that’s a roster problem, not just a PR problem for [TEAM].",       "Character flags aren’t gossip — they’re predictive when they affect preparation. [PLAYER] must show accountability fast.",       "Teams can manage talent. They can’t manage chaos. If [PLAYER] brings chaos, [TEAM] will regret this pick.",       "I don’t love gambling on maturity. [TEAM] is betting they can change [PLAYER]. That’s a risky bet at [ROUND].",       "If there’s a pattern of missed responsibilities, that doesn’t magically vanish. [TEAM] needs safeguards around [PLAYER].",       "The locker room cost is real. One distraction can drain a season. [TEAM] better be confident about [PLAYER].",       "You can’t outcoach a lack of buy-in. If [PLAYER] doesn’t buy in, [TEAM] is wasting development time and snaps.",       "I hope it works, but I’m skeptical. [TEAM] drafted [PLAYER] and now they’re responsible for the outcome off the field too.",       "This is not the kind of risk I like. If leadership has to babysit [PLAYER], [TEAM] loses focus and cohesion.",       "I’ll say it plainly: if the concerns are real, this pick can blow up. [TEAM] needs [PLAYER] to be professional immediately."     ],     sleeperAlert: [       "I don’t throw 'sleeper' around, but [PLAYER] has a path. If he learns quickly, [TEAM] got real value at [ROUND].",       "This is a sleeper if the processing speed translates. [PLAYER] has some traits that are easy to build on for [TEAM].",       "I can see it: [PLAYER] can outplay his slot if he fixes one or two key issues. That’s sleeper potential for [TEAM].",       "The reason I like this sleeper call is role clarity. [TEAM] can use [PLAYER] in a defined way early.",       "Not perfect, but intriguing. [PLAYER] at [ROUND] is the kind of pick that becomes a starter when development clicks.",       "If [PLAYER] embraces coaching, he’ll make this board look silly. [TEAM] might have found a sleeper with real upside.",       "The tools are there. The question is consistency. If [PLAYER] becomes consistent, [TEAM] wins the late rounds.",       "I’m cautiously calling it: sleeper candidate. [PLAYER] has a realistic path to meaningful snaps for [TEAM]."     ],     bustAlert: [       "Bust alert. The production might be loud, but the translation risk is louder. [TEAM] drafted [PLAYER] and I see warning signs.",       "I’ve seen this story before: big numbers, easy reps, and then the pro game exposes the gaps. [PLAYER] has that risk.",       "If [PLAYER] can’t win against better technique and speed, the learning curve will be brutal for [TEAM].",       "This is a bust path if the weaknesses are fundamental. [TEAM] needs [PLAYER] to improve quickly or it gets ugly.",       "Some players peak in college systems. If [PLAYER] is system-dependent, [TEAM] just drafted a mirage at [ROUND].",       "If [PLAYER] can’t handle complexity, he’ll play slow. Playing slow in the pros is how careers vanish. Bust risk.",       "I’m not wishing it — I’m forecasting it: if [PLAYER] doesn’t adapt, [TEAM] will be drafting the same position next year.",       "This pick has bust potential because the floor is lower than people want to admit. [TEAM] better have a development plan."     ]   },    lenaVoss: {     steal: [       "Based on board value, [TEAM] just captured a major surplus. [PLAYER] at [ROUND] is the definition of positive expected return.",       "This is a value chart win. [TEAM] got [PLAYER] at a cost below market expectation for this prospect tier.",       "[PLAYER] falling to [ROUND] creates a surplus value pocket. [TEAM] exploited it cleanly.",       "If you model draft outcomes, this is the type of pick that improves roster efficiency. [TEAM] got [PLAYER] at a discount.",       "Steal isn’t emotional — it’s arithmetic. [TEAM] gained significant value by selecting [PLAYER] here.",       "This is how you beat the draft: take the player whose probability-weighted value exceeds the slot. [TEAM] did that with [PLAYER].",       "The opportunity cost is low and the upside is meaningful. [TEAM] just made an efficient selection with [PLAYER] at [ROUND].",       "Surplus value matters over multiple seasons. [PLAYER] at [ROUND] is a compounding advantage for [TEAM].",       "You can feel the board tension. [TEAM] stayed patient and got [PLAYER] in a high-leverage value window.",       "This pick grades as a steal because the slot cost is lower than the median outcome projection for [PLAYER]."     ],     reach: [       "By standard board values, [TEAM] paid too much. Selecting [PLAYER] at [ROUND] looks like an overpay versus consensus slotting.",       "If you translate this to value points, [TEAM] reached above the market baseline for [PLAYER]. The delta is meaningful.",       "This is an efficiency loss. [TEAM] used a higher asset than necessary to acquire [PLAYER], assuming typical availability.",       "I can justify reaches when the positional scarcity is extreme, but [PLAYER] here still reads as an overpay for [TEAM].",       "Draft capital is finite. [TEAM] spent more of it than the modeled return suggests on [PLAYER] at [ROUND].",       "If you’re keeping score, [TEAM] took a negative value move. [PLAYER] might work, but the price was high.",       "This pick implies [TEAM] had [PLAYER] significantly higher than market. That can be smart — but the risk premium is real.",       "Value chart language: [TEAM] overpaid for [PLAYER] at [ROUND]. Now the player has to outperform the slot to break even."     ],     need: [       "Need picks can be efficient when they prevent future overpayment. [TEAM] addressing the hole now with [PLAYER] can reduce later costs.",       "Roster construction matters: if [TEAM] had to fix this position next cycle, the price likely rises. [PLAYER] at [ROUND] can be efficient.",       "From a portfolio perspective, [TEAM] is reducing volatility by filling a known weakness with [PLAYER].",       "Need plus reasonable slot cost is good process. If [PLAYER] fits, [TEAM] stabilizes a critical unit.",       "This selection suggests [TEAM] is optimizing for immediate marginal wins at the position. [PLAYER] helps that goal.",       "Need picks are fine when the value loss is small. Here, [PLAYER] at [ROUND] looks like a balanced decision for [TEAM].",       "[TEAM] is choosing certainty of role over theoretical upside elsewhere. [PLAYER] has a clear usage path.",       "This improves roster efficiency if [PLAYER] becomes a cost-controlled starter for [TEAM] across multiple seasons."     ],     value: [       "This is a value play in the purest sense: draft slot cost is below expected contribution. [TEAM] optimized the pick with [PLAYER].",       "I like the economics: [TEAM] gets [PLAYER] on a controlled contract while capturing above-slot performance probability.",       "Value is about alternatives. At [ROUND], [PLAYER] projects favorably versus the typical player available — that’s why I like it for [TEAM].",       "This pick has a high floor in terms of expected snaps. [TEAM] drafted [PLAYER] where the opportunity cost is manageable.",       "From an efficiency lens, [TEAM] made a disciplined selection. [PLAYER] is appropriately priced at [ROUND].",       "Value isn’t always sexy. It’s stacking good decisions. [TEAM] stacking good decisions with [PLAYER] here.",       "If you’re building a long-run contender, you need surplus picks. [PLAYER] at [ROUND] is a surplus candidate for [TEAM].",       "The risk-adjusted return is favorable. [TEAM] isn’t betting the franchise — they’re buying a strong outcome distribution with [PLAYER].",       "This pick aligns with draft surplus theory: maximize expected returns per unit of capital. [TEAM] did that with [PLAYER] at [ROUND].",       "I’d call this a plus-value selection: [TEAM] captured efficiency by taking [PLAYER] in the right market window."     ],     injuryConcern: [       "Injury risk changes the distribution. The mean outcome might remain strong, but the variance increases for [PLAYER] and [TEAM].",       "Medicals function like a discount rate. [TEAM] is pricing [PLAYER] with an availability uncertainty premium at [ROUND].",       "If the injury history suggests recurrence, you’re modeling missed games and delayed development. That’s the hidden cost for [TEAM].",       "The upside remains, but the probability mass shifts downward when durability is uncertain. [TEAM] must be comfortable with that.",       "This pick is only efficient if [PLAYER] stays available. Otherwise, the expected surplus evaporates for [TEAM].",       "Injury concerns don’t just reduce snaps — they reduce continuity and improvement rate. [TEAM] needs a plan for [PLAYER].",       "If [PLAYER] requires load management, the team-level value depends on depth. [TEAM] must support the pick structurally.",       "I’d label it: high-upside, higher-variance. [TEAM] drafted [PLAYER] knowing the injury risk widens the outcome range."     ],     characterConcern: [       "Character risk is an uncertainty multiplier. If it affects availability, focus, or development, the expected return drops for [TEAM] and [PLAYER].",       "Teams price this differently. [TEAM] is signaling they believe the downside probability is manageable for [PLAYER].",       "From an asset management view, off-field volatility can destroy value even when the talent is real. [TEAM] is accepting that risk.",       "The question is whether the risk is noise or pattern. If pattern, the pick’s expected value shrinks quickly for [TEAM].",       "Culture fit is a cost center if it requires constant attention. [TEAM] believes [PLAYER] won’t become a cost center.",       "If [PLAYER] needs structure, [TEAM] must supply structure. Otherwise the value model breaks.",       "This can still be a good pick, but it’s conditional. [TEAM] needs [PLAYER] to be consistent in preparation and accountability.",       "Character flags affect compounding. A talented player who doesn’t develop loses the entire surplus advantage for [TEAM]."     ],     sleeperAlert: [       "Sleeper case: [PLAYER] has indicators that beat the draft slot — efficiency, role translation, or measurables that correlate with playing time for [TEAM].",       "This is a sleeper if usage aligns. [TEAM] can deploy [PLAYER] in high-leverage situations where his traits matter most.",       "I like sleepers whose statistical signals outpace their reputation. [PLAYER] fits that profile at [ROUND] for [TEAM].",       "The market may be mispricing [PLAYER]. If so, [TEAM] just captured an inefficiency and will benefit quickly.",       "Day 3 picks become valuable when they earn snaps. [PLAYER] has a realistic snaps pathway, which is the core sleeper argument for [TEAM].",       "This is a sleeper because the downside cost is low and the upside is meaningful. That asymmetric bet favors [TEAM].",       "If [PLAYER] hits even a median outcome, [TEAM] wins. If he outperforms median, this becomes a high-surplus sleeper.",       "Analytics angle: [PLAYER] has traits that historically outperform this draft region. [TEAM] is betting on that signal."     ],     bustAlert: [       "Bust risk rises when the projection depends on a single swing trait. If [PLAYER] doesn’t improve the swing skill, [TEAM] doesn’t get return on [ROUND].",       "The bust path is low adaptability. If [PLAYER] can’t adjust to complexity and speed, the probability of failure increases for [TEAM].",       "This selection has a wider downside tail. [TEAM] needs development to compress that tail for [PLAYER].",       "If role translation is wrong, the asset becomes replacement-level. That’s the bust definition, and [TEAM] must avoid it with usage.",       "Bust risk isn’t doom — it’s probability. With [PLAYER], the probability is non-trivial, and [TEAM] needs the coaching to shift it.",       "If [PLAYER] doesn’t earn early snaps, the development curve often flattens. That’s the bust pathway for [TEAM]."     ],     tradeGrade: [       "Trade grade: [TEAM] moved up for [PLAYER]. If the cost was a premium, they need starter-level impact to justify the value points spent.",       "Trade grade: If [TEAM] surrendered future capital, the break-even math requires [PLAYER] to outperform the average player at [ROUND] by a clear margin.",       "Trade grade: Moving down can be optimal. If [TEAM] added picks and still landed [PLAYER], that’s a net positive value outcome.",       "Trade grade: The value hinges on opportunity cost. If [TEAM] gave up a high-upside pick to secure [PLAYER], the trade is only good if [PLAYER] becomes a core piece.",       "Trade grade: This looks like a modest overpay unless [PLAYER] is a high-confidence projection. The capital spent raises the expectation bar for [TEAM].",       "Trade grade: If [TEAM] traded down and gained an extra selection, the portfolio improves even if [PLAYER] is merely solid.",       "Trade grade: The cleanest win is trading up without paying future premium. If [TEAM] did that for [PLAYER], I grade it favorably.",       "Trade grade: If the move cost [TEAM] multiple mid-round assets, the aggregate value loss must be offset by [PLAYER] becoming a difference-maker."     ]   } };  var WAR_ROOM_993 = [   "BREAKING: Trade talks heating up between two teams picking in the top 15.",   "SOURCES: [TEAM] has been shopping their pick for the past 20 minutes.",   "RUMOR: [PLAYER] had a private workout with [TEAM] last week — insiders are buzzing.",   "INTEL: Medical flags on [PLAYER] are being downplayed by his agent.",   "CLOCK DRAMA: [TEAM] is still on the phone with two offers on the table.",   "UPDATE: A surprise name is rising fast on multiple boards — [PLAYER] could go earlier than expected.",   "SOURCES: [TEAM] is trying to leapfrog a rival for a position run starting at [ROUND].",   "RUMOR: One front office is split — coaches want [PLAYER], analytics wants a trade down.",   "BREAKING: A late call just came in from [TEAM] about moving up five spots.",   "INTEL: [PLAYER] skipped a scheduled meeting earlier this week — teams are re-checking notes.",   "SOURCES: Two teams have identical grades on [PLAYER] — tiebreaker might be scheme fit.",   "RUMOR: [TEAM] is targeting a specific position and may trade up if the run starts now.",   "ALERT: A prospect expected to go earlier is still available — phones are lighting up.",   "BREAKING: [TEAM] has reportedly offered a future pick to move into this slot.",   "CLOCK DRAMA: The pick is not in yet — [TEAM] is scrambling.",   "SOURCES: [TEAM] is calling every team behind them to gauge trade value.",   "RUMOR: A surprise trade-up is being discussed to secure [PLAYER] before a rumored run.",   "INTEL: One GM called [PLAYER] 'a culture fit' — another called him 'a headache.'",   "BREAKING: A medical re-check request was filed on [PLAYER] minutes ago.",   "SOURCES: [TEAM] is considering a trade down even with [PLAYER] available.",   "RUMOR: A coach is pushing hard for [PLAYER] despite board value concerns.",   "ALERT: Position run may be starting — multiple teams are calling about moving up at [ROUND].",   "CLOCK DRAMA: [TEAM] is asking for extra time — league says no.",   "BREAKING: [TEAM] and [TEAM] have a framework deal; details still being negotiated.",   "INTEL: [PLAYER] impressed in whiteboard sessions — teams are boosting his grade late.",   "RUMOR: A prospect is sliding due to interviews, not tape. [PLAYER] could fall farther.",   "SOURCES: [TEAM] has contingency options if their top target is taken right before them.",   "BREAKING: Trade compensation includes a pick swap and an extra mid-rounder — big movement coming.",   "CLOCK DRAMA: The selection is delayed; announcement crew is standing by.",   "INTEL: A team doctor reportedly flagged a long-term concern on [PLAYER] — market reacting in real time.",   "RUMOR: [TEAM] is negotiating with two trade partners simultaneously.",   "SOURCES: [TEAM] is locked on [PLAYER] — unless a trade down offer becomes too good to ignore.",   "ALERT: A surprise pick just happened — boards across the league are being re-stacked.",   "BREAKING: [TEAM] is attempting to trade out of the round entirely for future capital.",   "INTEL: League-wide consensus has shifted; [PLAYER] is now viewed as a top-tier option at his position.",   "RUMOR: A rival team is trying to block [TEAM] by trading into their target zone.",   "SOURCES: [TEAM] is debating between need and best-available with seconds left on the clock.",   "CLOCK DRAMA: The commissioner is waiting — the card still not delivered.",   "BREAKING: A last-second trade offer includes multiple late picks — decision pending.",   "INTEL: [PLAYER] has a strong special teams projection — could boost his chances earlier than expected.",   "RUMOR: [TEAM] is willing to pay a premium to secure [PLAYER] right now.",   "SOURCES: A position coach just made a direct call to [PLAYER] — confidence is high.",   "ALERT: Another prospect is free-falling; teams are trying to determine why.",   "BREAKING: [TEAM] is on the clock and actively shopping — expect movement.",   "INTEL: [PLAYER] tested well in agility work; teams are re-evaluating his ceiling.",   "RUMOR: A team wants to trade down but fears losing [PLAYER] to a run.",   "SOURCES: [TEAM] has two names circled — decision coming down to medical confidence.",   "CLOCK DRAMA: A trade call is in progress with under 30 seconds left.",   "BREAKING: The pick is in — and the room looks stunned by the choice." ];  var POST_DRAFT_GRADES_993 = {   aPlus: [     "[TEAM] just turned draft capital into immediate starters and long-term upside. That’s an A+ class by any reasonable standard.",     "A+ for [TEAM]. Clean process, strong value, and multiple picks that align with roster needs without forcing it.",     "[TEAM] dominated the board. They collected surplus value and still landed impact talent. That’s elite draft execution.",     "This is how contenders draft. [TEAM] hit on premium positions, avoided panic, and created a coherent class identity.",     "[TEAM] left this draft with a class that can start early and develop late. A+ grade — efficient and dangerous."   ],   aGrade: [     "[TEAM] had a very strong weekend. Solid value, clear roster fits, and at least one pick with real star potential.",     "A grade for [TEAM]. They didn’t chase noise; they drafted players who project to roles with upside.",     "[TEAM] drafted with discipline and balance. A few high-floor selections plus a couple high-ceiling swings — that’s good work.",     "This is a cohesive class. [TEAM] addressed weaknesses and improved depth with prospects who can earn snaps.",     "A for [TEAM]. Not perfect, but consistently smart and likely to look better as the season unfolds."   ],   bGrade: [     "B for [TEAM]. Solid, functional picks — not flashy, but likely to produce contributors and stabilize depth.",     "[TEAM] drafted responsibly, even if the ceiling isn’t screaming. A steady class that should yield role players.",     "This is a 'good not great' class for [TEAM]. The process was fine, but the upside swings were limited.",     "B grade: [TEAM] avoided major mistakes and found a few value pockets. The question is whether they landed true difference-makers.",     "[TEAM] put together a competent class. It won’t headline reels, but it can quietly improve the roster over time."   ],   cGrade: [     "C grade for [TEAM]. A couple picks feel forced, and the value curve looks uneven across the class.",     "[TEAM] made some questionable bets. The outcomes could swing, but the process raises eyebrows.",     "This class has risk without enough surplus value to compensate. [TEAM] will need development to save the grade.",     "C for [TEAM]. The draft wasn’t a disaster, but it includes decisions that could create regret if the players don’t hit quickly.",     "[TEAM] left some value on the table. If the reaches don’t outperform, this class will be remembered as missed opportunity."   ],   dGrade: [     "D grade for [TEAM]. The board value looks rough, and multiple picks require perfect outcomes to justify the capital spent.",     "[TEAM] took on a lot of risk without capturing enough upside. This could be a class that forces a rebuild of the rebuild.",     "This is a disaster-class profile: reaches, questionable fits, and little margin for error. D for [TEAM].",     "[TEAM] didn’t maximize their capital and may have drafted problems they can’t fix quickly. The process is the concern.",     "D grade. If the class doesn’t develop fast, [TEAM] will be drafting for the same needs again next year."   ],   bestPickOverall: [     "Best pick overall: [TEAM] landing [PLAYER]. That’s the kind of selection that changes the trajectory of a franchise.",     "Best pick overall goes to [TEAM] for [PLAYER]. The value, fit, and projection align in a rare way.",     "[TEAM] gets the best pick of the draft with [PLAYER]. High floor, high ceiling, and immediate impact potential.",     "Best pick overall: [PLAYER] to [TEAM]. That’s a cornerstone-type selection at a price that makes it even better.",     "[TEAM] wins the headline: [PLAYER] is the best pick overall based on talent versus slot and role translation."   ],   biggestReach: [     "Biggest reach: [TEAM] selecting [PLAYER]. The slot cost exceeds the consensus value, and the projection has too many conditions.",     "This one stands out: [PLAYER] to [TEAM] as the biggest reach. The board offered better value and safer paths.",     "Biggest reach call goes to [TEAM] for [PLAYER]. If it hits, it’s genius — but the price paid is the issue.",     "[TEAM] reached hardest with [PLAYER]. The development curve must accelerate or the capital spend looks wasteful.",     "Biggest reach: [PLAYER] by [TEAM]. The pick requires best-case coaching and best-case translation to justify the slot."   ],   bestValueRound2: [     "Best value Round 2: [TEAM] getting [PLAYER]. That’s a Day 2 steal with immediate contributor probability.",     "Round 2 value winner: [PLAYER] to [TEAM]. The combination of slot cost and projected impact is excellent.",     "[TEAM] nailed Day 2 by landing [PLAYER]. That’s surplus value and a clean role projection.",     "Best value in Round 2 belongs to [TEAM] for [PLAYER]. That pick should outperform the draft number.",     "[PLAYER] to [TEAM] is the Round 2 value headline. Strong process, strong projection, strong return potential."   ] };
 
@@ -9771,73 +9378,7 @@ var OFFSEASON_NEWS={
     return stories;
   }
 };
-var HOLDOUT_SYSTEM={
-  checkHoldouts:function(team,isUser){
-    var holdouts=[];
-    if(!team||!team.roster)return holdouts;
-    team.roster.forEach(function(p){
-      if(p.holdout75)return;// Already holding out
-      var marketTier86=getPosMarketTier86(p.pos);
-      var underpaidLine86=Math.max(0,((p.ovr||50)-60)*0.4)*(marketTier86.mult||1);
-      var isUnderpaid=(p.ovr||50)>=80&&p.contract&&p.contract.salary<underpaidLine86;
-      var isExpiring=p.contract&&p.contract.years<=1;
-      var isUnhappy=(p.morale||70)<50;
-      var isStar=(p.ovr||50)>=82;
-      var chance=0;
-      if(isStar&&isExpiring&&isUnderpaid)chance=0.25;
-      else if(isStar&&isUnhappy)chance=0.15;
-      else if(isExpiring&&isUnderpaid&&(p.ovr||50)>=76)chance=0.10;
-      if(chance>0){// v83: personality modifies holdout probability
-        var _hFx=getContractPersonalityEffects(p,{});
-        chance+=_hFx.holdoutChanceAdj;
-        var fitHold86=calcPlayerIdentityFit(p,team);
-        if(fitHold86.score<=55)chance+=0.06;
-        else if(fitHold86.score<=62)chance+=0.03;
-        else if(fitHold86.score>=84)chance-=0.05;
-        else if(fitHold86.score>=76)chance-=0.02;
-        chance=cl(chance,0,0.85);
-      }
-      if(chance>0&&RNG.ai()<chance){
-        p.holdout75={week:0,demands:"extension",severity:isUnhappy?"severe":"moderate"};
-        holdouts.push(p);
-      }
-    });
-    return holdouts;
-  },
-  weeklyHoldout:function(p){
-    if(!p||!p.holdout75)return null;
-    p.holdout75.week=(p.holdout75.week||0)+1;
-    var wk=p.holdout75.week;
-    p.morale=Math.max(20,(p.morale||70)-4);// v80: Steeper morale drain per week
-    var stage=wk<=1?1:wk<=2?2:wk<=4?3:wk<=6?4:5;
-    p.holdout75.stage=stage;
-    if(stage===1){
-      return{type:"holdout_noshow",stage:1,name:p.name,pos:p.pos,ovr:p.ovr,
-        headline:p.name+" ("+p.pos+") no-shows training camp. Agent: 'Exploring all options.'"};
-    }else if(stage===2&&wk===2){
-      return{type:"holdout_statement",stage:2,name:p.name,pos:p.pos,
-        headline:"STATEMENT: "+p.name+" says he 'deserves to be paid like a top-"+p.pos+". No hard feelings.' MFSN at 11."};
-    }else if(stage===3&&!p.holdout75.tradeRequest){
-      p.holdout75.tradeRequest=true;p.holdout75.severity="severe";p.onTradeBlock=true;
-      return{type:"trade_request",stage:3,name:p.name,pos:p.pos,
-        headline:"🚨 "+p.name+" DEMANDS TRADE. Agent: 'He will not report under any circumstances.' MFSN BREAKING."};
-    }else if(stage===4&&!p.holdout75.suspendOption){
-      p.holdout75.suspendOption=true;
-      return{type:"suspend_option",stage:4,name:p.name,pos:p.pos,
-        headline:"WEEK "+wk+": "+p.name+" holdout enters critical stage. Team weighing suspension. Locker room fracturing."};
-    }else if(stage===5){
-      p.morale=Math.max(10,(p.morale||30)-8);
-      return{type:"nuclear",stage:5,name:p.name,pos:p.pos,
-        headline:"☢️ NUCLEAR: "+p.name+" holdout hits Week "+wk+". MFSN: 'This is a franchise-defining crisis.'"};
-    }
-    return{type:"holdout_week",stage:stage,name:p.name,pos:p.pos,weeks:wk};
-  },
-  resolve:function(p){
-    if(!p||!p.holdout75)return;
-    delete p.holdout75;
-    p.morale=Math.min(99,(p.morale||70)+10);
-  }
-};
+// [module-swapped] HOLDOUT_SYSTEM → src/systems/
 var RING_OF_HONOR_LOG={};// {teamId: [{name, pos, number, year, seasons, ovr, reason}]}
 function nominateForRing(teamId,player,year){
   if(!RING_OF_HONOR_LOG[teamId])RING_OF_HONOR_LOG[teamId]=[];
@@ -10295,93 +9836,7 @@ var DRAFT_EVAL={
     return getScore(dA)-getScore(dB);
   }
 };
-var DRAFT_WAR_ROOM={
-  getIntel:function(dc,team,pick,schemes){
-    dc=dc||{};team=team||{};schemes=schemes||{};
-    var pool=dc.pool||dc.draftClass||dc.class||dc.prospects||[];
-    var rem=pool.filter(function(p){return p&&!(p._drafted||p.draftedBy||p.draftPick);});
-    var posList=["QB","RB","WR","TE","OL","DL","LB","CB","S","K","P"];
-    var needs={};
-    posList.forEach(function(pos){
-      var sts=team.roster?starters(team.roster,pos,pos==="OL"?5:pos==="WR"?2:1):[];
-      var o=sts&&sts.length?avg(sts,function(pl){return pl.ovr||50;}):50;
-      needs[pos]=cl(80-o,0,40);// 0..40
-    });
-    var scored=rem.map(function(p){
-      var need=needs[p.pos]||0;
-      var schemeFit=DRAFT_WAR_ROOM.schemeFitScore(p,schemes);
-      var val=(p.ovr||50)+need*0.35+schemeFit*0.20;
-      return {p:p,val:val,need:need,fit:schemeFit};
-    }).sort(function(a,b){return b.val-a.val;});
-    var targetBoard=scored.slice(0,5).map(function(x){
-      return {id:x.p.id||x.p.name, name:x.p.name, pos:x.p.pos, ovr:x.p.ovr||50, value:Math.round(x.val), need:Math.round(x.need), schemeFit:Math.round(x.fit)};
-    });
-    var bpa=scored[0]||null;
-    var next=scored[1]||null;
-    var bpaAlert=null;
-    if(bpa&&next&&bpa.val-next.val>=6){
-      bpaAlert={msg:"BPA gap: "+bpa.p.name+" is "+Math.round(bpa.val-next.val)+" points above next best.", prospect:{id:bpa.p.id||bpa.p.name,name:bpa.p.name,pos:bpa.p.pos,ovr:bpa.p.ovr||50}};
-    }
-    var pickRec=bpa;
-    if(scored.length){
-      var needFirst=scored.slice(0,12).sort(function(a,b){
-        var na=(a.need*1.2)+(a.fit*0.3)+(a.p.ovr||50)*0.2;
-        var nb=(b.need*1.2)+(b.fit*0.3)+(b.p.ovr||50)*0.2;
-        return nb-na;
-      })[0];
-      if(needFirst&&bpa&&bpa.val-needFirst.val<10)pickRec=needFirst;
-    }
-    var recReason=[];
-    if(pickRec){
-      if(pickRec===bpa)recReason.push("Best player available by value.");
-      if((pickRec.need||0)>=20)recReason.push("Fills a high team need.");
-      if((pickRec.fit||0)>=15)recReason.push("Strong scheme fit.");
-    }
-    return {
-      targetBoard:targetBoard,
-      bpaAlert:bpaAlert,
-      schemeFit:{off:schemes.off||null, def:schemes.def||null},
-      autoPick:pickRec?{id:pickRec.p.id||pickRec.p.name,name:pickRec.p.name,pos:pickRec.p.pos,ovr:pickRec.p.ovr||50,reason:recReason.join(" ")}:null
-    };
-  },
-  schemeFitScore:function(p,schemes){
-    p=p||{};schemes=schemes||{};
-    var off=schemes.off||"";var def=schemes.def||"";
-    var r=p.ratings||{};
-    var score=0;
-    if(p.pos==="QB"){
-      if(off==="west_coast")score+=(r.shortAccuracy||50)*0.10+(r.fieldVision||50)*0.08;
-      if(off==="air_raid")score+=(r.deepAccuracy||50)*0.10+(r.throwPower||r.arm||50)*0.08;
-      if(off==="balanced_o")score+=(r.awareness||50)*0.08+(r.accuracy||50)*0.08;
-      if(off==="smashmouth")score+=(r.toughness||50)*0.06+(r.pocketPresence||50)*0.06;
-    }else if(p.pos==="RB"){
-      if(off==="ground_pound"||off==="smashmouth")score+=(r.power||50)*0.10+(r.truckPower||50)*0.06;
-      if(off==="west_coast"||off==="balanced_o")score+=(r.ballCarrierVision||50)*0.08+(r.elusiveness||50)*0.06;
-    }else if(p.pos==="WR"||p.pos==="TE"){
-      if(off==="west_coast")score+=(r.shortRoute||50)*0.10+(r.separation||50)*0.06;
-      if(off==="air_raid")score+=(r.deepRoute||50)*0.10+(r.speed||50)*0.06;
-      score+=(r.catching||50)*0.05+(r.catchInTraffic||50)*0.05;
-    }else if(p.pos==="OL"){
-      if(off==="ground_pound"||off==="smashmouth")score+=(r.pullBlock||50)*0.10+(r.runBlock||50)*0.06;
-      else score+=(r.passBlock||50)*0.08+(r.assignmentIQ||50)*0.06;
-    }else if(p.pos==="DL"){
-      if(def==="blitz_heavy")score+=(r.powerMoves||50)*0.08+(r.motorEffort||50)*0.06;
-      if(def==="zone_cov")score+=(r.pursuit||50)*0.06+(r.blockShedding||50)*0.06;
-      if(def==="man_press")score+=(r.finesseMoves||50)*0.08;
-    }else if(p.pos==="LB"){
-      if(def==="zone_cov")score+=(r.zoneCoverage||50)*0.10+(r.range||r.speed||50)*0.04;
-      if(def==="blitz_heavy")score+=(r.hitPower||50)*0.06+(r.pursuit||50)*0.05;
-    }else if(p.pos==="CB"){
-      if(def==="man_press")score+=(r.manCoverage||50)*0.12+(r.breakOnBall||50)*0.05;
-      if(def==="zone_cov")score+=(r.zoneCoverage||50)*0.12+(r.breakOnBall||50)*0.04;
-    }else if(p.pos==="S"){
-      if(def==="zone_cov")score+=(r.rangeAbility||50)*0.12+(r.zoneCoverage||50)*0.05;
-      if(def==="man_press")score+=(r.manCoverage||50)*0.08+(r.breakOnBall||50)*0.04;
-    }
-    score=(score/10)-5;
-    return cl(Math.round(score),0,25);
-  }
-};
+// [module-swapped] DRAFT_WAR_ROOM → src/systems/
 var PROSPECT_CHARACTER={
   types:[
     {id:"leader",label:"Leader",icon:"👑",effect:"team",desc:"Natural captain. Lifts teammates' morale.",weight:8},
@@ -10473,91 +9928,8 @@ var DRAFT_DAY_TRADES={
     return offer;
   }
 };
-var REVENGE_GAME={
-  check:function(teamA,teamB,rivalries){
-    if(!rivalries||!teamA||!teamB)return null;
-    var riv=null;
-    (rivalries||[]).forEach(function(r){
-      if(!r)return;
-      var isMatch=(r.teamA===teamA.id&&r.teamB===teamB.id)||(r.teamA===teamB.id&&r.teamB===teamA.id);
-      if(isMatch)riv=r;
-    });
-    if(!riv)return null;
-    var hist=riv.history||{};
-    var aLostLast=hist.lastResult&&hist.lastResult.loserId===teamA.id;
-    var bLostLast=hist.lastResult&&hist.lastResult.loserId===teamB.id;
-    var streak=hist.streak||0;
-    var result=null;
-    if(aLostLast&&Math.abs(streak)>=2){
-      result={revengeTeam:teamA.id,revengeAbbr:teamA.abbr,revengeIcon:teamA.icon,
-        streak:Math.abs(streak),heat:riv.heat||0,bonus:Math.min(5,Math.abs(streak))};
-    }else if(bLostLast&&Math.abs(streak)>=2){
-      result={revengeTeam:teamB.id,revengeAbbr:teamB.abbr,revengeIcon:teamB.icon,
-        streak:Math.abs(streak),heat:riv.heat||0,bonus:Math.min(5,Math.abs(streak))};
-    }
-    if(!result&&(riv.heat||0)>=50){
-      result={revengeTeam:null,isHeatRivalry:true,heat:riv.heat,bonus:2,
-        label:"🔥 HEATED RIVALRY"};
-    }
-    return result;
-  },
-  getBonus:function(revengeInfo,teamId){
-    if(!revengeInfo)return 0;
-    if(revengeInfo.revengeTeam===teamId)return revengeInfo.bonus||0;
-    if(revengeInfo.isHeatRivalry)return revengeInfo.bonus||0;
-    return 0;
-  }
-};
-var ALL_TIME_RECORDS={
-  categories:[
-    {id:"passYds",label:"Passing Yards",pos:"QB",type:"season"},
-    {id:"passTD",label:"Passing TDs",pos:"QB",type:"season"},
-    {id:"rushYds",label:"Rushing Yards",pos:"RB",type:"season"},
-    {id:"rushTD",label:"Rushing TDs",pos:"RB",type:"season"},
-    {id:"recYds",label:"Receiving Yards",pos:"WR",type:"season"},
-    {id:"rec",label:"Receptions",pos:"WR",type:"season"},
-    {id:"sacks",label:"Sacks",pos:"DL",type:"season"},
-    {id:"defINT",label:"Interceptions",pos:"DB",type:"season"},
-    {id:"tackles",label:"Tackles",pos:"LB",type:"season"},
-    {id:"teamWins",label:"Team Wins",pos:null,type:"team_season"},
-    {id:"teamPF",label:"Points Scored",pos:null,type:"team_season"},
-    {id:"teamPA",label:"Fewest Points Allowed",pos:null,type:"team_season",invert:true}
-  ],
-  buildRecords:function(history){
-    var records={};
-    ALL_TIME_RECORDS.categories.forEach(function(cat){records[cat.id]=[];});
-    if(!history)return records;
-    history.forEach(function(h){
-      if(!h||!h.teams)return;
-      h.teams.forEach(function(t){
-        if(t.wins!==undefined)records.teamWins.push({val:t.wins,name:t.abbr,icon:t.icon||"",year:h.year});
-        if(t.pointsFor!==undefined)records.teamPF.push({val:t.pointsFor,name:t.abbr,icon:t.icon||"",year:h.year});
-        if(t.pointsAgainst!==undefined)records.teamPA.push({val:t.pointsAgainst,name:t.abbr,icon:t.icon||"",year:h.year});
-        if(t.rosterSnap){
-          t.rosterSnap.forEach(function(p){
-            if(!p||!p.stats)return;
-            var s=p.stats;
-            if(s.passYds)records.passYds.push({val:s.passYds,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.passTD)records.passTD.push({val:s.passTD,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.rushYds)records.rushYds.push({val:s.rushYds,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.rushTD)records.rushTD.push({val:s.rushTD,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.recYds)records.recYds.push({val:s.recYds,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.rec)records.rec.push({val:s.rec,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.sacks)records.sacks.push({val:s.sacks,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.defINT)records.defINT.push({val:s.defINT,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-            if(s.tackles)records.tackles.push({val:s.tackles,name:p.name,pos:p.pos,team:t.abbr,year:h.year});
-          });
-        }
-      });
-    });
-    ALL_TIME_RECORDS.categories.forEach(function(cat){
-      if(cat.invert){records[cat.id].sort(function(a,b){return a.val-b.val;});}
-      else{records[cat.id].sort(function(a,b){return b.val-a.val;});}
-      records[cat.id]=records[cat.id].slice(0,10);// Top 10
-    });
-    return records;
-  }
-};
+// [module-swapped] REVENGE_GAME → src/systems/
+// [module-swapped] ALL_TIME_RECORDS → src/systems/
 var SIM_CULL={
   matchupOVR:function(t,opp){
     var getUnit=function(roster,pos,n){
@@ -12239,54 +11611,8 @@ function progressCoach(c,teamWins,teamLosses,madePlayoffs,wonChamp){
   return nc;
 }
 function coachBuyout(c){return Math.round(((c.yearsLeft||0)*(c.salary||3))*10)/10;}
-function detectPositionBattles974(roster){
-  var battles=[];
-  var starterSlots=STARTER_COUNTS||{};
-  Object.keys(starterSlots).forEach(function(pos){
-    if(pos==="K"||pos==="P")return;
-    var players=(roster||[]).filter(function(p){
-      return p&&p.pos===pos&&(!p.injury||!p.injury.games);
-    }).sort(function(a,b){return (b.ovr||0)-(a.ovr||0);});
-    if(players.length<2)return;
-    var starter=players[0];
-    var challenger=players[1];
-    var gap=(starter.ovr||0)-(challenger.ovr||0);
-    if(gap<=5||((challenger.age||99)<=24&&((challenger.pot||0)>=(starter.ovr||0)))){
-      battles.push({
-        pos:pos,
-        incumbent:{id:starter.id,name:starter.name,ovr:starter.ovr||0,age:starter.age||0,salary:v36_capHit(starter.contract||{})},
-        challenger:{id:challenger.id,name:challenger.name,ovr:challenger.ovr||0,age:challenger.age||0,pot:challenger.pot||0,salary:v36_capHit(challenger.contract||{})},
-        resolved:false,
-        winner:null
-      });
-    }
-  });
-  return battles.slice(0,4);
-}
-function buildCutAdvisor974(roster,rosterCap){
-  var overBy=(roster||[]).length-(rosterCap||ROSTER_CAP);
-  if(overBy<=0)return null;
-  var candidates=(roster||[]).slice().sort(function(a,b){
-    var aScore=(a.ovr||0)+(a.isStarter?20:0)+(((a.pot||0)>(a.ovr||0))?5:0)+((a.age||99)<=24?5:0);
-    var bScore=(b.ovr||0)+(b.isStarter?20:0)+(((b.pot||0)>(b.ovr||0))?5:0)+((b.age||99)<=24?5:0);
-    var aSal=v36_capHit(a.contract||{})||0;
-    var bSal=v36_capHit(b.contract||{})||0;
-    if((a.ovr||0)<65)aScore-=aSal*2;
-    if((b.ovr||0)<65)bScore-=bSal*2;
-    return aScore-bScore;
-  });
-  return {
-    overBy:overBy,
-    suggestions:candidates.slice(0,Math.min(overBy+3,10)).map(function(p){
-      var deadMoney=v36_deadIfCut(p.contract||{});
-      var salary=v36_capHit(p.contract||{})||0;
-      var reason=(p.ovr||0)<60?"Low OVR":
-        ((p.ovr||0)<65&&salary>3)?"Overpaid backup":
-        (!p.isStarter&&(p.age||0)>=30)?"Aging non-starter":"Roster crunch";
-      return {id:p.id,name:p.name,pos:p.pos,ovr:p.ovr||0,age:p.age||0,salary:salary,deadMoney:deadMoney,reason:reason};
-    })
-  };
-}
+// [module-swapped] detectPositionBattles974 → src/systems/
+// [module-swapped] buildCutAdvisor974 → src/systems/
 function getAgingPhase(p){
   var curve=AGE_CURVES[p.pos]||AGE_CURVES.WR;
   if(p.age<curve.prime[0]) return {label:"📈",tip:"Rising",color:"#10b981"};
@@ -13025,197 +12351,9 @@ function draftPickOvr991(round,pick){
 // ── END DEEPSEEK v99.2 ──────────────────────────────────────────────────────────
 
 // v99.3 — Claude: Special Teams Plays + Coverage Packages
-var SPECIAL_PLAYS_993 = {
-  trickPlays: [
-    {
-      id: "fake_punt",
-      label: "Fake Punt",
-      icon: "🎭",
-      desc: "Punter takes the snap and runs — catches the coverage unit completely off guard",
-      type: "run",
-      ydsBase: [-2, 18],
-      bigPlay: 0.35,
-      fumble: 0.06,
-      incPct: 0,
-      intPct: 0,
-      sackPct: 0,
-      isTrick: true,
-      shortYdsOk: false,
-      noHuddleOk: false,
-      commentary: [
-        "FAKE PUNT! The punter tucks it and runs!",
-        "They kept the offense out there — it's a fake! He's got room!",
-        "Fake punt — the coverage unit is caught completely flat-footed!",
-        "WHAT A CALL! The punter takes off and the defense has no answer!"
-      ]
-    },
-    {
-      id: "flea_flicker",
-      label: "Flea Flicker",
-      icon: "🪰",
-      desc: "RB takes the handoff and tosses it back to the QB for a deep bomb",
-      type: "pass",
-      ydsBase: [12, 45],
-      bigPlay: 0.45,
-      fumble: 0.04,
-      incPct: 0.40,
-      intPct: 0.06,
-      sackPct: 0.12,
-      isTrick: true,
-      shortYdsOk: false,
-      noHuddleOk: false,
-      commentary: [
-        "Flea flicker! RB pitches it back — QB lets it fly!",
-        "It's a flea flicker! The secondary bit HARD on that run fake!",
-        "FLEA FLICKER! The defense is turned around — wide open downfield!",
-        "Handoff, pitch back, LAUNCH! That's the flea flicker at its finest!"
-      ]
-    },
-    {
-      id: "hook_lateral",
-      label: "Hook & Lateral",
-      icon: "🔀",
-      desc: "WR catches a short hook then laterals to a trailing teammate at full speed",
-      type: "pass",
-      ydsBase: [0, 25],
-      bigPlay: 0.32,
-      fumble: 0.08,
-      incPct: 0.30,
-      intPct: 0.04,
-      sackPct: 0.06,
-      isTrick: true,
-      shortYdsOk: false,
-      noHuddleOk: false,
-      commentary: [
-        "Hook and lateral! The pitch is clean — he's got blockers!",
-        "Short catch — AND HE LATERALS! The trailing man has the ball!",
-        "HOOK AND LATERAL! They practiced this one all week!",
-        "Catch, pitch, AND HE'S GONE! The hook and lateral breaks the defense wide open!"
-      ]
-    },
-    {
-      id: "qb_sneak",
-      label: "QB Sneak",
-      icon: "🐍",
-      desc: "QB dives behind the center — the ultimate short yardage play",
-      type: "run",
-      ydsBase: [0, 3],
-      bigPlay: 0.02,
-      fumble: 0.01,
-      incPct: 0,
-      intPct: 0,
-      sackPct: 0,
-      isTrick: false,
-      shortYdsOk: true,
-      noHuddleOk: true,
-      commentary: [
-        "QB sneak! He pushes forward behind the center!",
-        "Quarterback dives over the top — did he get it?",
-        "Sneak play! The pile pushes forward — tough, physical football!",
-        "QB lowers his shoulder and burrows through the line — pure grit!"
-      ]
-    }
-  ],
-  passVariants: [
-    {
-      id: "fake_fg_pass",
-      label: "Fake FG Pass",
-      icon: "🏹",
-      desc: "Holder stands up and fires to the tight end leaking into the flat",
-      type: "pass",
-      ydsBase: [8, 22],
-      bigPlay: 0.28,
-      fumble: 0.02,
-      incPct: 0.35,
-      intPct: 0.05,
-      sackPct: 0.08,
-      isTrick: true,
-      shortYdsOk: false,
-      noHuddleOk: false,
-      commentary: [
-        "FAKE FIELD GOAL! The holder stands up — he's throwing!",
-        "It's a fake! The holder fires to the tight end in the flat!",
-        "Nobody picked up the tight end — FAKE FG and he's wide open!",
-        "WHAT A PLAY CALL! Fake field goal, holder to TE — first down!"
-      ]
-    },
-    {
-      id: "end_around_pass",
-      label: "End Around Pass",
-      icon: "🌀",
-      desc: "WR takes the reverse handoff and throws back across the field",
-      type: "pass",
-      ydsBase: [-3, 30],
-      bigPlay: 0.30,
-      fumble: 0.05,
-      incPct: 0.38,
-      intPct: 0.08,
-      sackPct: 0.10,
-      isTrick: true,
-      shortYdsOk: false,
-      noHuddleOk: false,
-      commentary: [
-        "End around — AND HE THROWS! The receiver is a quarterback tonight!",
-        "Reverse handoff — he pulls up and launches it downfield!",
-        "It's an end around pass! The defense is scrambling!",
-        "WR takes the reverse and FIRES across the field — what a design!"
-      ]
-    },
-    {
-      id: "shovel_pass",
-      label: "Shovel Pass",
-      icon: "🥄",
-      desc: "QB flips an underhand shovel to the RB slipping through the line",
-      type: "pass",
-      ydsBase: [1, 8],
-      bigPlay: 0.06,
-      fumble: 0.02,
-      incPct: 0.10,
-      intPct: 0.01,
-      sackPct: 0.04,
-      isTrick: false,
-      shortYdsOk: true,
-      noHuddleOk: true,
-      commentary: [
-        "Shovel pass! Quick flip to the back — he slips through!",
-        "Underhand shovel to the running back — picks up the first down!",
-        "QB shovels it underneath — the defense was looking downfield!",
-        "Quick shovel pass right through the heart of the line — clever call!"
-      ]
-    }
-  ]
-};
+// [module-swapped] SPECIAL_PLAYS_993 → src/systems/
 
-var SPECIAL_COVERAGES_993 = [
-  {
-    id: "dime",
-    label: "Dime Package",
-    icon: "💎",
-    desc: "Six defensive backs blanket every receiver — maximum coverage, vulnerable against the run",
-    mods: { short: -2, deep: 5, rush: -8, blitz: 0.08, sackMod: 0.02 }
-  },
-  {
-    id: "goal_line",
-    label: "Goal Line Defense",
-    icon: "🏰",
-    desc: "Extra linemen and linebackers stacked in the box — built to stuff the run at the goal line",
-    mods: { short: -5, deep: -8, rush: 12, blitz: 0.15, sackMod: 0.05 }
-  },
-  {
-    id: "cover3_zone",
-    label: "Cover 3 Zone",
-    icon: "🛡️",
-    desc: "Three-deep zone with four underneath — balanced and reliable across the field",
-    mods: { short: 1, deep: 2, rush: 1, blitz: 0.10, sackMod: 0.01 }
-  },
-  {
-    id: "bear_defense",
-    label: "Bear Defense",
-    icon: "🐻",
-    desc: "Overloaded front with four DL and three stacked linebackers — collapses the pocket and destroys the run game",
-    mods: { short: -1, deep: -6, rush: 10, blitz: 0.22, sackMod: 0.08 }
-  }
-];
+// [module-swapped] SPECIAL_COVERAGES_993 → src/systems/
 
 // v99.3 — Win Probability Engine v2 → extracted to src/systems/win-probability.js (module swap #10)
 
