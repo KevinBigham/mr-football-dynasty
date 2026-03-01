@@ -28588,8 +28588,8 @@ var GS={
           })}
         </div>
         
-        <div style={{background:"rgba(2,6,23,0.8)",display:"flex",alignItems:"center",gap:2,flexShrink:0,
-          position:"sticky",top:76,zIndex:28,padding:"4px 8px",borderBottom:"1px solid "+T.glassBorder,
+        <div style={{background:T.bg,display:"flex",alignItems:"center",gap:2,flexShrink:0,
+          position:"sticky",top:76,zIndex:28,padding:"4px 8px",borderBottom:"1px solid "+T.border,
           overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
           {activePillarObj.tabs.map(function(st){
             var isActive2=tab===st.id;
@@ -28598,20 +28598,20 @@ var GS={
             return <div key={st.id} style={{padding:"7px 12px",cursor:locked?"not-allowed":"pointer",
               fontWeight:isActive2?700:400,fontSize:11,
               color:locked?T.faint:isActive2?T.gold:isContextual?T.orange:T.faint,
-              background:isActive2?"rgba(251,191,36,0.1)":"transparent",
+              background:isActive2?"rgba(240,160,40,0.12)":"transparent",
               opacity:locked?0.5:1,
-              borderRadius:12,whiteSpace:"nowrap",flexShrink:0,
-              border:isContextual&&!isActive2?"1px solid rgba(245,158,11,0.3)":"1px solid transparent",
-              transition:"all 0.12s"}}
+              borderRadius:RAD.sm,whiteSpace:"nowrap",flexShrink:0,
+              border:isContextual&&!isActive2?"1px solid rgba(240,160,40,0.3)":"1px solid transparent",
+              transition:"all 0.05s"}}
               onClick={function(){
                 if(locked){
                   var def=UNLOCK_DEFS.find(function(u){return u.tabs.indexOf(st.id)>=0;});
-                  addN("🔒 Locked — "+(def?"Unlock by: "+def.trigger:"Keep playing to unlock!"),"info");
+                  addN("[L] Locked — "+(def?"Unlock by: "+def.trigger:"Keep playing to unlock!"),"info");
                   return;
                 }
                 setTab(st.id);if(st.id==="inbox")setInboxRead(true);
               }}>
-              {locked?"🔒 ":""}{st.label}
+              {locked?"[L] ":""}{st.label}
             </div>;
           })}
         </div>
