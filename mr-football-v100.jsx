@@ -4,6 +4,11 @@ import { makeContract, calcCapHit, calcDeadMoney, restructureContract, backloadC
 import { getTradeValue, getTeamNeeds, getGMTradeThresholdMod, getGMFABias, getGMDraftBias } from './src/systems/trade-ai.js';
 import { TRADE_MATH, RECORDS_WALL, GM_TRADE_PITCH, getGMTradePitch } from './src/systems/trade-math.js';
 import { calcTradeValue, calcPickValue, evaluateTradePackage } from './src/systems/trade-value.js';
+import { makePick, pickConditionText972, maybeBuildPickCondition972, pickValue, draftContract, aucContract } from './src/systems/draft-utils.js';
+import { STARTER_COUNTS, SCOUT_COSTS86, SCOUT_POINT_GYM_BONUS86, SCOUT_POINT_WIN_BONUS86, genPickBlurb, genRunAlerts } from './src/systems/scouting.js';
+// SCOUT_POINT_BASE86 kept local — dynamically mutated for large leagues (line ~12740)
+var SCOUT_POINT_BASE86 = 1000;
+import { COMP_PICKS_986 } from './src/systems/comp-picks.js';
 var __MFD_REACT=_R;
 var useState=__MFD_REACT&&__MFD_REACT.useState?__MFD_REACT.useState:function(init){
   return [typeof init==="function"?init():init,function(){}];
@@ -246,21 +251,6 @@ var FRANCHISE_TAG_986={
 };
 
 // #5: COMPENSATORY DRAFT PICKS
-var COMP_PICKS_986={
-  calculate:function(lostFAs,gainedFAs){
-    var picks=[];var netLoss=[];
-    lostFAs.forEach(function(p){
-      var matched=gainedFAs.find(function(g){return g.ovr>=p.ovr-3;});
-      if(!matched&&p.ovr>=68)netLoss.push(p);
-    });
-    netLoss.sort(function(a,b){return b.ovr-a.ovr;});
-    netLoss.slice(0,4).forEach(function(p,i){
-      var round=p.ovr>=80?3:p.ovr>=75?4:p.ovr>=70?5:6;
-      picks.push({round:round+i,reason:p.name+" ("+p.pos+" "+p.ovr+") departed",ovr:p.ovr});
-    });
-    return picks;
-  }
-};
 
 // #6: CONTRACT INCENTIVES
 var INCENTIVES_986={
@@ -1145,16 +1135,11 @@ var EXPANSION_DRAFT_986={
   icons:["🐍","🐺","⛈️","⚔️","🏛️","🔥","⚡","🐎","🐍","🛡️"]
 };
 
-var STARTER_COUNTS={QB:1,RB:1,WR:3,TE:1,OL:5,DL:4,LB:3,CB:3,S:2,K:1,P:1};
 var COST_MEASURABLES=20;
 var COST_INTERVIEW=30;
 var COST_FILM=50;
-var SCOUT_COSTS86={measurables:COST_MEASURABLES,interview:COST_INTERVIEW,film:COST_FILM};
 SCOUT_COSTS86.full=SCOUT_COSTS86.measurables+SCOUT_COSTS86.interview+SCOUT_COSTS86.film;
-var SCOUT_POINT_BASE86=1000;// v95: Start with 1000 (was 900)
-var SCOUT_POINT_GYM_BONUS86=100;// v95: Gym bonus increased (was 80)
 // v95: Scout Points win bonus — awarded after each regular season week win
-var SCOUT_POINT_WIN_BONUS86=25;// Per win
 var SCOUT_POINT_PLAYOFF_BONUS86=50;// Per playoff win
 // v95: Scout Points spending menu — all the ways to spend beyond draft scouting
 var SCOUT_SPEND_MENU95=[
@@ -1534,22 +1519,6 @@ function rngAI(a,b){return Math.floor(RNG.ai()*(b-a+1))+a;}
 function rngT(a,b){return Math.floor(RNG.trade()*(b-a+1))+a;}
 function rngDev(a,b){return Math.floor(RNG.dev()*(b-a+1))+a;}
 function pick(a){return a[Math.floor(RNG.play()*a.length)];}
-function makePick(round,origId,ownerId,year){return {pid:U(),round:round,original:origId,owner:ownerId,year:year||2026,originalOwner:origId,currentOwner:ownerId};}
-function pickConditionText972(cond){
-  if(!cond)return"";
-  if(cond.type==="playoff")return "→Rd"+cond.upgradeRound+" if playoffs";
-  if(cond.type==="record")return "→Rd"+cond.upgradeRound+" if 10+ wins";
-  if(cond.type==="top10pick")return "→Rd"+cond.upgradeRound+" if top-10 pick";
-  return "Conditional";
-}
-function maybeBuildPickCondition972(pk){
-  if(!pk||pk.condition)return null;
-  if((pk.round||0)<2||(pk.round||0)>5)return null;
-  if(RNG.ai()>=0.35)return null;
-  var up=Math.max(1,(pk.round||3)-1);
-  var down=Math.min(7,(pk.round||3)+1);
-  return {type:pick(["playoff","record","top10pick"]),upgradeRound:up,downgradeRound:down};
-}
 function pickD(a){return a[Math.floor(RNG.draft()*a.length)];}
 function U(){return RNG.ui().toString(36).slice(2,8)+RNG.ui().toString(36).slice(2,5);}// v42: Fully deterministic IDs via RNG.ui
 function sum(a,fn){return a.reduce(function(s,x){return s+(fn?fn(x):x);},0);}
@@ -1557,35 +1526,7 @@ function avg(a,fn){return a.length?sum(a,fn)/a.length:0;}
 // ROSTER_CAP, CAMP_CAP, PS_CAP, MIN_SALARY, CAP_MATH, getSalaryCap, getCapFloor, getMinSalary
 // → imported from ./src/config/cap-math.js
 // v93.13: Draft contract — OVR+round → realistic salary/years for inaugural snake draft
-function draftContract(ovr,round){
-  var market;
-  if(ovr>=90)market=(ovr-90)*2.0+16;
-  else if(ovr>=85)market=(ovr-85)*1.4+9;
-  else if(ovr>=78)market=(ovr-78)*0.9+3.5;
-  else if(ovr>=68)market=(ovr-68)*0.28+1.0;
-  else market=Math.max(0.795,(ovr-50)*0.04+0.5);
-  var rMod=round<=1?1.0:round<=3?0.90:round<=7?0.78:round<=15?0.65:round<=30?0.52:0.40;
-  var sal=Math.round(Math.min(Math.max(market*rMod,CAP_MATH.MIN_SAL.ROOKIE),22.0)*10)/10;
-  var yrs=round<=2?4:round<=6?3:round<=15?2:1;
-  var bonus=round<=5?Math.round(sal*0.25*yrs*10)/10:0;
-  return makeContract(sal,yrs,bonus,Math.round(sal*Math.min(yrs,2)*10)/10);
-}
 // v93.12: Auction contract — bid+OVR → realistic salary so cap fills properly (~$180-250M for 53 players)
-function aucContract(ovr,bid,budget){
-  budget=budget||1000;
-  var market;
-  if(ovr>=90)market=(ovr-90)*1.8+16;
-  else if(ovr>=85)market=(ovr-85)*1.2+10;
-  else if(ovr>=78)market=(ovr-78)*0.75+4.5;
-  else if(ovr>=68)market=(ovr-68)*0.30+1.5;
-  else market=Math.max(0.8,(ovr-50)*0.04+0.5);
-  var ratio=Math.min(bid/budget,1.0);
-  var bidMod=0.6+ratio*1.2;// 0.6x at $1, 1.8x at $1000
-  var sal=Math.round(Math.min(Math.max(market*bidMod,CAP_MATH.MIN_SAL.ROOKIE),26.0)*10)/10;
-  var yrs=bid>=100?4:bid>=50?3:bid>=20?2:1;
-  var bonus=bid>=50?Math.round(sal*0.25*yrs*10)/10:0;
-  return makeContract(sal,yrs,bonus,Math.round(sal*Math.min(yrs,2)*10)/10);
-}
 // CONTRACT_VALUE_TABLE_994, AGE_VALUE_CURVE_994, calcContractScore994,
 // calcDeadCap994, calcFourthDownEV995 → imported from ./src/systems/contracts.js
 var _CONTRACT_IMPORTED_SENTINEL = true; // marker so esbuild tree-shakes nothing
@@ -2014,39 +1955,6 @@ var Trophy = memo(function(props){
     React.createElement("text",{x:20,y:20,fontSize:10,textAnchor:"middle",fill:"#fff",fontWeight:"bold"},"🏆")
   );
 });
-function genPickBlurb(player,teamRoster){
-  var pos=player.pos;var ovr=player.ovr;var pot=player.pot;var age=player.age;
-  var counts={};teamRoster.forEach(function(p){counts[p.pos]=(counts[p.pos]||0)+1;});
-  var have=counts[pos]||0;
-  var starterNeed=(STARTER_COUNTS||{})[pos]||1;
-  var phrases=[];
-  if(ovr>=88) phrases.push("Elite talent");
-  else if(ovr>=80) phrases.push("Day 1 starter");
-  else if(ovr>=72) phrases.push("Solid contributor");
-  else phrases.push("Depth piece");
-  if(age<=23) phrases.push("young upside");
-  else if(age>=30) phrases.push("veteran presence");
-  if(pot-ovr>=12) phrases.push("sky-high ceiling");
-  else if(pot-ovr>=6) phrases.push("room to grow");
-  if(have<starterNeed) phrases.push("fills critical need");
-  else if(have===0) phrases.push("first at "+pos);
-  return phrases.slice(0,3).join(" • ");
-}
-function genRunAlerts(pool,prevPool){
-  var alerts=[];
-  if(!prevPool||!pool) return alerts;
-  var countPos=function(pl,pos){return pl.filter(function(p){return p.pos===pos&&p.ovr>=75;}).length;};
-  ["QB","CB","OL","WR","DL"].forEach(function(pos){
-    var now=countPos(pool,pos);var before=countPos(prevPool,pos);
-    if(before-now>=3) alerts.push("🔥 RUN on "+pos+"s! Starter-quality "+pos+"s drying up fast");
-  });
-  var eliteLeft=pool.filter(function(p){return p.ovr>=85;}).length;
-  if(eliteLeft<=5&&eliteLeft>0) alerts.push("⚠️ Only "+eliteLeft+" elite players (85+) remaining!");
-  if(eliteLeft===0) alerts.push("💀 All elite talent is OFF the board");
-  var qbsLeft=pool.filter(function(p){return p.pos==="QB"&&p.ovr>=72;}).length;
-  if(qbsLeft<=3&&qbsLeft>0) alerts.push("📢 Only "+qbsLeft+" starting-caliber QBs left!");
-  return alerts.slice(0,2);
-}
 var VirtualList = memo(function VirtualList(props) {
   var items = props.items || [];
   var rowHeight = props.rowHeight || 50;
@@ -13544,7 +13452,6 @@ function initTeams(ui,usePresets){
       draftPicks:[1,2,3,4,5,6,7].map(function(r){return makePick(r,td.id,td.id,2026);})}));
   });
 }
-function pickValue(round){return [0,200,120,70,35,15,8,5][round]||3;}
 function proposeTrade(ut,ai,uP,aP,uPks,aPks,cap,userStrategy,trustBonus69){
   var aiN=getTeamNeeds(ai);
   var uV=uP.reduce(function(s,p){return s+getTradeValue(p,aiN,ai);},0)+(uPks||[]).reduce(function(s,pk){return s+pickValue(pk.round);},0);
