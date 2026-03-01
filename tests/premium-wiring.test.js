@@ -78,4 +78,18 @@ describe('premium wiring', () => {
     expect(src.includes("useState(PREMIUM.isUnlocked('godMode'))")).toBe(true);
     expect(src.includes('PREMIUM.getScoutingBonus()')).toBe(true);
   });
+
+  it('monolith gates quickSim theater delay behind premium unlock', () => {
+    var monolithPath = path.resolve(__dirname, '../mr-football-v100.jsx');
+    var src = fs.readFileSync(monolithPath, 'utf8');
+
+    expect(src.includes("PREMIUM.isUnlocked('quickSim')?0:")).toBe(true);
+  });
+
+  it('monolith gates advancedAnalytics dashboard behind premium unlock', () => {
+    var monolithPath = path.resolve(__dirname, '../mr-football-v100.jsx');
+    var src = fs.readFileSync(monolithPath, 'utf8');
+
+    expect(src.includes("PREMIUM.isUnlocked('advancedAnalytics')")).toBe(true);
+  });
 });

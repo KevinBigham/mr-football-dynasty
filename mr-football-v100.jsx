@@ -17565,7 +17565,7 @@ var GS={
       }
       var drv=theater.result.log[theater.driveIdx]||"";
       var isQtrHeader=drv.indexOf("── Q")===0;
-      var delay=isQtrHeader?200:(theater.speed==="fast"?250:700);
+      var delay=PREMIUM.isUnlocked('quickSim')?0:(isQtrHeader?200:(theater.speed==="fast"?250:700));
       theaterTimer.current=setTimeout(function(){
         setTheater(function(prev){
           if(!prev) return null;
@@ -27667,7 +27667,7 @@ var GS={
                 })
               )}
               
-              {season.phase==="regular"&&my&&season.week>=2&&(function(){
+              {season.phase==="regular"&&my&&season.week>=2&&PREMIUM.isUnlocked('advancedAnalytics')&&(function(){
                 var dvoa78=ADVANCED_ANALYTICS.calcDVOA(my);
                 var topPlayers78=(my.roster||[]).filter(function(p){return p.stats&&p.stats.gp>0;}).map(function(p){
                   return{name:p.name,pos:p.pos,ovr:p.ovr,epa:ADVANCED_ANALYTICS.calcEPA(p,my.wins,(my.wins||0)+(my.losses||0)),
