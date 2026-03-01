@@ -523,6 +523,24 @@ describe('sim-validation', function () {
     expect(elite.pointsAgainst).toBeLessThanOrEqual(weak.pointsAgainst);
   });
 
+  it('elite team (ovr 99) wins 90%+ of games against weak team (ovr 50)', function () {
+    var GAMES = 30;
+    var wins = 0;
+    setSeed(9999);
+    for (var i = 0; i < GAMES; i += 1) {
+      var out = simulateGame({
+        homeTeam: buildTeam('ELITE', 99),
+        awayTeam: buildTeam('WEAK', 50),
+        homeOffPlan: 'balanced_o',
+        awayOffPlan: 'balanced_o',
+        homeDefPlan: 'balanced_d',
+        awayDefPlan: 'balanced_d',
+      });
+      if (out.home.points > out.away.points) wins += 1;
+    }
+    expect(wins / GAMES).toBeGreaterThanOrEqual(0.90);
+  });
+
   it('game clock monotonically decreases and per-play clock usage stays bounded', function () {
     setSeed(321321);
     var out = simulateGame({
