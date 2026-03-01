@@ -5,6 +5,7 @@
  * drives (TD, FG, INT, fumble), plays, scores, and more.
  * Used by the game simulation engine for play-by-play text.
  */
+import { RNG } from '../utils/rng.js';
 
 export var BROADCAST_COMMENTARY={
 // ═══ v98.6: ENHANCED PLAY-BY-PLAY NARRATION ENGINE ═══
@@ -112,7 +113,7 @@ fill986:function(template,data){
   if(!template||!data)return template||"";
   return template.replace(/\{(\w+)\}/g,function(m,k){return data[k]!==undefined?data[k]:m;});
 },
-pick986:function(arr){return arr[Math.floor(Math.random()*arr.length)]||"";},
+pick986:function(arr){return arr[Math.floor(RNG.play()*arr.length)]||"";},
   drives:{
     TD:[
       "Touchdown! Surgical precision on that drive.",
@@ -212,7 +213,8 @@ pick986:function(arr){return arr[Math.floor(Math.random()*arr.length)]||"";},
   },
   get:function(category,type,rng2){
     var pool=(this.drives||{})[type]||(this[category]||{})[type]||["Great play."];
-    return pool[Math.floor((rng2||Math.random)()*pool.length)];
+    var randFn=rng2||RNG.play;
+    return pool[Math.floor(randFn()*pool.length)];
   }
 };
 

@@ -25,7 +25,7 @@ import { StatBar, ToneBadge, WeeklyShowCard } from './src/components/index.js';
 import { NARRATIVE_STATES, STORY_ARC_EVENTS, pickWeightedEvent } from './src/systems/story-arcs.js';
 import { STORY_ARC_ENGINE } from './src/systems/story-arc-engine.js';
 import { FO_FIRST_NAMES, FO_LAST_NAMES, FO_TRAITS, FO_BACKSTORIES, FRONT_OFFICE } from './src/systems/front-office.js';
-import { WEEKLY_CHALLENGES, getPosMarketTier86 } from './src/systems/weekly-challenges.js';
+import { WEEKLY_CHALLENGES } from './src/systems/weekly-challenges.js';
 import { GRUDGE_MATCH, REVENGE_GAME } from './src/systems/grudge-revenge.js';
 import { COACH_SKILL_TREE } from './src/systems/coach-skill-tree.js';
 import { MENTOR_SYSTEM } from './src/systems/mentor-system.js';
@@ -1272,6 +1272,7 @@ function pickD(a){return a[Math.floor(RNG.draft()*a.length)];}
 function U(){return RNG.ui().toString(36).slice(2,8)+RNG.ui().toString(36).slice(2,5);}// v42: Fully deterministic IDs via RNG.ui
 function sum(a,fn){return a.reduce(function(s,x){return s+(fn?fn(x):x);},0);}
 function avg(a,fn){return a.length?sum(a,fn)/a.length:0;}
+function safeDiv(n,d,fallback){return(d===0||isNaN(d))?((fallback===undefined)?0:fallback):n/d;}
 // ROSTER_CAP, CAMP_CAP, PS_CAP, MIN_SALARY, CAP_MATH, getSalaryCap, getCapFloor, getMinSalary
 // → imported from ./src/config/cap-math.js
 // v93.13: Draft contract — OVR+round → realistic salary/years for inaugural snake draft
@@ -11711,7 +11712,7 @@ function initTeams(ui,usePresets){
         posCoaches:{qb_coach:generatePosCoach(RNG.ai),ol_coach:generatePosCoach(RNG.ai),dl_coach:generatePosCoach(RNG.ai),db_coach:generatePosCoach(RNG.ai)},// v60
       capUsed:capCalc(roster),deadCap:0,deadCapByYear:{},prestige:50+rng(-10,10),
       cash:((DIFF_SETTINGS[DIFF_ACTIVE]||DIFF_SETTINGS.pro).startCash||50)+rng(-5,10),facilities:{gym:1,med:1,stad:1},ticketPrice:75,fanbase:55+rng(-10,15),
-        revenue:0,expenses:0,attendance:0,scoutPts:SCOUT_POINT_BASE86,// v95: start with 1000
+        revenue:0,expenses:0,attendance:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),// v95: start with 1000 (+premium bonus)
         _pipelineTripsWeekly:4,// v97.1: weekly college pipeline trips
         reSignNeg84:{},fitAlertPrefs84:{},fitAlertProfile85:"strict",
       scouts:[genScout(),genScout(),genScout()],
@@ -11826,7 +11827,7 @@ function _archiveSeasonInner(teams,wId,yr,sched){
     if(p.pos==="CB"||p.pos==="S") return (s.defINT*90+s.tackles*4)+pffMod+p.ovr*0.5;
     if(p.pos==="K") return (s.fgM||0)*55+pffMod*0.8+p.ovr*0.3;
     if(p.pos==="OL") return p.ovr*10+pffMod*1.2-(s.sacksAllowed||0)*22;
-    if(p.pos==="P"){var pAvg3=s.punts>0?(s.puntYds/s.punts):0;return((s.punts||0)*4+(pAvg3-38)*10)+pffMod*0.8+p.ovr*0.3;}
+    if(p.pos==="P"){var pAvg3=safeDiv(s.puntYds,s.punts);return((s.punts||0)*4+(pAvg3-38)*10)+pffMod*0.8+p.ovr*0.3;}
     return p.ovr;
   };
   var mvpPool=all.filter(function(p){return p.stats&&p.stats.gp>=6&&p.tW>=6;});
@@ -12037,7 +12038,7 @@ function draftPickOvr991(round,pick){
   var min=ranges[idx].min;var max=ranges[idx].max;
   var spread=max-min;var mid=(min+max)/2;var step=spread/31;
   var mean=mid+(16.5-pick)*step;var stdDev=5;
-  var u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();
+  var u=0,v=0;while(u===0)u=RNG.draft();while(v===0)v=RNG.draft();
   var z=Math.sqrt(-2.0*Math.log(u))*Math.cos(2.0*Math.PI*v);
   var rating=Math.round(mean+z*stdDev);
   if(rating<40)rating=40;if(rating>99)rating=99;return rating;
@@ -13647,18 +13648,18 @@ var LIVE_GAME_986={
 
     // ── PENALTY CHECK (FIRST — before clock, before stats, before box score) ──
     // Pre-snap penalties mean the play never happened
-    var penRoll=Math.random();
+    var penRoll=RNG.play();
     if(penRoll<0.025){
       // Offensive penalty — play nullified
-      var penYds=[5,5,5,10,10,15][Math.floor(Math.random()*6)];
+      var penYds=[5,5,5,10,10,15][Math.floor(RNG.play()*6)];
       var penNames=["False Start","Holding","Illegal Formation","Offensive Pass Interference","Delay of Game"];
-      var penName=penNames[Math.floor(Math.random()*penNames.length)];
+      var penName=penNames[Math.floor(RNG.play()*penNames.length)];
       if(penName==="False Start"||penName==="Delay of Game")penYds=5;
       if(penName==="Offensive Pass Interference")penYds=10;
       var preSnap=(penName==="False Start"||penName==="Delay of Game");
       g.fieldPos=Math.max(1,g.fieldPos-penYds);
       g.stats[side].penalties++;g.stats[side].penYds+=penYds;
-      var penClockTick=preSnap?0:Math.floor(Math.random()*8+5);// pre-snap = no clock, post-snap = some clock
+      var penClockTick=preSnap?0:Math.floor(RNG.play()*8+5);// pre-snap = no clock, post-snap = some clock
       g.clock=Math.max(0,g.clock-penClockTick);
       result={type:"penalty",yards:-penYds,desc:"🚩 FLAG! "+penName+" on "+off.abbr+". "+penYds+"-yard penalty. Replay the down.",
         clock:penClockTick,commentary:"",isPenalty:true};
@@ -13671,11 +13672,11 @@ var LIVE_GAME_986={
       LIVE_GAME_986.checkQuarter(g);return g;
     }else if(penRoll<0.05){
       // Defensive penalty — play nullified
-      var dPenYds=[5,5,10,15][Math.floor(Math.random()*4)];
+      var dPenYds=[5,5,10,15][Math.floor(RNG.play()*4)];
       var dPenNames=["Offsides","Defensive Holding","Pass Interference","Roughing the Passer"];
-      var dPenName=dPenNames[Math.floor(Math.random()*dPenNames.length)];
+      var dPenName=dPenNames[Math.floor(RNG.play()*dPenNames.length)];
       if(dPenName==="Offsides")dPenYds=5;
-      if(dPenName==="Pass Interference")dPenYds=Math.max(10,Math.min(40,Math.floor(Math.random()*25)+5));
+      if(dPenName==="Pass Interference")dPenYds=Math.max(10,Math.min(40,Math.floor(RNG.play()*25)+5));
       if(dPenName==="Roughing the Passer")dPenYds=15;
       g.fieldPos=Math.min(99,g.fieldPos+dPenYds);
       var defSid=LIVE_GAME_986.defSide(g);
@@ -13683,7 +13684,7 @@ var LIVE_GAME_986={
       var autoFD=(dPenYds>=g.yardsToGo)||dPenName==="Roughing the Passer"||dPenName==="Pass Interference";
       if(autoFD){g.down=1;g.yardsToGo=10;g.stats[side].firstDowns++;}
       var dPreSnap=(dPenName==="Offsides");
-      var dPenClock=dPreSnap?0:Math.floor(Math.random()*8+5);
+      var dPenClock=dPreSnap?0:Math.floor(RNG.play()*8+5);
       g.clock=Math.max(0,g.clock-dPenClock);
       result={type:"penalty",yards:dPenYds,desc:"🚩 FLAG! "+dPenName+" on "+def.abbr+". "+dPenYds+" yards"+(autoFD?", automatic first down!":"."),
         clock:dPenClock,commentary:"",isPenalty:true};
@@ -13716,16 +13717,16 @@ var LIVE_GAME_986={
     result.ngs=ngs;
 
     // ── IN-GAME INJURY (~2% per play) ──
-    if(Math.random()<0.018&&!result.isSpike){
-      var injTeam=Math.random()<0.5?off:def;
+    if(RNG.injury()<0.018&&!result.isSpike){
+      var injTeam=RNG.injury()<0.5?off:def;
       var injSide2=injTeam===off?side:LIVE_GAME_986.defSide(g);
       var injCandidates=injTeam.roster.filter(function(p){return p.isStarter&&!p._gameInjured&&p.pos!=="K"&&p.pos!=="P";});
       if(injCandidates.length>0){
-        var injP=injCandidates[Math.floor(Math.random()*injCandidates.length)];
+        var injP=injCandidates[Math.floor(RNG.injury()*injCandidates.length)];
         injP._gameInjured=true;
         var injTypes=["ankle","knee","hamstring","shoulder","wrist","ribs"];
-        var injType=injTypes[Math.floor(Math.random()*injTypes.length)];
-        var injSeverity=Math.random()<0.6?"questionable":"out for the game";
+        var injType=injTypes[Math.floor(RNG.injury()*injTypes.length)];
+        var injSeverity=RNG.injury()<0.6?"questionable":"out for the game";
         result.injury={name:injP.name,pos:injP.pos,type:injType,severity:injSeverity,team:injTeam.abbr};
         if(!g.injuries)g.injuries=[];
         g.injuries.push(result.injury);
@@ -13740,7 +13741,7 @@ var LIVE_GAME_986={
     var clockTick=result.clock||25;
     if(result.type==="incomplete"||result.isSpike)clockTick=Math.min(clockTick,5);
     var finalTwoMin=(g.quarter===2||g.quarter===4||g.quarter>=5)&&g.clock<=120;
-    if(finalTwoMin&&result.type==="run"&&!result.isTD&&Math.random()<0.15){
+    if(finalTwoMin&&result.type==="run"&&!result.isTD&&RNG.play()<0.15){
       clockTick=Math.min(clockTick,8);result.desc+=" — out of bounds!";result.oob=true;
     }
     var prevClock=g.clock;
@@ -13881,7 +13882,7 @@ var LIVE_GAME_986={
       g.stats[side].fgA++;
       var k2=off.roster.find(function(p){return p.pos==="K";});
       var pct=k2?(0.65+(k2.ovr-60)*0.008-(fgDist>50?0.25:fgDist>45?0.15:fgDist>35?0.05:0)):0.65;
-      if(Math.random()<pct){
+      if(RNG.play()<pct){
         LIVE_GAME_986.endDrive(g,"FIELD GOAL");
         g.stats[side].fgM++;
         if(side==="home"){g.hScore+=3;g.qtrs.h[qi]+=3;}else{g.aScore+=3;g.qtrs.a[qi]+=3;}
@@ -13929,15 +13930,15 @@ var LIVE_GAME_986={
     if(choice==="xp"){
       var xpPct=k?0.90+(k.ovr-60)*0.001:0.94;
       xpPct=Math.max(0.85,Math.min(0.97,xpPct));
-      if(Math.random()<xpPct){
+      if(RNG.play()<xpPct){
         if(side==="home"){g.hScore+=1;g.qtrs.h[qi]+=1;}else{g.aScore+=1;g.qtrs.a[qi]+=1;}
         g.pendingResult={type:"xp_good",desc:(k?k.name:"Kicker")+" — extra point is GOOD!",clock:0};
       }else{
-        var missType=Math.random()<0.5?"BLOCKED!":"WIDE! No good!";
+        var missType=RNG.play()<0.5?"BLOCKED!":"WIDE! No good!";
         g.pendingResult={type:"xp_miss",desc:"Extra point "+missType,clock:0};
       }
     }else{
-      if(Math.random()<0.48){
+      if(RNG.play()<0.48){
         if(side==="home"){g.hScore+=2;g.qtrs.h[qi]+=2;}else{g.aScore+=2;g.qtrs.a[qi]+=2;}
         g.pendingResult={type:"two_good",desc:"TWO-POINT CONVERSION IS GOOD! "+off.abbr+" pushes it in!",clock:0};
       }else{
@@ -14229,7 +14230,7 @@ var LIVE_GAME_986={
     var userSideC=g.userId===g.homeTeam.id?"home":"away";
     if(g.timeouts[userSideC]<=0)return g;// need a timeout
 
-    var overturned=Math.random()<0.40;
+    var overturned=RNG.play()<0.40;
     if(overturned){
       // Overturn! Reverse the turnover — restore original possession and field position
       // Undo turnover stats
@@ -15031,7 +15032,7 @@ function simGame(hT,aT,isPreseason,halftimeFx){
         else if(p.pos==="WR"||p.pos==="TE")impact=(p.stats.recYds||0)/25+(p.stats.recTD||0)*3;
         else if(POS_DEF[p.pos]&&POS_DEF[p.pos].side==="D")impact=(p.stats.tackles||0)*0.5+(p.stats.sacks||0)*3+(p.stats.defINT||0)*5;
         else if(p.pos==="K")impact=(p.stats.fgM||0)*3;
-        else if(p.pos==="P")impact=(p.stats.punts||0)*0.5+((p.stats.punts>0?p.stats.puntYds/p.stats.punts:0)-38)*0.3;
+        else if(p.pos==="P")impact=(p.stats.punts||0)*0.5+(safeDiv(p.stats.puntYds,p.stats.punts)-38)*0.3;
         p.gameLog.push(Math.round(cl(impact,0,30)));
         if(p.gameLog.length>8)p.gameLog=p.gameLog.slice(-8);// Keep last 8 games
         var pffBase=55;
@@ -15059,7 +15060,7 @@ function simGame(hT,aT,isPreseason,halftimeFx){
           var kEff=(p.stats.fgM||0)*10/gp3;
           pffBase=cl(44+kEff*1.3,30,99);
         }else if(p.pos==="P"){
-          var pAvg=p.stats.punts>0?(p.stats.puntYds/p.stats.punts):0;
+          var pAvg=safeDiv(p.stats.puntYds,p.stats.punts);
           var pEff=(pAvg-38)*2.0+(p.stats.punts||0)*0.4;
           pffBase=cl(44+pEff/gp3*1.2,30,99);
         }
@@ -15302,7 +15303,7 @@ function updateLeagueLeaders(teams){
     pushTop(L.sacks,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:s.sacks||0},"val",5);
     pushTop(L.defINT,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:s.defINT||0},"val",5);
     pushTop(L.tackles,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:s.tackles||0},"val",5);
-    if(p.pos==="P"&&(s.punts||0)>0){pushTop(L.puntAvg,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:Math.round(s.puntYds/s.punts*10)/10},"val",5);}
+    if(p.pos==="P"&&(s.punts||0)>0){pushTop(L.puntAvg,{pid:p.id,name:p.name,pos:p.pos,team:t.abbr,icon:t.icon,val:Math.round(safeDiv(s.puntYds,s.punts)*10)/10},"val",5);}
   });});
   return L;
 }
@@ -16555,7 +16556,8 @@ var ToastContainer = memo(function(props){
       "@keyframes tdCelebrate{0%{transform:scale(1);background:rgba(212,167,75,0.10)}20%{transform:scale(1.03);background:rgba(212,167,75,0.28)}50%{transform:scale(1.01);background:rgba(212,167,75,0.18)}100%{transform:scale(1);background:rgba(212,167,75,0.10)}}",
       "@keyframes turnoverFlash{0%{background:rgba(239,68,68,0.08)}30%{background:rgba(239,68,68,0.28)}100%{background:rgba(239,68,68,0.08)}}",
       "@keyframes bigPlayPop{0%{transform:translateY(0);opacity:1}20%{transform:translateY(-3px);opacity:1}100%{transform:translateY(0);opacity:1}}",
-      "@keyframes pulse-draft{0%,100%{opacity:1}50%{opacity:0.4}}"
+      "@keyframes pulse-draft{0%,100%{opacity:1}50%{opacity:0.4}}",
+      "@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}"
     ].join(""))
   );
 });
@@ -17252,7 +17254,7 @@ var GS={
   var _dpRatCat=useState("CORE"),dpRatCat=_dpRatCat[0],setDpRatCat=_dpRatCat[1];// v69: Rating category filter
   var _dpSortAttr=useState("ovr"),dpSortAttr=_dpSortAttr[0],setDpSortAttr=_dpSortAttr[1];
   var _hof=useState([]),hallOfFame=_hof[0],setHallOfFame=_hof[1];
-  var _godMode=useState(false),godMode=_godMode[0],setGodMode=_godMode[1];
+  var _godMode=useState(PREMIUM.isUnlocked('godMode')),godMode=_godMode[0],setGodMode=_godMode[1];
   var _godTarget=useState(null),godTarget=_godTarget[0],setGodTarget=_godTarget[1];// v98: null=my team
   var _recap=useState(null),gameRecap=_recap[0],setGameRecap=_recap[1];
   var _prevRecap=useState(null),prevRecap=_prevRecap[0],setPrevRecap=_prevRecap[1];// v49: What Changed?
@@ -17565,7 +17567,7 @@ var GS={
       }
       var drv=theater.result.log[theater.driveIdx]||"";
       var isQtrHeader=drv.indexOf("── Q")===0;
-      var delay=isQtrHeader?200:(theater.speed==="fast"?250:700);
+      var delay=PREMIUM.isUnlocked('quickSim')?0:(isQtrHeader?200:(theater.speed==="fast"?250:700));
       theaterTimer.current=setTimeout(function(){
         setTheater(function(prev){
           if(!prev) return null;
@@ -19421,7 +19423,7 @@ var GS={
         posCoaches:{qb_coach:generatePosCoach(RNG.ai),ol_coach:generatePosCoach(RNG.ai),dl_coach:generatePosCoach(RNG.ai),db_coach:generatePosCoach(RNG.ai)},// v60
         capUsed:0,deadCap:0,deadCapByYear:{},prestige:50+rng(-10,10),
         cash:(i===idx?(DIFF_SETTINGS[DIFF_ACTIVE]||DIFF_SETTINGS.pro).startCash||55:50)+rng(-10,20),facilities:{gym:1,med:1,stad:1},ticketPrice:75,fanbase:55+rng(-10,15),
-        revenue:0,expenses:0,attendance:0,scoutPts:1000,_pipelineTripsWeekly:4,
+        revenue:0,expenses:0,attendance:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),_pipelineTripsWeekly:4,
         reSignNeg84:{},fitAlertPrefs84:{},fitAlertProfile85:"strict",
         ownerMood:70,ownerGoal:"playoff",aiStrategy:"bubble",rivals:[],
         gmArchetype90:getTeamGMArchetypeId90({id:td.id}),
@@ -19549,7 +19551,7 @@ var GS={
         posCoaches:{qb_coach:generatePosCoach(RNG.ai),ol_coach:generatePosCoach(RNG.ai),dl_coach:generatePosCoach(RNG.ai),db_coach:generatePosCoach(RNG.ai)},// v60
         capUsed:0,deadCap:0,deadCapByYear:{},prestige:50+rng(-10,10),
         cash:(i===idx?(DIFF_SETTINGS[DIFF_ACTIVE]||DIFF_SETTINGS.pro).startCash||55:50)+rng(-10,20),facilities:{gym:1,med:1,stad:1},ticketPrice:75,fanbase:55+rng(-10,15),
-        revenue:0,expenses:0,attendance:0,scoutPts:1000,_pipelineTripsWeekly:4,
+        revenue:0,expenses:0,attendance:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),_pipelineTripsWeekly:4,
         reSignNeg84:{},fitAlertPrefs84:{},fitAlertProfile85:"strict",
         ownerMood:70,ownerGoal:"playoff",aiStrategy:"bubble",rivals:[],
         gmArchetype90:getTeamGMArchetypeId90({id:td.id}),
@@ -24429,7 +24431,7 @@ var GS={
       psKept87.forEach(function(p){p.everReached90=(p.ovr||0)>=90;});
       return assign({},t,{roster:active,practiceSquad:psKept87,
         wins:0,losses:0,pf:0,pa:0,streak:0,capUsed:capCalc(active),deadCap:0,
-        gameplan:GAMEPLANS[0].id,gameplanOff:"balanced_o",gameplanDef:"balanced_d",revenue:0,expenses:0,scoutPts:1000,_pipelineTripsWeekly:4,ownerGoal:ovrAvg2>74?"title":ovrAvg2>68?"playoff":"rebuild",
+        gameplan:GAMEPLANS[0].id,gameplanOff:"balanced_o",gameplanDef:"balanced_d",revenue:0,expenses:0,scoutPts:(SCOUT_POINT_BASE86+PREMIUM.getScoutingBonus()),_pipelineTripsWeekly:4,ownerGoal:ovrAvg2>74?"title":ovrAvg2>68?"playoff":"rebuild",
         franchiseTag973:(t.franchiseTag973&&t.franchiseTag973.year===season.year+1)?assign({},t.franchiseTag973):null,
         aiStrategy:ovrAvg2>76?"contend":ovrAvg2>70?"bubble":"rebuild",
         staff:staff,
@@ -27667,7 +27669,7 @@ var GS={
                 })
               )}
               
-              {season.phase==="regular"&&my&&season.week>=2&&(function(){
+              {season.phase==="regular"&&my&&season.week>=2&&PREMIUM.isUnlocked('advancedAnalytics')&&(function(){
                 var dvoa78=ADVANCED_ANALYTICS.calcDVOA(my);
                 var topPlayers78=(my.roster||[]).filter(function(p){return p.stats&&p.stats.gp>0;}).map(function(p){
                   return{name:p.name,pos:p.pos,ovr:p.ovr,epa:ADVANCED_ANALYTICS.calcEPA(p,my.wins,(my.wins||0)+(my.losses||0)),
@@ -32288,11 +32290,11 @@ var GS={
                         <td style={assign({},tdS,{color:T.gold,fontSize:10})}>{p.pos}</td>
                         <td style={assign({},tdS,{fontSize:10})}>{p.tIcon+" "+p.tA}</td>
                         {sec.cols.map(function(c){
-                          var val=c[1]==="_puntAvg"?(p.stats.punts>0?Math.round(p.stats.puntYds/p.stats.punts*10)/10:0)
+                          var val=c[1]==="_puntAvg"?Math.round(safeDiv(p.stats.puntYds,p.stats.punts)*10)/10
                             :c[1]==="_qbRtg"?qbRating73(p)
                             :c[1]==="_gp"?(p.stats.gp||0)
                             :c[1]==="_totTD"?((p.stats.rushTD||0)+(p.stats.recTD||0))
-                            :c[1]==="_fgPct"?((p.stats.fgA||0)>0?Math.round((p.stats.fgM||0)/(p.stats.fgA||0)*1000)/10:0)
+                            :c[1]==="_fgPct"?Math.round(safeDiv(p.stats.fgM||0,p.stats.fgA||0)*1000)/10
                             :(p.stats[c[1]]||0);
                           return <td key={c[0]} style={assign({},tdS,{fontWeight:700})}>{val}</td>;
                         })}</tr>;
@@ -34812,7 +34814,7 @@ var GS={
               if(["DL","LB"].indexOf(p.pos)>=0)return((s.sacks||0)*90+(s.tackles||0)*4+(s.defINT||0)*55)+pM+p.ovr*0.5;
               if(["CB","S"].indexOf(p.pos)>=0)return((s.defINT||0)*90+(s.tackles||0)*4)+pM+p.ovr*0.5;
               if(p.pos==="K")return((s.fgM||0)*55)+pM*0.8+p.ovr*0.3;
-              if(p.pos==="P"){var pAvg2=s.punts>0?(s.puntYds/s.punts):0;return((s.punts||0)*4+(pAvg2-38)*10)+pM*0.8+p.ovr*0.3;}
+              if(p.pos==="P"){var pAvg2=safeDiv(s.puntYds,s.punts);return((s.punts||0)*4+(pAvg2-38)*10)+pM*0.8+p.ovr*0.3;}
               if(p.pos==="OL")return p.ovr*10+pM*1.2-(s.sacksAllowed||0)*22;
               return p.ovr;};
             var pffColor=function(g){return g>=90?"#10b981":g>=80?"#22d3ee":g>=70?"#fbbf24":g>=60?"#9ca3af":"#ef4444";};
@@ -41646,7 +41648,7 @@ var GS={
                           var newLg=JSON.parse(JSON.stringify(lg));newLg.homeTeam=lg.homeTeam;newLg.awayTeam=lg.awayTeam;
                           // AI decides: onside kick if losing by 9+ in Q4 final 5 min, otherwise normal
                           var aiScoreDiff=(LIVE_GAME_986.side(lg)==="home")?(lg.hScore-lg.aScore):(lg.aScore-lg.hScore);
-                          var aiOnside=lg.quarter>=4&&lg.clock<=300&&aiScoreDiff<=-9&&Math.random()<0.7;
+                          var aiOnside=lg.quarter>=4&&lg.clock<=300&&aiScoreDiff<=-9&&RNG.ai()<0.7;
                           LIVE_GAME_986.resolveKickoff(newLg,aiOnside?"onside":"normal");
                           setLiveGame986(newLg);setLiveResult986(newLg.pendingResult||null);
                         }} style={{marginTop:20,padding:"14px 32px",borderRadius:10,cursor:"pointer",fontWeight:900,fontSize:14,
@@ -41940,7 +41942,7 @@ var GS={
                       </div>}
                       {lg.driveComment994&&<div style={{marginTop:3,padding:"2px 10px",fontSize:9,color:T.cyan,fontStyle:"italic",textAlign:"center",opacity:0.8,lineHeight:1.4}}>{lg.driveComment994}</div>}
                       <button onClick={function(){
-                        var aiChoice=Math.random()<0.95?"xp":"two_pt";
+                        var aiChoice=RNG.ai()<0.95?"xp":"two_pt";
                         // In desperate situations, AI goes for 2 more often
                         var aiSide=LIVE_GAME_986.side(lg);
                         var aiScore=aiSide==="home"?lg.hScore:lg.aScore;

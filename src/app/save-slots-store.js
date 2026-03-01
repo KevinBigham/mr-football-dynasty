@@ -1,4 +1,5 @@
 import { checksumString, verifyAutosavePayload } from './legacy-save-api.js';
+import { PREMIUM } from '../systems/premium.js';
 
 export var SAVE_SLOTS_KEY = 'mfd.saveSlots.v1';
 
@@ -86,6 +87,13 @@ export function saveSlot(slotId, payload, meta, input) {
   var now = Number(options.now || Date.now());
   var all = readAllSlots(options);
   var existing = all.find(function (slot) { return slot.slotId === id; });
+  var activeSlots = all.filter(function (slot) {
+    return !slot.deletedAt;
+  });
+  var slotLimit = PREMIUM.getSaveSlotCount();
+  if (!existing && activeSlots.length >= slotLimit) {
+    return { ok: false, error: 'slot limit reached', limit: slotLimit };
+  }
   if (existing && !options.allowOverwrite) {
     return { ok: false, error: 'slot already exists', requireConfirm: true };
   }
