@@ -28685,12 +28685,12 @@ var GS={
         {id:"home",label:"Home"},
         {id:"inbox",label:"Inbox"},
         {id:"schedule",label:"Schedule"},
-        {id:"calendar",label:"📅 Calendar"},
-        {id:"stories",label:"📰 Stories"},
+        {id:"calendar",label:"Calendar"},
+        {id:"stories",label:"Stories"},
         {id:"powerRank",label:"Power Rankings"},
         {id:"ticker",label:"News Feed"},
         {id:"awardsRace",label:"Awards Race"},
-        {id:"globalBoard",label:"🌐 Leaderboard"}
+        {id:"globalBoard",label:"Leaderboard"}
       ]},
       {id:"team",label:"Team",tabs:[
         {id:"roster",label:"Roster"},
@@ -28700,7 +28700,7 @@ var GS={
         {id:"trade",label:"Trade"},
         {id:"gameplan",label:"Gameplan"},
         {id:"scouting",label:"Scouting"},
-        {id:"pipeline",label:"🎓 Pipeline"},
+        {id:"pipeline",label:"Pipeline"},
         {id:"training",label:"Training"},
         {id:"chemistry",label:"Chemistry"},
         {id:"injuries",label:"Injury Report"}
@@ -28714,37 +28714,37 @@ var GS={
         {id:"playoffPic",label:"Playoff Picture"},
         {id:"weekRecap",label:"Weekly Recap"},
         {id:"milestones",label:"Milestones"},
-        {id:"analyticsHub",label:"📊 Analytics"}
+        {id:"analyticsHub",label:"Analytics"}
       ]},
       {id:"office",label:"Office",tabs:[
         {id:"franchise",label:"Franchise"},
         {id:"log",label:"Transactions"},
-        {id:"ledger",label:"📜 Ledger"},
+        {id:"ledger",label:"Ledger"},
         {id:"capLab",label:"Cap Lab"},
         {id:"ownerReport",label:"Owner Report"},
         {id:"facilities",label:"Facilities"},
-        {id:"gmIntel",label:"🕵️ GM Intel"},
-        {id:"warRoom",label:"🏟️ War Room"},
-        {id:"settings",label:"⚙️ Settings"}
+        {id:"gmIntel",label:"GM Intel"},
+        {id:"warRoom",label:"War Room"},
+        {id:"settings",label:"Settings"}
       ]},
       {id:"legacy",label:"Legacy",tabs:[
-        {id:"allTimeRecords",label:"🏆 All-Time"},
+        {id:"allTimeRecords",label:"All-Time"},
         {id:"hof",label:"Hall of Fame"},
         {id:"history",label:"Archives"},
-        {id:"almanac",label:"📖 Almanac"},
-        {id:"records",label:"🏅 Records"},// v80: All-Time Records Wall
-        {id:"mentors",label:"🤝 Mentors"},// v80: Mentor/Protégé setup
+        {id:"almanac",label:"Almanac"},
+        {id:"records",label:"Records"},// v80: All-Time Records Wall
+        {id:"mentors",label:"Mentors"},// v80: Mentor/Protégé setup
         {id:"rivalries",label:"Rivalries"},
         {id:"ringOfHonor",label:"Ring of Honor"},
         {id:"timeline",label:"Timeline"},
-        {id:"dynastyMode",label:"🏛️ Dynasty"},
-        {id:"timeline986",label:"📅 Timeline"},
-        {id:"draftArchive",label:"📋 Drafts"},
+        {id:"dynastyMode",label:"Dynasty"},
+        {id:"timeline986",label:"Timeline"},
+        {id:"draftArchive",label:"Drafts"},
         {id:"boxScores",label:"Box Scores"}
       ]}
     ];
     if(season.phase==="reSign")NAV_PILLARS[1].tabs.push({id:"reSign",label:"Re-Sign"});
-    if(season.phase==="combine")NAV_PILLARS[1].tabs.push({id:"combine",label:"🏋️ Combine"});
+    if(season.phase==="combine")NAV_PILLARS[1].tabs.push({id:"combine",label:"Combine"});
     if(season.phase==="drafting")NAV_PILLARS[1].tabs.push({id:"draft",label:"Draft"});
     var activePillar="hub";
     NAV_PILLARS.forEach(function(p){p.tabs.forEach(function(t){if(t.id===tab)activePillar=p.id;});});
