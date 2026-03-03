@@ -1,6 +1,7 @@
 # Playable Change Index (Grouped)
 
 ## App / Launcher
+- `mr-football-v100.jsx`
 - `src/main.jsx`
 - `src/app/boot-mode.js`
 - `src/app/launcher-copy.js`
@@ -11,6 +12,7 @@
 - `src/app/status-screen.jsx`
 - `src/app/play-screen.jsx`
 - `src/app/launcher-shell.jsx`
+- `src/app/rookie-funnel.js`
 
 ## Build / Verification Scripts
 - `scripts/sync-legacy-assets.mjs`
@@ -35,6 +37,7 @@
 - `docs/playable-known-issues.md`
 - `docs/playable-rollback-plan.md`
 - `docs/collab-lane-ownership.md`
+- `docs/hybrid-v4-380-slice-ledger.md`
 - `docs/playable-release-template.md`
 - `docs/playable-artifact-index.md`
 - `docs/playable-change-index.md`
@@ -63,3 +66,5 @@
 - `tests/ci-summary.test.js`
 - `tests/main-entrypoint.test.js`
 - `tests/verify-no-gameplay-delta.test.js`
+- `tests/rookie-funnel.test.js`
+- `tests/rookie-funnel-wiring.test.js`

@@ -26,3 +26,10 @@
 - Shared-file edits outside approved conflict windows are lane violations.
 - If a change must cross lanes, log it in `docs/hybrid-v4-380-slice-ledger.md` first.
 - Default profile is `closed`; open named profiles only for approved shared windows.
+
+## Temporary Exception (2026-03-03)
+- Scope: `mr-football-v100.jsx` onboarding-only edits for Rookie Funnel vertical slice.
+- Requested by: Kevin / implementation request for one-release Rookie Funnel delivery.
+- Lane owner during exception: Codex.
+- Guardrail: do not modify `src/systems/**` or `src/data/**` behaviors in this exception.
+- Close condition: Rookie Funnel implementation merged and ledger window closed.
