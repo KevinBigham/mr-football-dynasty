@@ -13,6 +13,7 @@
 - `src/app/play-screen.jsx`
 - `src/app/launcher-shell.jsx`
 - `src/app/rookie-funnel.js`
+- `src/components/Icon.jsx`
 
 ## Build / Verification Scripts
 - `scripts/sync-legacy-assets.mjs`
@@ -48,6 +49,8 @@
 - `docs/overnight-run-results.md`
 - `docs/morning-handoff.md`
 - `docs/overnight-summary.md`
+- `docs/ui-emoji-overhaul-phase1-audit.md`
+- `docs/ui-emoji-overhaul-phase2-progress.md`
 
 ## Tests
 - `tests/boot-mode.test.js`
@@ -68,3 +71,4 @@
 - `tests/verify-no-gameplay-delta.test.js`
 - `tests/rookie-funnel.test.js`
 - `tests/rookie-funnel-wiring.test.js`
+- `tests/emoji-phase2-wiring.test.js`

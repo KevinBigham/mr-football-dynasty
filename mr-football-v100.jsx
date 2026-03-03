@@ -21,7 +21,7 @@ import { TEAM_CLIMATES, CLIMATE_PROFILES, WEATHER, HT_CONDITIONS, HT_STRATEGIES 
 import { BREAKOUT_SYSTEM } from './src/systems/breakout-system.js';
 import { calcDominanceScore, calcDynastyIndex, calcPeakPower, calcLongevity, generateIdentityTags, ERA_THRESHOLD, ALMANAC_SCHEMA_VERSION, generateEraCards, buildHallOfSeasons } from './src/systems/dynasty-analytics.js';
 import { PLAYBOOK_986 } from './src/systems/playbook.js';
-import { StatBar, ToneBadge, WeeklyShowCard } from './src/components/index.js';
+import { StatBar, ToneBadge, WeeklyShowCard, Icon } from './src/components/index.js';
 import { ROOKIE_STEPS, createRookieFlow, advanceRookieFlow, completeRookieFlow, formatRookieDuration, shouldShowRookieCoachCard } from './src/app/rookie-funnel.js';
 import { NARRATIVE_STATES, STORY_ARC_EVENTS, pickWeightedEvent } from './src/systems/story-arcs.js';
 import { STORY_ARC_ENGINE } from './src/systems/story-arc-engine.js';
@@ -24925,16 +24925,27 @@ var GS={
             onClick={function(){
               startRookieFlow();
               runRookieTransition("Setting up your rookie funnel...",function(){setScreen("pick");});
-            }}>{"🏟️ PRESS START"}</button>
+            }}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>
+              {React.createElement(Icon,{name:"play",size:16})}
+              <span>{"PRESS START"}</span>
+            </span></button>
           {saveLoading && <div style={{textAlign:"center",fontSize:11}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:8,color:T.dim}}>
               <span style={{width:7,height:7,borderRadius:"50%",background:T.gold,boxShadow:"0 0 12px rgba(251,191,36,0.35)",animation:"savePulse 1s ease-in-out infinite"}}/>
               <span style={{letterSpacing:0.6,animation:"saveBlink 1.4s ease-in-out infinite"}}>{"Loading saves..."}</span>
             </div>
           </div>}
-          {!saveLoading && _save && <button style={mS(S.btn,S.btnGhost,{width:"100%",padding:"12px 20px"})} onClick={loadSave2}>{"📂 Continue Dynasty"}</button>}
+          {!saveLoading && _save && <button style={mS(S.btn,S.btnGhost,{width:"100%",padding:"12px 20px"})} onClick={loadSave2}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
+              {React.createElement(Icon,{name:"folder",size:14})}
+              <span>{"Continue Dynasty"}</span>
+            </span>
+          </button>}
           <label style={mS(S.btn,S.btnGhost,{width:"100%",padding:"10px 20px",cursor:"pointer",boxSizing:"border-box"})}>
-            {"📁 Import Save"}
+            <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
+              {React.createElement(Icon,{name:"upload",size:14})}
+              <span>{"Import Save"}</span>
+            </span>
             <input type="file" accept=".json" onChange={importSave} style={{display:"none"}} />
           </label>
         </div>
@@ -24952,8 +24963,18 @@ var GS={
           </div>
         )}
         <div style={{display:"flex",gap:8}}>
-          <button onClick={function(){setScreen("music");}} style={mS(S.btn,{background:"rgba(168,85,247,0.25)",color:"#fff",border:"1px solid rgba(168,85,247,0.5)",padding:"8px 16px",fontSize:11})}>{"🎵 Jukebox"}</button>
-          <button onClick={function(){setShowHelp(true);}} style={mS(S.btn,S.btnGhost,{padding:"8px 16px",fontSize:11})}>{"📖 Guide"}</button>
+          <button onClick={function(){setScreen("music");}} style={mS(S.btn,{background:"rgba(168,85,247,0.25)",color:"#fff",border:"1px solid rgba(168,85,247,0.5)",padding:"8px 16px",fontSize:11})}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+              {React.createElement(Icon,{name:"music",size:13})}
+              <span>{"Jukebox"}</span>
+            </span>
+          </button>
+          <button onClick={function(){setShowHelp(true);}} style={mS(S.btn,S.btnGhost,{padding:"8px 16px",fontSize:11})}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+              {React.createElement(Icon,{name:"book",size:13})}
+              <span>{"Guide"}</span>
+            </span>
+          </button>
         </div>
         
         <div style={{position:"absolute",bottom:16,fontSize:7,color:T.faint,textAlign:"center",lineHeight:1.6,maxWidth:400,padding:"0 16px"}}>{"Mr. Football Dynasty — v1 Public Release"}</div>
@@ -26718,7 +26739,9 @@ var GS={
             <span style={{color:T.cyan,fontSize:9,flexShrink:0}}>{"Scout:"+(my.scoutPts||0)}</span>
             <span style={{color:T.gold,fontWeight:700,fontSize:10,flexShrink:0}}>{season.year+" Wk"+season.week}</span>
             {/* DBG button hidden for public release */}
-            <button onClick={function(){setTab("settings");}} style={{background:PREMIUM.isSupporter()?"rgba(212,167,75,0.15)":"none",border:"1px solid "+(PREMIUM.isSupporter()?"rgba(212,167,75,0.3)":T.glassBorder),borderRadius:4,color:PREMIUM.isSupporter()?T.gold:T.faint,fontSize:9,padding:"2px 5px",cursor:"pointer",flexShrink:0}} title={PREMIUM.isSupporter()?"◆ Supporter — Thank You!":"Support MFD on Ko-fi"}>{"☕"}</button>
+            <button onClick={function(){setTab("settings");}} style={{background:PREMIUM.isSupporter()?"rgba(212,167,75,0.15)":"none",border:"1px solid "+(PREMIUM.isSupporter()?"rgba(212,167,75,0.3)":T.glassBorder),borderRadius:4,color:PREMIUM.isSupporter()?T.gold:T.faint,fontSize:9,padding:"2px 5px",cursor:"pointer",flexShrink:0,display:"inline-flex",alignItems:"center",justifyContent:"center"}} title={PREMIUM.isSupporter()?"◆ Supporter — Thank You!":"Support MFD on Ko-fi"}>
+              {React.createElement(Icon,{name:"support",size:12,color:PREMIUM.isSupporter()?T.gold:T.faint})}
+            </button>
             <button onClick={function(){setShowKbHelp(true);}} style={{background:"none",border:"1px solid "+T.glassBorder,borderRadius:4,color:T.faint,fontSize:9,padding:"2px 5px",cursor:"pointer",flexShrink:0}} title="Keyboard Shortcuts">{"?"}</button>
           </div>
         </div>
@@ -26829,9 +26852,24 @@ var GS={
                     {"Check your starters, then simulate Week 1 to complete onboarding. The full manual stays available via Guide whenever you want deeper detail."}
                   </div>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    <button onClick={function(){setTab("roster");}} style={mS(S.btn,S.btnGhost,{padding:"8px 12px",fontSize:11,flex:1,minWidth:130})}>{"📋 Review Roster"}</button>
-                    <button onClick={handleGameDayStart977} style={mS(S.btn,S.btnPrimary,{padding:"8px 12px",fontSize:11,flex:1,minWidth:130})}>{"▶ Sim Week 1"}</button>
-                    <button onClick={skipRookieFlow} style={mS(S.btn,{padding:"8px 12px",fontSize:11,background:"rgba(255,255,255,0.06)",color:T.faint,border:"1px solid "+T.glassBorder})}>{"Skip"}</button>
+                    <button onClick={function(){setTab("roster");}} style={mS(S.btn,S.btnGhost,{padding:"8px 12px",fontSize:11,flex:1,minWidth:130})}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                        {React.createElement(Icon,{name:"list",size:13})}
+                        <span>{"Review Roster"}</span>
+                      </span>
+                    </button>
+                    <button onClick={handleGameDayStart977} style={mS(S.btn,S.btnPrimary,{padding:"8px 12px",fontSize:11,flex:1,minWidth:130})}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                        {React.createElement(Icon,{name:"play",size:13})}
+                        <span>{"Sim Week 1"}</span>
+                      </span>
+                    </button>
+                    <button onClick={skipRookieFlow} style={mS(S.btn,{padding:"8px 12px",fontSize:11,background:"rgba(255,255,255,0.06)",color:T.faint,border:"1px solid "+T.glassBorder})}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                        {React.createElement(Icon,{name:"skip",size:13})}
+                        <span>{"Skip"}</span>
+                      </span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -38027,7 +38065,10 @@ var GS={
           )}
           {tab==="settings" && (
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <div style={{fontWeight:700}}>{"⚙️ Game Settings"}</div>
+              <div style={{fontWeight:700,display:"inline-flex",alignItems:"center",gap:6}}>
+                {React.createElement(Icon,{name:"target",size:14})}
+                <span>{"Game Settings"}</span>
+              </div>
 
               {/* ── Support MFD ── */}
               {(function(){
@@ -38035,15 +38076,19 @@ var GS={
                 var featureList=Object.values(PREMIUM_FEATURES);
                 return React.createElement("div",{style:assign({},cS,{padding:16,borderColor:isSupporter?"rgba(212,167,75,0.4)":"rgba(255,255,255,0.12)",background:isSupporter?"rgba(212,167,75,0.06)":"rgba(255,255,255,0.03)"})},
                   React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:isSupporter?T.gold:T.text}},
-                      isSupporter?"◆ MFD Supporter — Thank You!":"☕ Support Mr. Football Dynasty"
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:isSupporter?T.gold:T.text,display:"inline-flex",alignItems:"center",gap:6}},
+                      React.createElement(Icon,{name:"support",size:13,color:isSupporter?T.gold:T.text}),
+                      React.createElement("span",null,isSupporter?"◆ MFD Supporter — Thank You!":"Support Mr. Football Dynasty")
                     ),
                     isSupporter
                       ? React.createElement("span",{style:{fontSize:10,color:T.gold,fontWeight:700,background:"rgba(212,167,75,0.12)",padding:"3px 8px",borderRadius:4}},"All Features Unlocked")
                       : React.createElement("button",{
                           style:mS(S.btn,S.btnPrimary,{fontSize:11,padding:"6px 14px"}),
                           onClick:function(){window.open(PREMIUM.getKoFiUrl(),"_blank");}
-                        },"☕ Ko-fi — Support MFD")
+                        },React.createElement("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},
+                          React.createElement(Icon,{name:"support",size:13,color:"#000"}),
+                          React.createElement("span",null,"Ko-fi — Support MFD")
+                        ))
                   ),
                   React.createElement("div",{style:{fontSize:10,color:T.dim,marginBottom:10,lineHeight:1.5}},
                     isSupporter
@@ -38173,11 +38218,14 @@ var GS={
               })()}
               
               <div style={assign({},cS,{padding:12})}>
-                <div style={{fontWeight:700,fontSize:12,marginBottom:8}}>{"🎨 Visual Preferences"}</div>
+                <div style={{fontWeight:700,fontSize:12,marginBottom:8,display:"inline-flex",alignItems:"center",gap:6}}>
+                  {React.createElement(Icon,{name:"target",size:13})}
+                  <span>{"Visual Preferences"}</span>
+                </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   <button style={mS(S.btn,S.btnSmall,{background:showScanlines?"rgba(251,191,36,0.15)":"rgba(255,255,255,0.04)",color:showScanlines?T.gold:T.faint,border:"1px solid "+(showScanlines?"rgba(251,191,36,0.3)":T.border)})}
                     onClick={function(){setShowScanlines(function(v){return !v;});}}>
-                    {showScanlines?"📺 CRT Scanlines ON":"📺 CRT Scanlines OFF"}
+                    {showScanlines?"CRT Scanlines ON":"CRT Scanlines OFF"}
                   </button>
                   <button style={mS(S.btn,S.btnSmall,{background:"rgba(34,211,238,0.15)",color:T.cyan,border:"1px solid rgba(34,211,238,0.3)"})}>
                     {"▦ Normal Roster"}
@@ -38224,7 +38272,12 @@ var GS={
                   {React.createElement("br")}
                   {"Seed: "+SEED_GLOBAL}
                 </div>
-                <button onClick={function(){setShowHelp(true);}} style={mS(S.btn,S.btnGhost,{marginTop:8,width:"100%",padding:"10px 16px"})}>{"📖 How to Play — Field Guide"}</button>
+                <button onClick={function(){setShowHelp(true);}} style={mS(S.btn,S.btnGhost,{marginTop:8,width:"100%",padding:"10px 16px"})}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                    {React.createElement(Icon,{name:"book",size:13})}
+                    <span>{"How to Play — Field Guide"}</span>
+                  </span>
+                </button>
               </div>
               
               <div style={assign({},cS,{padding:12})}>
@@ -43159,7 +43212,10 @@ var GS={
                 <div style={{fontSize:10,fontWeight:900,letterSpacing:1,color:sessionRookieMetric.metTarget?T.green:T.gold,marginBottom:4}}>
                   {"ROOKIE FUNNEL COMPLETE"}
                 </div>
-                <div style={{fontSize:22,fontWeight:900,color:T.text,marginBottom:8}}>{"🏁 First Game Reached"}</div>
+                <div style={{fontSize:22,fontWeight:900,color:T.text,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+                  {React.createElement(Icon,{name:"flag",size:20})}
+                  <span>{"First Game Reached"}</span>
+                </div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
                   <div style={{flex:1,minWidth:160,padding:10,borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid "+T.border}}>
                     <div style={{fontSize:9,color:T.faint,marginBottom:2}}>{"Time To First Game"}</div>
@@ -43168,7 +43224,7 @@ var GS={
                   <div style={{flex:1,minWidth:160,padding:10,borderRadius:10,background:sessionRookieMetric.metTarget?"rgba(16,185,129,0.10)":"rgba(245,158,11,0.10)",border:"1px solid "+(sessionRookieMetric.metTarget?"rgba(16,185,129,0.35)":"rgba(245,158,11,0.35)")}}>
                     <div style={{fontSize:9,color:T.faint,marginBottom:2}}>{"Target (< 2:00)"}</div>
                     <div style={{fontSize:14,fontWeight:900,color:sessionRookieMetric.metTarget?T.green:T.gold}}>
-                      {sessionRookieMetric.metTarget?"✅ Target Hit":"⚠️ Keep Pushing"}
+                      {sessionRookieMetric.metTarget?"Target Hit":"Needs Improvement"}
                     </div>
                   </div>
                 </div>
@@ -43392,17 +43448,17 @@ var GS={
           {!theater && !selGame && !presser && !seasonReport && !preseasonReport && !fitDrilldown && !schemeConfirm && !showHelp && (function(){
             var fabLabel=null;var fabAction=null;
             var ph=season.phase;
-            if(ph==="regular"&&!done){fabLabel="▶ Sim Wk "+season.week;fabAction=simWeek;}
-            else if(ph==="regular"&&done){fabLabel="🏆 Playoffs";fabAction=function(){setSeason(function(s){return assign({},s,{phase:"playoffs"});});};}
-            else if(ph==="preseason"){fabLabel="🏈 Sim Preseason";fabAction=simWeek;}
-            else if(ph==="cutDay"){fabLabel="✂️ Cut Day";fabAction=function(){setTab("roster");};}
-            else if(ph==="reSign"){fabLabel="✍️ Re-Sign ("+reSignPool.length+")";fabAction=function(){setTab("reSign");};}
-            else if(ph==="combine"){fabLabel="🔍 Scout";fabAction=function(){setTab("combine");};}
-            else if(ph==="draft"){fabLabel="📺 Draft";fabAction=function(){startDraft();};}
-            else if(ph==="drafting"){fabLabel="📋 Draft Board";fabAction=function(){setTab("draft");};}
-            else if(ph==="freeAgency"){fabLabel="🏪 Free Agents";fabAction=function(){setTab("fa");};}
-            else if(tab==="depth"){fabLabel="⚡ Auto-Optimize";fabAction=autoSortDepth;}
-            else if(tab==="roster"){fabLabel="📋 Depth Chart";fabAction=function(){setTab("depth");};}
+            if(ph==="regular"&&!done){fabLabel="Sim Wk "+season.week;fabAction=simWeek;}
+            else if(ph==="regular"&&done){fabLabel="Playoffs";fabAction=function(){setSeason(function(s){return assign({},s,{phase:"playoffs"});});};}
+            else if(ph==="preseason"){fabLabel="Sim Preseason";fabAction=simWeek;}
+            else if(ph==="cutDay"){fabLabel="Cut Day";fabAction=function(){setTab("roster");};}
+            else if(ph==="reSign"){fabLabel="Re-Sign ("+reSignPool.length+")";fabAction=function(){setTab("reSign");};}
+            else if(ph==="combine"){fabLabel="Scout";fabAction=function(){setTab("combine");};}
+            else if(ph==="draft"){fabLabel="Draft";fabAction=function(){startDraft();};}
+            else if(ph==="drafting"){fabLabel="Draft Board";fabAction=function(){setTab("draft");};}
+            else if(ph==="freeAgency"){fabLabel="Free Agents";fabAction=function(){setTab("fa");};}
+            else if(tab==="depth"){fabLabel="Auto-Optimize";fabAction=autoSortDepth;}
+            else if(tab==="roster"){fabLabel="Depth Chart";fabAction=function(){setTab("depth");};}
             if(!fabLabel)return null;
             var hasTickerBottom=weekShow&&weekShow.headlines&&weekShow.headlines.length>0&&ph==="regular"&&!done;
             return React.createElement("button",{style:mS(S.fab,{bottom:hasTickerBottom?36:16}),onClick:fabAction},fabLabel);
@@ -43415,7 +43471,10 @@ var GS={
           
           {showKbHelp && <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:9500,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={function(){setShowKbHelp(false);}}>
             <div style={{background:T.bg2,border:"1px solid "+T.gold,borderRadius:12,padding:24,maxWidth:500,width:"90%",maxHeight:"80vh",overflowY:"auto"}} onClick={function(e){e.stopPropagation();}}>
-              <div style={{fontSize:18,fontWeight:800,color:T.gold,marginBottom:16}}>{"⌨️ Keyboard Shortcuts"}</div>
+              <div style={{fontSize:18,fontWeight:800,color:T.gold,marginBottom:16,display:"inline-flex",alignItems:"center",gap:8}}>
+                {React.createElement(Icon,{name:"list",size:18,color:T.gold})}
+                <span>{"Keyboard Shortcuts"}</span>
+              </div>
               {HELP_SECTIONS.map(function(sec){
                 return <div key={sec.title} style={{marginBottom:16}}>
                   <div style={{fontSize:12,fontWeight:700,color:T.cyan,marginBottom:6,textTransform:"uppercase"}}>{sec.title}</div>
