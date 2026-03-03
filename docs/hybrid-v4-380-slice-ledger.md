@@ -483,3 +483,28 @@
 - `npm run verify:blitz` now fails only on `verify:toolchain`.
 - E2E launcher gate fixed and passing after smoke script alignment with launcher copy contracts.
 - Active local blocker remains: `git` unusable until Xcode license acceptance.
+
+### 2026-03-03 — Rookie Funnel Cross-Lane Window
+#### Window Open
+- Timestamp (UTC): 2026-03-03T00:00:00Z
+- Requested by: Kevin
+- Lane: codex-hybrid-v4 (temporary gameplay-surface exception)
+- Profile name: closed (documented exception, no shared-file profile change)
+- Reason: Rookie Funnel vertical slice requires targeted onboarding updates in `mr-football-v100.jsx`
+- Planned files:
+  - `mr-football-v100.jsx`
+  - `src/app/rookie-funnel.js`
+  - `tests/rookie-funnel.test.js`
+  - `tests/rookie-funnel-wiring.test.js`
+  - `docs/collab-lane-ownership.md`
+  - `docs/playable-change-index.md`
+- Expected close condition: onboarding flow, KPI surface, and regression tests are committed in one release train
+
+#### Window Close
+- Timestamp (UTC): 2026-03-03T00:00:00Z
+- Closed by: Codex
+- Profile name: closed (exception consumed)
+- Files touched: see planned list above
+- Lane report: pending local Node toolchain availability
+- Shared-window audit: pending local Node toolchain availability
+- Follow-up actions: run `npm run verify:lane`, `npm test`, and release gates in a Node-enabled environment

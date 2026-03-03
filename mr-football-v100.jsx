@@ -22,6 +22,7 @@ import { BREAKOUT_SYSTEM } from './src/systems/breakout-system.js';
 import { calcDominanceScore, calcDynastyIndex, calcPeakPower, calcLongevity, generateIdentityTags, ERA_THRESHOLD, ALMANAC_SCHEMA_VERSION, generateEraCards, buildHallOfSeasons } from './src/systems/dynasty-analytics.js';
 import { PLAYBOOK_986 } from './src/systems/playbook.js';
 import { StatBar, ToneBadge, WeeklyShowCard } from './src/components/index.js';
+import { ROOKIE_STEPS, createRookieFlow, advanceRookieFlow, completeRookieFlow, formatRookieDuration, shouldShowRookieCoachCard } from './src/app/rookie-funnel.js';
 import { NARRATIVE_STATES, STORY_ARC_EVENTS, pickWeightedEvent } from './src/systems/story-arcs.js';
 import { STORY_ARC_ENGINE } from './src/systems/story-arc-engine.js';
 import { FO_FIRST_NAMES, FO_LAST_NAMES, FO_TRAITS, FO_BACKSTORIES, FRONT_OFFICE } from './src/systems/front-office.js';
@@ -17095,6 +17096,50 @@ var EXPLAIN={
 };
 function AppCore(){
   var _s=useState("title"),screen=_s[0],setScreen=_s[1];
+  var ROOKIE_TARGET_MS=120000;
+  function makeIdleRookieFlow(){
+    return {active:false,step:ROOKIE_STEPS.IDLE,startedAtMs:0,stepStartedAtMs:0,completedAtMs:null,firstGameMs:null,skipped:false};
+  }
+  var _rookieFlow=useState(makeIdleRookieFlow()),rookieFlow=_rookieFlow[0],setRookieFlow=_rookieFlow[1];
+  var _sessionRookieMetric=useState(null),sessionRookieMetric=_sessionRookieMetric[0],setSessionRookieMetric=_sessionRookieMetric[1];
+  var _rookieCompletionOpen=useState(false),rookieCompletionOpen=_rookieCompletionOpen[0],setRookieCompletionOpen=_rookieCompletionOpen[1];
+  var _rookieTransition=useState(null),rookieTransition=_rookieTransition[0],setRookieTransition=_rookieTransition[1];
+  var rookieTransitionTimer=useRef(null);
+  var rookieTransitionClearTimer=useRef(null);
+  function isReducedMotionPreferred(){
+    return !!(typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+  function clearRookieTransitionTimers(){
+    if(rookieTransitionTimer.current){clearTimeout(rookieTransitionTimer.current);rookieTransitionTimer.current=null;}
+    if(rookieTransitionClearTimer.current){clearTimeout(rookieTransitionClearTimer.current);rookieTransitionClearTimer.current=null;}
+  }
+  useEffect(function(){return function(){clearRookieTransitionTimers();};},[]);
+  function runRookieTransition(label,fn){
+    clearRookieTransitionTimers();
+    var text=label||"Loading...";
+    var reduced=isReducedMotionPreferred();
+    setRookieTransition({label:text});
+    if(reduced){
+      try{if(fn)fn();}finally{setRookieTransition(null);}
+      return;
+    }
+    rookieTransitionTimer.current=setTimeout(function(){
+      try{if(fn)fn();}finally{
+        rookieTransitionClearTimer.current=setTimeout(function(){setRookieTransition(null);},160);
+      }
+    },120);
+  }
+  function startRookieFlow(){
+    var flow=createRookieFlow(Date.now());
+    setRookieFlow(flow);
+    setSessionRookieMetric(null);
+    setRookieCompletionOpen(false);
+    return flow;
+  }
+  function skipRookieFlow(){
+    setRookieFlow(function(prev){return advanceRookieFlow(prev,ROOKIE_STEPS.SKIPPED,Date.now());});
+    setRookieCompletionOpen(false);
+  }
   var _pdm=useState(null),pendingDraftMode=_pdm[0],setPendingDraftMode=_pdm[1]; // v80.2: stores chosen draft mode while FO setup runs
   var _foSC=useState(null),foSetupCandidates=_foSC[0],setFoSetupCandidates=_foSC[1]; // v80.2: hiring candidates on FO setup screen
   var _foSS=useState([]),foSetupStaff=_foSS[0],setFoSetupStaff=_foSS[1]; // v80.2: staff hired on FO setup screen
@@ -17107,6 +17152,14 @@ function AppCore(){
   var _m=useState(null),myId=_m[0],setMyId=_m[1];
   var _sc=useState([]),sched=_sc[0],setSched=_sc[1];
   var _sn=useState({year:2026,week:1,phase:"regular",ledger:[]}),season=_sn[0],setSeason=_sn[1];
+  useEffect(function(){
+    if(screen!=="league")return;
+    if(!season||season.phase!=="regular"||Number(season.week)!==1)return;
+    setRookieFlow(function(prev){
+      if(!prev||!prev.active||prev.step!==ROOKIE_STEPS.MODE)return prev;
+      return advanceRookieFlow(prev,ROOKIE_STEPS.FIRST_GAME,Date.now());
+    });
+  },[screen,season&&season.phase,season&&season.week]);
   var _dc=useState([]),dc=_dc[0],setDC=_dc[1];
   var _dcNarr=useState(null),draftNarrative76=_dcNarr[0],setDraftNarrative76=_dcNarr[1];// v76: Draft Class Storylines
   var _udfa76=useState(null),udfaPool76=_udfa76[0],setUdfaPool76=_udfa76[1];// v76: UDFA mini-game pool
@@ -19411,6 +19464,25 @@ var GS={
     }
     return order;
   }
+  function openDraftModeForTeam(idx){
+    setExpTeamIdx(idx);
+    setRookieFlow(function(prev){
+      if(!prev.active)return prev;
+      return advanceRookieFlow(prev,ROOKIE_STEPS.MODE,Date.now());
+    });
+    if(rookieFlow&&rookieFlow.active){
+      runRookieTransition("Preparing franchise setup...",function(){setScreen("draftMode");});
+      return;
+    }
+    setScreen("draftMode");
+  }
+  function startRookieInstantLeague(idx){
+    setRookieFlow(function(prev){
+      if(!prev.active)return prev;
+      return advanceRookieFlow(prev,ROOKIE_STEPS.FIRST_GAME,Date.now());
+    });
+    runRookieTransition("Building your Week 1 kickoff...",function(){createLeague(idx,true);});
+  }
   function initExpSnakeDraft(idx,depth){
     try{
     var leagueSeed=Date.now();setSeed(leagueSeed);
@@ -19870,6 +19942,11 @@ var GS={
     }catch(e){console.error("createLeague error:",e);alert("League creation error: "+e.message);}
   }
   function loadSave2(){var d=loadG();if(!d) return;
+    clearRookieTransitionTimers();
+    setRookieTransition(null);
+    setRookieFlow(makeIdleRookieFlow());
+    setSessionRookieMetric(null);
+    setRookieCompletionOpen(false);
     function normalizePlayerSaveFlags93(p){
       if(!p)return;
       if(p.contractDispute===undefined)p.contractDispute=false;else p.contractDispute=!!p.contractDispute;
@@ -21582,6 +21659,19 @@ var GS={
         passTD:uTape?uTape.passTD||0:0,rushYds:uTape?uTape.rushYds||0:0,ints:uTape?uTape.turnovers||0:0,
         sacks:uTape?uTape.sacks||0:0,streak:u?(u.streak||0):0
       });
+      if(rookieFlow&&rookieFlow.active&&rookieFlow.step===ROOKIE_STEPS.FIRST_GAME){
+        var finishedFlow=completeRookieFlow(rookieFlow,Date.now());
+        var elapsedMs=typeof finishedFlow.firstGameMs==="number"?finishedFlow.firstGameMs:0;
+        setRookieFlow(finishedFlow);
+        setSessionRookieMetric({
+          firstGameMs:elapsedMs,
+          formatted:formatRookieDuration(elapsedMs),
+          metTarget:elapsedMs<ROOKIE_TARGET_MS,
+          completedAtMs:finishedFlow.completedAtMs
+        });
+        setRookieCompletionOpen(true);
+        setShowConfetti(true);
+      }
     }
     var tbOffers=genTradeBlockOffers(nt);
     inboxData=inboxData.concat(tbOffers);
@@ -24831,14 +24921,36 @@ var GS={
         <div style={{fontSize:10,color:T.faint,maxWidth:340,textAlign:"center",lineHeight:1.6,marginBottom:24}}>{"Draft your 53-man roster. Survive ruthless owners. Outsmart 29 AI GMs in real-time trades. Navigate press conferences, coaching carousels, contract holdouts, and a championship run that changes everything."}</div>
         
         <div style={{display:"flex",flexDirection:"column",gap:10,width:280,marginBottom:20}}>
-          <button style={mS(S.btn,S.btnPrimary,{width:"100%",padding:"16px 20px",fontSize:16,borderRadius:RAD.lg,boxShadow:"0 0 30px rgba(251,191,36,0.3),"+SH.glow,letterSpacing:1,animation:"pulse 2s ease-in-out infinite"})} onClick={function(){setScreen("pick");}}>{"🏟️ PRESS START"}</button>
-          {saveLoading && <div style={{textAlign:"center",color:T.dim,fontSize:11}}>{"Loading saves..."}</div>}
+          <button style={mS(S.btn,S.btnPrimary,{width:"100%",padding:"16px 20px",fontSize:16,borderRadius:RAD.lg,boxShadow:"0 0 30px rgba(251,191,36,0.3),"+SH.glow,letterSpacing:1,animation:"pulse 2s ease-in-out infinite"})}
+            onClick={function(){
+              startRookieFlow();
+              runRookieTransition("Setting up your rookie funnel...",function(){setScreen("pick");});
+            }}>{"🏟️ PRESS START"}</button>
+          {saveLoading && <div style={{textAlign:"center",fontSize:11}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:8,color:T.dim}}>
+              <span style={{width:7,height:7,borderRadius:"50%",background:T.gold,boxShadow:"0 0 12px rgba(251,191,36,0.35)",animation:"savePulse 1s ease-in-out infinite"}}/>
+              <span style={{letterSpacing:0.6,animation:"saveBlink 1.4s ease-in-out infinite"}}>{"Loading saves..."}</span>
+            </div>
+          </div>}
           {!saveLoading && _save && <button style={mS(S.btn,S.btnGhost,{width:"100%",padding:"12px 20px"})} onClick={loadSave2}>{"📂 Continue Dynasty"}</button>}
           <label style={mS(S.btn,S.btnGhost,{width:"100%",padding:"10px 20px",cursor:"pointer",boxSizing:"border-box"})}>
             {"📁 Import Save"}
             <input type="file" accept=".json" onChange={importSave} style={{display:"none"}} />
           </label>
         </div>
+        {sessionRookieMetric&&(
+          <div style={mS(S.card,{width:280,padding:10,marginBottom:16,borderColor:sessionRookieMetric.metTarget?"rgba(16,185,129,0.45)":"rgba(245,158,11,0.45)",background:sessionRookieMetric.metTarget?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)"})}>
+            <div style={{fontSize:9,fontWeight:800,letterSpacing:1,color:sessionRookieMetric.metTarget?T.green:T.gold,marginBottom:4}}>
+              {"ROOKIE FUNNEL SESSION KPI"}
+            </div>
+            <div style={{fontSize:18,fontWeight:900,color:T.text,marginBottom:2}}>
+              {"First Game: "+sessionRookieMetric.formatted}
+            </div>
+            <div style={{fontSize:10,color:T.dim}}>
+              {sessionRookieMetric.metTarget?"Target hit (< 2:00).":"Target missed (goal < 2:00)."}
+            </div>
+          </div>
+        )}
         <div style={{display:"flex",gap:8}}>
           <button onClick={function(){setScreen("music");}} style={mS(S.btn,{background:"rgba(168,85,247,0.25)",color:"#fff",border:"1px solid rgba(168,85,247,0.5)",padding:"8px 16px",fontSize:11})}>{"🎵 Jukebox"}</button>
           <button onClick={function(){setShowHelp(true);}} style={mS(S.btn,S.btnGhost,{padding:"8px 16px",fontSize:11})}>{"📖 Guide"}</button>
@@ -24846,7 +24958,7 @@ var GS={
         
         <div style={{position:"absolute",bottom:16,fontSize:7,color:T.faint,textAlign:"center",lineHeight:1.6,maxWidth:400,padding:"0 16px"}}>{"Mr. Football Dynasty — v1 Public Release"}</div>
         
-        <style>{"@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.2)}50%{box-shadow:0 0 40px rgba(251,191,36,0.5)}}"}</style>
+        <style>{"@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.2)}50%{box-shadow:0 0 40px rgba(251,191,36,0.5)}}@keyframes savePulse{0%,100%{opacity:.45;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}@keyframes saveBlink{0%,100%{opacity:.65}50%{opacity:1}}"}</style>
         
         {showHelp && (
           <div style={GS.overlay} onClick={function(){setShowHelp(false);}}>
@@ -25193,12 +25305,24 @@ var GS={
           <div style={{fontSize:24,fontWeight:900,color:T.gold}}>Franchise</div>
           <div style={{color:T.faint,fontSize:11,marginTop:4}}>Build the empire. Survive the owner. Win the war.</div>
         </div>
+        {rookieFlow&&rookieFlow.active&&(
+          <div style={mS(S.card,{padding:"10px 12px",marginBottom:12,borderColor:"rgba(251,191,36,0.4)",background:"rgba(251,191,36,0.08)"})}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontSize:9,fontWeight:900,color:T.gold,letterSpacing:1,marginBottom:2}}>{"ROOKIE FUNNEL · STEP 1 OF 3"}</div>
+                <div style={{fontSize:11,color:T.text,fontWeight:700}}>{"Pick your franchise to begin onboarding."}</div>
+                <div style={{fontSize:9,color:T.dim,marginTop:2}}>{"Full manual stays available anytime from the Guide button."}</div>
+              </div>
+              <button onClick={skipRookieFlow} style={mS(S.btn,S.btnGhost,{padding:"6px 10px",fontSize:10})}>{"Skip Rookie Funnel"}</button>
+            </div>
+          </div>
+        )}
         {(function(){
           var useGrouped97=TD.length>=30&&LEAGUE_STRUCTURE&&LEAGUE_STRUCTURE.conferences&&LEAGUE_STRUCTURE.divisions;
           if(!useGrouped97){
             return <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
               {TD.map(function(t,i){return (
-                <div key={t.id} onClick={function(){setExpTeamIdx(i);setScreen("draftMode");}} style={mS(S.card,{cursor:"pointer",textAlign:"center",padding:14,transition:"all 0.15s ease",borderColor:T.glassBorder})}>
+                <div key={t.id} onClick={function(){openDraftModeForTeam(i);}} style={mS(S.card,{cursor:"pointer",textAlign:"center",padding:14,transition:"all 0.15s ease",borderColor:T.glassBorder})}>
                   <div style={{display:"flex",justifyContent:"center",marginBottom:6}}>{React.createElement(TeamLogo,{team:t,size:42})}</div>
                   <div style={{fontWeight:800,fontSize:13}}>{t.city}</div>
                   <div style={{fontWeight:600,fontSize:11,color:T.dim}}>{t.name}</div>
@@ -25230,7 +25354,7 @@ var GS={
                         {(div.teams||[]).map(function(teamId){
                           var t=tdById97[teamId];
                           if(!t)return null;
-                          return <div key={t.id} onClick={function(){setExpTeamIdx(tdIdx97[t.id]);setScreen("draftMode");}}
+                          return <div key={t.id} onClick={function(){openDraftModeForTeam(tdIdx97[t.id]);}}
                             style={mS(S.card,{cursor:"pointer",textAlign:"center",padding:10,borderColor:T.glassBorder,background:"rgba(255,255,255,0.015)"})}>
                             <div style={{display:"flex",justifyContent:"center",marginBottom:4}}>{React.createElement(TeamLogo,{team:t,size:34})}</div>
                             <div style={{fontWeight:800,fontSize:11,lineHeight:1.15}}>{t.city}</div>
@@ -25269,6 +25393,18 @@ var GS={
         </div>
         <div style={{fontSize:18,fontWeight:800,color:T.gold,marginBottom:4}}>Choose Your Draft Mode</div>
         <div style={{color:T.dim,fontSize:11,textAlign:"center",maxWidth:400,marginBottom:10}}>{"How will "+getLeagueTeamCountLabel97()+" teams build their rosters? Pick your path."}</div>
+        {rookieFlow&&rookieFlow.active&&(
+          <div style={mS(S.card,{width:"100%",maxWidth:420,padding:"10px 12px",marginBottom:12,borderColor:"rgba(251,191,36,0.4)",background:"rgba(251,191,36,0.08)"})}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontSize:9,fontWeight:900,color:T.gold,letterSpacing:1,marginBottom:2}}>{"ROOKIE FUNNEL · STEP 2 OF 3"}</div>
+                <div style={{fontSize:11,color:T.text,fontWeight:700}}>{"Pick Instant Start for the fastest path to Week 1."}</div>
+                <div style={{fontSize:9,color:T.dim,marginTop:2}}>{"Need details? The full manual is always on the Guide button."}</div>
+              </div>
+              <button onClick={skipRookieFlow} style={mS(S.btn,S.btnGhost,{padding:"6px 10px",fontSize:10})}>{"Skip Rookie Funnel"}</button>
+            </div>
+          </div>
+        )}
         
         <div style={mS(S.card,{display:"flex",gap:4,marginBottom:8,padding:6})}>
           {Object.keys(DIFF_SETTINGS).map(function(k){
@@ -25330,6 +25466,11 @@ var GS={
             return React.createElement("div",{key:m.id,
               onClick:function(){
                 try{
+                if(m.type==="quick"&&rookieFlow&&rookieFlow.active){
+                  setFoSetupStaff([]);setFoSetupCandidates(null);setPendingDraftMode(null);
+                  startRookieInstantLeague(expTeamIdx);
+                  return;
+                }
                 setFoSetupStaff([]);setFoSetupCandidates(null); // v80.2: reset FO setup state
                 setPendingDraftMode({type:m.type,depth:m.depth}); // v80.2: stash the chosen mode
                 setScreen("foExplain"); // v80.6: show FO explainer before hiring
@@ -26680,6 +26821,28 @@ var GS={
           
           {tab==="home" && (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {shouldShowRookieCoachCard(rookieFlow,{screen:screen,tab:tab,phase:season.phase,week:season.week})&&(
+                <div style={mS(S.card,{padding:12,borderColor:"rgba(96,165,250,0.45)",background:"linear-gradient(135deg,rgba(59,130,246,0.12),rgba(59,130,246,0.03))"})}>
+                  <div style={{fontSize:9,fontWeight:900,color:T.cyan,letterSpacing:1,marginBottom:4}}>{"ROOKIE FUNNEL · STEP 3 OF 3"}</div>
+                  <div style={{fontSize:14,fontWeight:900,color:T.text,marginBottom:4}}>{"Coach Suggestion: Finish Week 1"}</div>
+                  <div style={{fontSize:10,color:T.dim,lineHeight:1.45,marginBottom:8}}>
+                    {"Check your starters, then simulate Week 1 to complete onboarding. The full manual stays available via Guide whenever you want deeper detail."}
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <button onClick={function(){setTab("roster");}} style={mS(S.btn,S.btnGhost,{padding:"8px 12px",fontSize:11,flex:1,minWidth:130})}>{"📋 Review Roster"}</button>
+                    <button onClick={handleGameDayStart977} style={mS(S.btn,S.btnPrimary,{padding:"8px 12px",fontSize:11,flex:1,minWidth:130})}>{"▶ Sim Week 1"}</button>
+                    <button onClick={skipRookieFlow} style={mS(S.btn,{padding:"8px 12px",fontSize:11,background:"rgba(255,255,255,0.06)",color:T.faint,border:"1px solid "+T.glassBorder})}>{"Skip"}</button>
+                  </div>
+                </div>
+              )}
+              {sessionRookieMetric&&(
+                <div style={mS(S.card,{padding:10,borderColor:sessionRookieMetric.metTarget?"rgba(16,185,129,0.35)":"rgba(245,158,11,0.35)",background:sessionRookieMetric.metTarget?"rgba(16,185,129,0.08)":"rgba(245,158,11,0.08)"})}>
+                  <div style={{fontSize:9,fontWeight:900,letterSpacing:1,color:sessionRookieMetric.metTarget?T.green:T.gold,marginBottom:2}}>{"ROOKIE KPI"}</div>
+                  <div style={{fontSize:11,color:T.text,fontWeight:700}}>
+                    {"First game reached in "+sessionRookieMetric.formatted+(sessionRookieMetric.metTarget?" (target hit).":" (target missed).")}
+                  </div>
+                </div>
+              )}
 
               {/* ═══ v98.6: GAME DAY HERO CARD — Front and Center! ═══ */}
               {season.phase==="regular"&&my&&(function(){
@@ -42977,6 +43140,48 @@ var GS={
               )
             );
           })()}
+
+          {rookieTransition&&(
+            <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9650,background:"rgba(2,6,23,0.86)",display:"flex",alignItems:"center",justifyContent:"center",padding:16,pointerEvents:"auto"}}>
+              <div style={{minWidth:260,maxWidth:420,width:"100%",borderRadius:12,padding:"18px 16px",background:"linear-gradient(135deg,rgba(15,23,42,0.96),rgba(15,23,42,0.82))",border:"1px solid rgba(251,191,36,0.35)",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.45)"}}>
+                {!isReducedMotionPreferred()&&<div style={{width:36,height:36,borderRadius:"50%",margin:"0 auto 10px",border:"3px solid rgba(251,191,36,0.25)",borderTopColor:T.gold,boxShadow:"0 0 12px rgba(251,191,36,0.25)"}}/>}
+                <div style={{fontSize:13,fontWeight:800,color:T.gold,marginBottom:4}}>{rookieTransition.label||"Loading..."}</div>
+                <div style={{fontSize:10,color:T.dim}}>{"Onboarding handoff in progress..."}</div>
+              </div>
+            </div>
+          )}
+
+          {rookieCompletionOpen&&sessionRookieMetric&&(
+            <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9660,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}
+              onClick={function(){setRookieCompletionOpen(false);}}>
+              <div style={{maxWidth:520,width:"100%",background:T.bg2,borderRadius:14,border:"1px solid "+(sessionRookieMetric.metTarget?"rgba(16,185,129,0.45)":"rgba(245,158,11,0.45)"),padding:18,boxShadow:"0 24px 70px rgba(0,0,0,0.55)"}}
+                onClick={function(e){e.stopPropagation();}}>
+                <div style={{fontSize:10,fontWeight:900,letterSpacing:1,color:sessionRookieMetric.metTarget?T.green:T.gold,marginBottom:4}}>
+                  {"ROOKIE FUNNEL COMPLETE"}
+                </div>
+                <div style={{fontSize:22,fontWeight:900,color:T.text,marginBottom:8}}>{"🏁 First Game Reached"}</div>
+                <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                  <div style={{flex:1,minWidth:160,padding:10,borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid "+T.border}}>
+                    <div style={{fontSize:9,color:T.faint,marginBottom:2}}>{"Time To First Game"}</div>
+                    <div style={{fontSize:22,fontWeight:900,color:T.text}}>{sessionRookieMetric.formatted}</div>
+                  </div>
+                  <div style={{flex:1,minWidth:160,padding:10,borderRadius:10,background:sessionRookieMetric.metTarget?"rgba(16,185,129,0.10)":"rgba(245,158,11,0.10)",border:"1px solid "+(sessionRookieMetric.metTarget?"rgba(16,185,129,0.35)":"rgba(245,158,11,0.35)")}}>
+                    <div style={{fontSize:9,color:T.faint,marginBottom:2}}>{"Target (< 2:00)"}</div>
+                    <div style={{fontSize:14,fontWeight:900,color:sessionRookieMetric.metTarget?T.green:T.gold}}>
+                      {sessionRookieMetric.metTarget?"✅ Target Hit":"⚠️ Keep Pushing"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{fontSize:10,color:T.dim,lineHeight:1.45,marginBottom:12}}>
+                  {"The full operations manual remains available any time from the Guide button."}
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button onClick={function(){setRookieCompletionOpen(false);}} style={mS(S.btn,S.btnPrimary,{padding:"9px 12px",fontSize:11,flex:1,minWidth:150})}>{"Continue Dynasty"}</button>
+                  <button onClick={function(){setRookieCompletionOpen(false);setShowHelp(true);}} style={mS(S.btn,S.btnGhost,{padding:"9px 12px",fontSize:11,flex:1,minWidth:150})}>{"Open Full Manual"}</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {fieldGuide && (
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:96,background:"rgba(0,0,0,0.95)",display:"flex",alignItems:"center",justifyContent:"center",padding:10}}
