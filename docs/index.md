@@ -73,6 +73,7 @@
 
 ## Collaboration
 - `codex-claude-collab-protocol.md`
+- `mfd-pr6-codex-gameplan.md`
 - `collab-lane-ownership.md`
 - `commit-conventions.md`
 - `no-gameplay-change-checklist.md`
