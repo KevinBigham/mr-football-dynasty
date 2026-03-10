@@ -90,7 +90,7 @@ export default function PlayScreen(props) {
     var active = true;
     setPlayability({ loading: true, ok: true, missingFiles: [], errors: [] });
 
-    runPlayabilityCheck(manifest, probeFn).then(function (result) {
+    runPlayabilityCheck(manifest, probeFn, basePath).then(function (result) {
       if (!active) return;
       setPlayability({
         loading: false,
@@ -129,8 +129,9 @@ export default function PlayScreen(props) {
         consumerRef.current.ingestMessage({ type: 'mfd:game-event', envelope: envelope });
         setFeedView(consumerRef.current.getViewModel());
       },
-      onInvalid: function (diag) {
-        consumerRef.current.ingestMessage(diag.data);
+      onInvalid: function () {
+        // Invalid game-event messages are tracked by the receiver's own diagnostics.
+        // Do NOT feed them back into ingestMessage — that poisons sourceState.
         setFeedView(consumerRef.current.getViewModel());
       },
     });

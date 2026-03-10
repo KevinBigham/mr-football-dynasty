@@ -12,20 +12,29 @@ export function buildExpectedLegacyFiles(manifest) {
   return getLegacyRequiredFiles(manifest || LEGACY_MANIFEST).map(normalizeLegacyAssetPath);
 }
 
-async function defaultProbe(pathname) {
+function resolveBasePath(basePath) {
+  var p = String(basePath || '/').trim();
+  if (!p) return '/';
+  if (p.charAt(0) !== '/') p = '/' + p;
+  if (p.charAt(p.length - 1) !== '/') p += '/';
+  return p;
+}
+
+async function defaultProbe(pathname, basePath) {
   if (typeof fetch !== 'function') {
     return false;
   }
   try {
-    var response = await fetch('/' + normalizeLegacyAssetPath(pathname), { method: 'GET' });
+    var base = resolveBasePath(basePath);
+    var response = await fetch(base + normalizeLegacyAssetPath(pathname), { method: 'GET' });
     return !!(response && response.ok);
   } catch (_err) {
     return false;
   }
 }
 
-export async function probeLegacyAssets(assetPaths, probeFn) {
-  var probe = typeof probeFn === 'function' ? probeFn : defaultProbe;
+export async function probeLegacyAssets(assetPaths, probeFn, basePath) {
+  var probe = typeof probeFn === 'function' ? probeFn : function (p) { return defaultProbe(p, basePath); };
   var checks = [];
   var missingFiles = [];
 
@@ -51,7 +60,7 @@ export async function probeLegacyAssets(assetPaths, probeFn) {
   };
 }
 
-export async function runPlayabilityCheck(manifest, probeFn) {
+export async function runPlayabilityCheck(manifest, probeFn, basePath) {
   var m = manifest || LEGACY_MANIFEST;
   var validation = validateLegacyManifest(m);
   if (!validation.ok) {
@@ -64,7 +73,7 @@ export async function runPlayabilityCheck(manifest, probeFn) {
   }
 
   var expectedFiles = buildExpectedLegacyFiles(m);
-  var result = await probeLegacyAssets(expectedFiles, probeFn);
+  var result = await probeLegacyAssets(expectedFiles, probeFn, basePath);
   return {
     ok: result.ok,
     missingFiles: result.missingFiles,

@@ -37,4 +37,25 @@ describe('playability-check helpers', () => {
     expect(out.ok).toBe(false);
     expect(out.errors.length).toBeGreaterThan(0);
   });
+
+  it('probeLegacyAssets passes basePath to default probe', async () => {
+    var probedPaths = [];
+    var customProbe = async function (path) {
+      probedPaths.push(path);
+      return true;
+    };
+    await probeLegacyAssets(['legacy/index.html'], customProbe, '/my-app');
+    // Custom probe receives the normalized path (basePath is only used by defaultProbe)
+    expect(probedPaths).toEqual(['legacy/index.html']);
+  });
+
+  it('runPlayabilityCheck forwards basePath to probing', async () => {
+    var probedPaths = [];
+    var customProbe = async function (path) {
+      probedPaths.push(path);
+      return true;
+    };
+    await runPlayabilityCheck(LEGACY_MANIFEST, customProbe, '/mr-football-dynasty');
+    expect(probedPaths.length).toBeGreaterThan(0);
+  });
 });

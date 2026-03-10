@@ -54,6 +54,11 @@ export function createGameEventReceiver(options = {}) {
   if (!target || typeof target.addEventListener !== 'function') return function noop() {};
 
   const handler = function onMessage(event) {
+    // Silently ignore non-object data and messages not typed as mfd:game-event.
+    // This prevents unrelated messages (React DevTools, mfd:consumer-packet, etc.)
+    // from being treated as invalid game events.
+    if (!isObject(event.data) || event.data.type !== GAME_EVENT_MESSAGE_TYPE) return;
+
     const result = validateGameEventMessage(event.data);
     if (!result.ok) {
       onInvalid({ reason: result.reason, data: event.data });

@@ -129,6 +129,92 @@ describe('live event consumer', () => {
 });
 
 // ═══════════════════════════════════════════════
+// Receiver: ignoring unrelated messages
+// ═══════════════════════════════════════════════
+
+describe('receiver ignores unrelated messages', () => {
+  it('silently ignores non-object message data', () => {
+    const win = createWindowStub();
+    const valid = [];
+    const invalid = [];
+    const off = createGameEventReceiver({
+      target: win,
+      onEnvelope(envelope) { valid.push(envelope); },
+      onInvalid(diag) { invalid.push(diag.reason); },
+    });
+
+    win.post('string data');
+    win.post(42);
+    win.post(null);
+    win.post(undefined);
+
+    off();
+
+    expect(valid).toHaveLength(0);
+    expect(invalid).toHaveLength(0);
+  });
+
+  it('silently ignores mfd:consumer-packet messages in game-event receiver', () => {
+    const win = createWindowStub();
+    const valid = [];
+    const invalid = [];
+    const off = createGameEventReceiver({
+      target: win,
+      onEnvelope(envelope) { valid.push(envelope); },
+      onInvalid(diag) { invalid.push(diag.reason); },
+    });
+
+    win.post({ type: CONSUMER_PACKET_MESSAGE_TYPE, packet: { schemaVersion: '0.1.0' } });
+
+    off();
+
+    expect(valid).toHaveLength(0);
+    expect(invalid).toHaveLength(0);
+  });
+
+  it('silently ignores messages with unrecognized type', () => {
+    const win = createWindowStub();
+    const valid = [];
+    const invalid = [];
+    const off = createGameEventReceiver({
+      target: win,
+      onEnvelope(envelope) { valid.push(envelope); },
+      onInvalid(diag) { invalid.push(diag.reason); },
+    });
+
+    win.post({ type: 'react-devtools-bridge' });
+    win.post({ type: 'webpackHotUpdate' });
+    win.post({ some: 'random object' });
+
+    off();
+
+    expect(valid).toHaveLength(0);
+    expect(invalid).toHaveLength(0);
+  });
+
+  it('still validates and reports invalid mfd:game-event envelopes', () => {
+    const win = createWindowStub();
+    const valid = [];
+    const invalid = [];
+    const off = createGameEventReceiver({
+      target: win,
+      onEnvelope(envelope) { valid.push(envelope); },
+      onInvalid(diag) { invalid.push(diag.reason); },
+    });
+
+    // Valid game event
+    win.post({ type: GAME_EVENT_MESSAGE_TYPE, envelope: fixturePacket.envelope });
+    // Invalid game event (bad payload)
+    win.post({ type: GAME_EVENT_MESSAGE_TYPE, envelope: { ...fixturePacket.envelope, payload: null } });
+
+    off();
+
+    expect(valid).toHaveLength(1);
+    expect(invalid).toEqual(['invalid_payload']);
+  });
+});
+
+// ═══════════════════════════════════════════════
 // Consumer packet validation
 // ═══════════════════════════════════════════════
 
