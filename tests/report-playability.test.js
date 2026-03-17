@@ -11,10 +11,17 @@ import {
 
 describe('report-playability script', () => {
   it('returns missing-section defaults when reports are absent', () => {
-    var input = buildPlayabilityReportInput();
-    expect(input.launcher.ok).toBe(false);
-    expect(input.save.ok).toBe(false);
-    expect(Array.isArray(input.launcher.checks)).toBe(true);
+    var cwd = process.cwd();
+    var tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mfd-playability-input-'));
+    process.chdir(tmp);
+    try {
+      var input = buildPlayabilityReportInput();
+      expect(input.launcher.ok).toBe(false);
+      expect(input.save.ok).toBe(false);
+      expect(Array.isArray(input.launcher.checks)).toBe(true);
+    } finally {
+      process.chdir(cwd);
+    }
   });
 
   it('writes a stable playability report document', () => {

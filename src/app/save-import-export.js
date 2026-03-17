@@ -48,7 +48,7 @@ export function validateImportPayload(input) {
     return { ok: false, code: 'empty_input', error: mapImportExportError('empty_input') };
   }
 
-  var bytes = text.length;
+  var bytes = new TextEncoder().encode(text).length;
   if (bytes > MAX_IMPORT_BYTES) {
     return {
       ok: false,

@@ -6,6 +6,7 @@
  */
 
 import { MIN_SALARY, getMinSalary } from '../config/cap-math.js';
+import { getEP993 } from './win-probability.js';
 
 export function makeContract(salary, years, signingBonus, guaranteed) {
   var sb = signingBonus || 0;
@@ -265,13 +266,7 @@ export function calcFourthDownEV995(yards, fieldPos, score, quarter, timeLeft) {
   else if (fgDistance <= 50) fgSuccess = 0.69;
   else fgSuccess = 0.52;
 
-  // Expected points lookup (uses getEP993 from main game — will be wired later)
-  var getEP =
-    typeof getEP993 !== 'undefined'
-      ? getEP993
-      : function () {
-          return 2.5;
-        };
+  var getEP = getEP993;
 
   var epOppFail = getEP(1, 10, 100 - fieldPos);
   var convertField = fieldPos + yards;
@@ -308,9 +303,9 @@ export function calcFourthDownEV995(yards, fieldPos, score, quarter, timeLeft) {
     if (score >= 7) fgAdj += 0.2;
   }
   if (isLateTrail) goAdj += 0.2;
-  if (fieldPos <= 35 && yards >= 5) goAdj -= 0.4;
-  if (fieldPos <= 35 && yards >= 8) goAdj -= 1.0;
-  if (fieldPos <= 50 && yards >= 12) goAdj -= 0.6;
+  if (!isDesperate && fieldPos <= 35 && yards >= 5) goAdj -= 0.4;
+  if (!isDesperate && fieldPos <= 35 && yards >= 8) goAdj -= 1.0;
+  if (!isDesperate && fieldPos <= 50 && yards >= 12) goAdj -= 0.6;
   if (fieldPos >= 80 && yards <= 2) goAdj += 0.35;
   if (isProtecting && fieldPos <= 60) {
     goAdj -= 0.9;

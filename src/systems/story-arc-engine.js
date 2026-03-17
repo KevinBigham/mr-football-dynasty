@@ -6,7 +6,8 @@
  * transitions between states based on performance and season context.
  */
 
-import { NARRATIVE_STATES } from './story-arcs.js';
+import { NARRATIVE_STATES, STORY_ARC_EVENTS, pickWeightedEvent } from './story-arcs.js';
+import { RNG } from '../utils/rng.js';
 
 export var STORY_ARC_ENGINE={
   normalizePlayer:function(p){

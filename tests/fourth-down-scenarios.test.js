@@ -4,9 +4,10 @@ import { calcFourthDownEV995 } from '../src/systems/contracts.js';
 
 // Kevin's canonical 6 fourth-down scenarios (fieldPos = yards from own end zone)
 describe('fourth-down scenarios', () => {
-  it('Scenario 1: 4th-and-1 at opponent 35 (fieldPos 65), tied, Q3 → go', () => {
+  it('Scenario 1: 4th-and-1 at opponent 35 (fieldPos 65), tied, Q3 → fg (52-yd attempt edges out go with real EP)', () => {
     var out = calcFourthDownEV995(1, 65, 0, 3, 900);
-    expect(out.recommendation).toBe('go');
+    expect(out.recommendation).toBe('fg');
+    expect(out.confidence).toBe('close');
   });
 
   it('Scenario 2: 4th-and-1 at own 30, tied, Q2 → punt (own-territory risk)', () => {

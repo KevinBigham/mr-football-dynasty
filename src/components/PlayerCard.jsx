@@ -120,7 +120,6 @@ export function PlayerCard(props) {
   var getInjuryMask = props.getInjuryMask || function () { return { type: 'Injury', status: 'Unknown' }; };
 
   var arch = p.archetype || PLAYER_ARCHETYPES.classify(p);
-  if (!p.archetype && arch) p.archetype = arch;
 
   var def = POS_DEF[p.pos] || { r: [], w: [] };
   var cs = p.careerStats || {};
@@ -402,7 +401,7 @@ export function PlayerCard(props) {
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginTop: 6, fontSize: 10, color: T.dim, flexWrap: 'wrap' }}>
-                {p.college ? <span style={{ color: T.cyan }}>{'🎓 ' + p.college.school}</span> : null}
+                {p.college ? <span style={{ color: T.cyan }}>{'🎓 ' + (p.college.school || p.college)}</span> : null}
                 {p.height ? <span>{formatHeight(p.height)}</span> : null}
                 {p.weight ? <span>{p.weight + ' lbs'}</span> : null}
                 {expYrs > 0 ? <span>{expYrs + 'yr exp'}</span> : null}
@@ -638,7 +637,7 @@ export function PlayerCard(props) {
           {(contract.prorated || 0) > 0 ? (
             <div style={{ display: 'flex', gap: 16, fontSize: 10, marginTop: 6, color: T.dim }}>
               <span style={{ color: '#ef4444' }}>{'✂️ Cut: $' + deadIfCut + 'M dead'}</span>
-              <span style={{ color: '#f59e0b' }}>{'🔄 Trade: $' + deadIfTraded + 'M dead (save $' + Math.abs(tradeSavings) + 'M)'}</span>
+              <span style={{ color: '#f59e0b' }}>{'🔄 Trade: $' + deadIfTraded + 'M dead (' + (tradeSavings >= 0 ? 'save $' + tradeSavings : 'cost $' + Math.abs(tradeSavings)) + 'M)'}</span>
             </div>
           ) : null}
 
@@ -697,7 +696,7 @@ export function PlayerCard(props) {
 
         {p.college && (p.college.passYds || p.college.rushYds || p.college.rec || p.college.starts) ? (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid ' + T.border }}>
-            <div style={{ fontSize: 9, color: T.cyan, fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>{'COLLEGE — ' + p.college.school.toUpperCase()}</div>
+            <div style={{ fontSize: 9, color: T.cyan, fontWeight: 700, marginBottom: 6, letterSpacing: 1.5 }}>{'COLLEGE — ' + (p.college.school || p.college || '').toUpperCase()}</div>
             <div style={{ display: 'flex', gap: 12, fontSize: 11, flexWrap: 'wrap' }}>
               {p.college.passYds ? <span><span style={{ color: T.faint }}>Pass </span><span style={{ fontWeight: 700 }}>{p.college.passYds + 'yd ' + p.college.passTD + 'TD ' + p.college.int + 'INT ' + p.college.comp + '%'}</span></span> : null}
               {p.college.rushYds ? <span><span style={{ color: T.faint }}>Rush </span><span style={{ fontWeight: 700 }}>{p.college.rushYds + 'yd ' + p.college.rushTD + 'TD ' + p.college.ypc + 'ypc'}</span></span> : null}
